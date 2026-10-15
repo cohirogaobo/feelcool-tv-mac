@@ -110,11 +110,11 @@
             line-height: 1.35;
         }
 
-        /* PSP UI 风格低饱和度动态流光背景 (正序图层 + GPU 硬件合成防止窗口模式视频切块静止) */
-        .base-layer { position: fixed; inset: 0; background-color: #070a10; z-index: 0; overflow: hidden; transition: opacity 0.6s ease; transform: translate3d(0,0,0); -webkit-transform: translate3d(0,0,0); pointer-events: none; }
+        /* PSP UI 风格低饱和度动态流光背景 (严格图层层级：.base-layer z-index:-3 < #mac-bg-video z-index:-2 < .hero-overlay z-index:-1) */
+        .base-layer { position: fixed; inset: 0; background-color: #070a10; z-index: -3; overflow: hidden; transition: opacity 0.45s ease; transform: translate3d(0,0,0); -webkit-transform: translate3d(0,0,0); pointer-events: none; }
         #pspWaveCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; opacity: 0.92; transition: opacity 0.65s ease; }
 
-        .hero-overlay { position: fixed; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), linear-gradient(to top, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.04) 45%, transparent 100%); z-index: 1; transition: opacity 0.4s ease; transform: translate3d(0,0,0); -webkit-transform: translate3d(0,0,0); pointer-events: none; }
+        .hero-overlay { position: fixed; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), linear-gradient(to top, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.04) 45%, transparent 100%); z-index: -1; transition: opacity 0.4s ease; transform: translate3d(0,0,0); -webkit-transform: translate3d(0,0,0); pointer-events: none; }
 
         .sidebar { position: fixed; left: 20px; top: 38px; bottom: 20px; width: 205px; background: var(--glass-bg); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px); border-radius: 20px; border: 1px solid var(--glass-border); z-index: 10; display: flex; flex-direction: column; padding: 18px 12px; box-sizing: border-box; transition: width var(--animation-speed) cubic-bezier(0.25, 1, 0.5, 1), padding var(--animation-speed) ease, opacity 0.35s ease; overflow: hidden; background-clip: padding-box; -webkit-mask-image: -webkit-radial-gradient(white, black); transform: translateZ(0); }
         .sidebar.collapsed { width: 68px; padding: 18px 0; }
@@ -1210,9 +1210,20 @@
 
         var macVideo = document.createElement('video');
         macVideo.id = 'mac-bg-video'; macVideo.autoplay = true; macVideo.muted = !appSettings.previewSound; macVideo.playsInline = true; 
-        // 修复 7 (Round 4)：正序 z-index: 0 配合 translate3d / backface-visibility 强制开启 macOS WKWebView 独立 AVPlayerLayer 硬件合成，彻底消除窗口模式局部切块卡死
-        macVideo.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 0; transition: opacity 0.5s ease; opacity: 0; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity;';
-        document.body.insertBefore(macVideo, document.body.firstChild);
+        // 修复 7 (Round 4)：严格恢复 z-index: -2 (位于 .base-layer z-index:-3 之上、.hero-overlay z-index:-1 之下)，并置于 #baseLayer 之后，配合 GPU 独立层与背景淡出彻底解决视频被遮挡及窗口模式切块卡死
+        macVideo.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -2; transition: opacity 0.5s ease; opacity: 0; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity;';
+        var heroOverlayEl = document.getElementById('heroOverlay');
+        if (heroOverlayEl && heroOverlayEl.parentNode) {
+            heroOverlayEl.parentNode.insertBefore(macVideo, heroOverlayEl);
+        } else {
+            document.body.insertBefore(macVideo, document.body.firstChild);
+        }
+
+        function setVideoLayerVisible(visible) {
+            macVideo.style.opacity = visible ? '1' : '0';
+            var bl = document.getElementById('baseLayer');
+            if (bl) bl.style.opacity = visible ? '0' : '1';
+        }
 
         var iptvHudTimer = null;
         function showIptvFullscreenHud(title, sub) {
@@ -1240,12 +1251,37 @@
             macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
             macVideo.volume = 1.0;
         }
+        window.addEventListener('mousedown', applyPreviewOrFullscreenAudio, { passive: true });
+
+        function startVideoPlaybackWithFallback(reqSeq) {
+            if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+            macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
+            macVideo.play().then(function() {
+                if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                isVideoReady = true;
+                setTimeout(function() {
+                    if (reqSeq === undefined || reqSeq === streamReqSeq) {
+                        setVideoLayerVisible(true);
+                    }
+                }, 80);
+                onBackgroundVideoStarted();
+            }).catch(function() {
+                if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                macVideo.muted = true;
+                macVideo.play().then(function() {
+                    if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                    isVideoReady = true;
+                    setVideoLayerVisible(true);
+                    onBackgroundVideoStarted();
+                }).catch(function() {});
+            });
+        }
 
         function loadAndPlayVideo(url, isMuted, reqSeq) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
             var targetMuted = isFullScreen ? false : !appSettings.previewSound;
             macVideo.muted = targetMuted;
-            macVideo.style.opacity = '0';
+            setVideoLayerVisible(false);
             isVideoReady = false;
             if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                 if (hlsInstance) hlsInstance.destroy();
@@ -1265,26 +1301,7 @@
                 hlsInstance.loadSource(url);
                 hlsInstance.attachMedia(macVideo);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-                    if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-                    macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
-                    macVideo.play().then(() => {
-                        if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-                        isVideoReady = true;
-                        setTimeout(() => {
-                            if (reqSeq === undefined || reqSeq === streamReqSeq) {
-                                macVideo.style.opacity = '1';
-                            }
-                        }, 80);
-                        onBackgroundVideoStarted();
-                    }).catch(e => {
-                        if (!macVideo.muted) {
-                            macVideo.muted = true;
-                            macVideo.play().then(() => {
-                                isVideoReady = true;
-                                macVideo.style.opacity = '1';
-                            }).catch(() => {});
-                        }
-                    });
+                    startVideoPlaybackWithFallback(reqSeq);
                 });
                 hlsInstance.on(Hls.Events.ERROR, function(event, data) {
                     if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
@@ -1296,6 +1313,11 @@
                         }
                     }
                 });
+            } else {
+                macVideo.src = url;
+                macVideo.onloadedmetadata = function() {
+                    startVideoPlaybackWithFallback(reqSeq);
+                };
             }
         }
 
@@ -1325,7 +1347,10 @@
                 }).catch(e => {}); 
             } else {
                 macVideo.muted = previewMuted;
-                macVideo.play().then(() => { macVideo.style.opacity = '1'; }).catch(() => {});
+                macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {
+                    macVideo.muted = true;
+                    macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
+                });
             }
         }
 
@@ -1339,10 +1364,11 @@
                 hlsInstance.destroy();
                 hlsInstance = null;
             }
+            macVideo.onloadedmetadata = null;
             macVideo.pause();
             macVideo.removeAttribute('src');
             macVideo.load();
-            macVideo.style.opacity = '0';
+            setVideoLayerVisible(false);
         }
 
         function executeItemAction(action, title) {
@@ -1386,7 +1412,7 @@
                     }).catch(() => {});
                 } else {
                     macVideo.muted = false;
-                    macVideo.play().then(() => { macVideo.style.opacity = '1'; }).catch(() => {});
+                    macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
                 }
             }
         }
