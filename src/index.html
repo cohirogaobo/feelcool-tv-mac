@@ -17,23 +17,23 @@
         .top-right-clock { position: fixed; top: 28px; right: 38px; z-index: 80; background: rgba(28, 28, 30, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 16px; border-radius: 999px; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.9); letter-spacing: 0.5px; opacity: 0; transform: translateY(-8px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .top-right-clock.visible { opacity: 1; transform: translateY(0); }
 
-        /* 修复 1 (Round 4) & 任务 11 (Round 5) & 任务 3 (Round 6)：日本电视台风格顶部中央两行天气速报/预警，字号进一步放大 */
+        /* 修复 1 (Round 4) & 任务 11 (Round 5) & 任务 3 (Round 6) & 任务 2 (Round 7)：日本电视台风格顶部中央两行天气速报/预警，字号再度放大 */
         .jp-weather-telop {
             position: fixed;
             top: 58px;
             left: 50%;
             transform: translateX(-50%) translateY(-8px);
-            width: min(820px, 68vw);
-            min-width: 540px;
+            width: min(940px, 74vw);
+            min-width: 620px;
             z-index: 95;
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: 1.6px;
+            font-size: 35px;
+            font-weight: 800;
+            letter-spacing: 1.8px;
             line-height: 1.35;
             color: #ffffff;
             white-space: nowrap;
@@ -41,15 +41,15 @@
             transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
             -webkit-font-smoothing: antialiased;
             text-shadow:
-                -2px -2px 0 #000,
-                 2px -2px 0 #000,
-                -2px  2px 0 #000,
-                 2px  2px 0 #000,
-                 0px -2px 0 #000,
-                 0px  2px 0 #000,
-                -2px  0px 0 #000,
-                 2px  0px 0 #000,
-                 0px  4px 10px rgba(0, 0, 0, 0.88);
+                -2.5px -2.5px 0 #000,
+                 2.5px -2.5px 0 #000,
+                -2.5px  2.5px 0 #000,
+                 2.5px  2.5px 0 #000,
+                 0px -2.5px 0 #000,
+                 0px  2.5px 0 #000,
+                -2.5px  0px 0 #000,
+                 2.5px  0px 0 #000,
+                 0px  5px 12px rgba(0, 0, 0, 0.90);
         }
         .jp-weather-telop.visible {
             opacity: 1;
@@ -60,15 +60,15 @@
             align-items: baseline;
             justify-content: space-between;
             width: 100%;
-            gap: 28px;
+            gap: 32px;
         }
         .jp-telop-row2 {
             display: flex;
             align-items: baseline;
             justify-content: flex-end;
             width: 100%;
-            font-size: 25px;
-            letter-spacing: 2px;
+            font-size: 29px;
+            letter-spacing: 2.2px;
         }
 
         /* 修复 2 (Round 4) & 任务 8 (Round 6)：IPTV 与抖音全屏播放左下角大屏信息块 */
@@ -595,7 +595,7 @@
 
         function renderPspWaveFrame() {
             if (!pspCtx || !pspCanvas) return;
-            if (!isFullScreen && (!macVideo || macVideo.style.opacity !== '1')) {
+            if (!isFullScreen && (!macVideo || parseFloat(macVideo.style.opacity || '0') < 0.5)) {
                 var w = pspCanvas.width, h = pspCanvas.height;
                 var theme = getCurrentPspTheme();
                 pspPhase += 0.0085;
@@ -705,7 +705,39 @@
         const PILL_CHEVRON_RIGHT_SVG = '<svg class="pill-chevron-svg" viewBox="0 0 24 24"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41.01z"/></svg>';
         const PILL_CHEVRON_LEFT_SVG = '<svg class="pill-chevron-left-svg" viewBox="0 0 24 24"><path d="M14.71 6.71a1 1 0 0 1 0 1.41L10.83 12l3.88 3.88a1 1 0 1 1-1.41 1.41L8.71 13.7a1 1 0 0 1 0-1.41L13.3 6.7a1 1 0 0 1 1.41.01z"/></svg>';
 
-        // 任务 5 (Round 6)：恢复原本已经够大的近方形/常规宽幅台标内边距（29px 34px / 24px），仅针对因超宽扁平比 (ratio > 2.60) 或小尺寸导致视觉偏小的台标适度放大
+        // 任务 3 (Round 7)：IPTV 台标像素级 Alpha 边界自动裁切 + 视觉体量均衡算法
+        // 针对如 CCTV1 等无留白双行厚重台标大幅缩小（内边距增至 38px 58px），针对如江西卫视等四周存在大面积透明留白或丝带+单行字纤细台标自动剥离留白并显著放大（内边距缩至 20px 22px）
+        var iptvLogoTrimCache = {};
+
+        function applyIptvLogoBoxStyle(img, itemEl, trimRatio, bboxFill) {
+            var cardTitle = (itemEl ? (itemEl.getAttribute('data-title') || '') : '').toUpperCase();
+            var isCctv = cardTitle.indexOf('CCTV') !== -1 || cardTitle.indexOf('CGTN') !== -1;
+
+            img.style.objectFit = 'contain';
+            img.style.boxSizing = 'border-box';
+            img.style.transform = 'none';
+
+            if (isCctv) {
+                // CCTV 系列双行满画幅高密度台标：缩小显示，留出充足呼吸感
+                img.style.padding = '38px 58px';
+            } else if (trimRatio < 1.38) {
+                // 近正方形/圆形独立台标：适度收窄内边距防止过大
+                img.style.padding = '35px 62px';
+            } else if (bboxFill < 0.29) {
+                // 如江西卫视等左侧丝带+右侧单行文字（去留白后右上角大片镂空、视觉占比偏小）：显著放大
+                img.style.padding = '19px 20px';
+            } else if (bboxFill < 0.36 || trimRatio >= 2.38) {
+                // 常规地方卫视横向图文台标：适度放大
+                img.style.padding = '23px 26px';
+            } else if (trimRatio <= 2.25 && bboxFill >= 0.39) {
+                // 高密度饱满块状台标：适度缩小
+                img.style.padding = '36px 54px';
+            } else {
+                // 标准均衡台标
+                img.style.padding = '30px 40px';
+            }
+        }
+
         function fitSingleImage(img) {
             if (!img) return;
             var itemEl = img.closest('.media-item');
@@ -714,30 +746,144 @@
             if (rowId !== 2) {
                 img.style.objectFit = 'cover';
                 img.style.padding = '0px';
+                img.style.transform = 'none';
+                img.style.opacity = '1';
+                return;
+            }
+
+            var currentSrc = img.getAttribute('src') || '';
+            if (currentSrc.indexOf('data:image/jpeg') === 0 || currentSrc === DEFAULT_LOCAL_CARD_SVG) {
+                img.style.objectFit = 'cover';
+                img.style.padding = '0px';
+                img.style.transform = 'none';
+                img.style.opacity = '1';
+                return;
+            }
+
+            if (img.getAttribute('data-logo-trimmed') === '1') {
+                var tRatio = parseFloat(img.getAttribute('data-trim-ratio') || '2.2');
+                var bFill = parseFloat(img.getAttribute('data-bbox-fill') || '0.32');
+                applyIptvLogoBoxStyle(img, itemEl, tRatio, bFill);
                 img.style.opacity = '1';
                 return;
             }
 
             if (img.naturalWidth && img.naturalHeight) {
-                var ratio = img.naturalWidth / img.naturalHeight;
-                if (ratio >= 1.50 && ratio <= 1.90 && img.naturalWidth >= 400) {
-                    img.style.objectFit = 'cover';
-                    img.style.padding = '0px';
-                } else if (ratio < 1.95) {
-                    // 原本已经很大的近方形/竖向台标：严格保持 29px 34px 不放大
+                var origKey = img.getAttribute('data-orig-src') || currentSrc;
+                img.setAttribute('data-orig-src', origKey);
+
+                if (iptvLogoTrimCache[origKey]) {
+                    var cached = iptvLogoTrimCache[origKey];
+                    if (cached.isFullCover) {
+                        img.style.objectFit = 'cover';
+                        img.style.padding = '0px';
+                        img.style.transform = 'none';
+                        img.style.opacity = '1';
+                        return;
+                    }
+                    img.setAttribute('data-logo-trimmed', '1');
+                    img.setAttribute('data-trim-ratio', String(cached.trimRatio));
+                    img.setAttribute('data-bbox-fill', String(cached.bboxFill));
+                    applyIptvLogoBoxStyle(img, itemEl, cached.trimRatio, cached.bboxFill);
+                    if (cached.trimmedDataUrl && img.src !== cached.trimmedDataUrl) {
+                        img.src = cached.trimmedDataUrl;
+                    }
+                    img.style.opacity = '1';
+                    return;
+                }
+
+                try {
+                    var nw = img.naturalWidth, nh = img.naturalHeight;
+                    var scanScale = Math.min(1, 280 / Math.max(nw, nh));
+                    var sw = Math.max(1, Math.round(nw * scanScale));
+                    var sh = Math.max(1, Math.round(nh * scanScale));
+                    var c = document.createElement('canvas');
+                    c.width = sw;
+                    c.height = sh;
+                    var ctx = c.getContext('2d');
+                    ctx.drawImage(img, 0, 0, sw, sh);
+                    var imgData = ctx.getImageData(0, 0, sw, sh).data;
+
+                    // 检查四角是否完全不透明（若为 16:9 实心海报图则铺满）
+                    var c1 = imgData[3], c2 = imgData[(sw - 1) * 4 + 3], c3 = imgData[(sh - 1) * sw * 4 + 3], c4 = imgData[(sh * sw - 1) * 4 + 3];
+                    var rawRatio = nw / nh;
+                    if (c1 > 242 && c2 > 242 && c3 > 242 && c4 > 242 && rawRatio >= 1.50 && rawRatio <= 1.90 && nw >= 400) {
+                        iptvLogoTrimCache[origKey] = { isFullCover: true };
+                        img.style.objectFit = 'cover';
+                        img.style.padding = '0px';
+                        img.style.transform = 'none';
+                        img.style.opacity = '1';
+                        return;
+                    }
+
+                    var minX = sw, minY = sh, maxX = -1, maxY = -1;
+                    var weightedInk = 0;
+                    for (var py = 0; py < sh; py++) {
+                        var rowOff = py * sw * 4;
+                        for (var px = 0; px < sw; px++) {
+                            var a = imgData[rowOff + px * 4 + 3];
+                            if (a > 20) {
+                                if (px < minX) minX = px;
+                                if (px > maxX) maxX = px;
+                                if (py < minY) minY = py;
+                                if (py > maxY) maxY = py;
+                                weightedInk += (a / 255);
+                            }
+                        }
+                    }
+
+                    if (maxX >= minX && maxY >= minY) {
+                        var trimW = maxX - minX + 1;
+                        var trimH = maxY - minY + 1;
+                        var trimRatio = trimW / trimH;
+                        var bboxFill = weightedInk / (trimW * trimH);
+
+                        // 映射回原图坐标进行无损裁切透明留白（消除如江西卫视等台标四周的自带透明边距）
+                        var srcX = Math.max(0, Math.floor(minX / scanScale));
+                        var srcY = Math.max(0, Math.floor(minY / scanScale));
+                        var srcW = Math.min(nw - srcX, Math.ceil(trimW / scanScale));
+                        var srcH = Math.min(nh - srcY, Math.ceil(trimH / scanScale));
+
+                        var cropCanvas = document.createElement('canvas');
+                        cropCanvas.width = srcW;
+                        cropCanvas.height = srcH;
+                        cropCanvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+                        var trimmedUrl = cropCanvas.toDataURL('image/png');
+
+                        iptvLogoTrimCache[origKey] = {
+                            isFullCover: false,
+                            trimmedDataUrl: trimmedUrl,
+                            trimRatio: trimRatio,
+                            bboxFill: bboxFill
+                        };
+
+                        img.setAttribute('data-logo-trimmed', '1');
+                        img.setAttribute('data-trim-ratio', String(trimRatio));
+                        img.setAttribute('data-bbox-fill', String(bboxFill));
+                        applyIptvLogoBoxStyle(img, itemEl, trimRatio, bboxFill);
+                        img.src = trimmedUrl;
+                        img.style.opacity = '1';
+                        return;
+                    }
+                } catch (e) {
+                    // 若个别第三方图源未开启 CORS 导致无法读取像素，走标题与尺寸特征精准兜底
+                    var ratio = img.naturalWidth / img.naturalHeight;
+                    var fallbackTitle = (itemEl ? (itemEl.getAttribute('data-title') || '') : '').toUpperCase();
                     img.style.objectFit = 'contain';
-                    img.style.padding = '29px 34px';
                     img.style.boxSizing = 'border-box';
-                } else if (ratio > 2.62 || img.naturalWidth <= 165 || img.naturalHeight <= 68) {
-                    // 仅针对视觉上偏小的超宽扁平台标或小分辨率台标：适度减小内边距使其放大一点
-                    img.style.objectFit = 'contain';
-                    img.style.padding = '16px 15px';
-                    img.style.boxSizing = 'border-box';
-                } else {
-                    // 常规宽幅台标（如标准 CCTV 台标）：严格保持 24px 不放大
-                    img.style.objectFit = 'contain';
-                    img.style.padding = '24px';
-                    img.style.boxSizing = 'border-box';
+                    if (fallbackTitle.indexOf('CCTV') !== -1 || fallbackTitle.indexOf('CGTN') !== -1) {
+                        img.style.padding = '38px 58px';
+                        img.style.transform = 'none';
+                    } else if (fallbackTitle.indexOf('卫视') !== -1 || ratio > 2.35 || img.naturalWidth <= 360) {
+                        img.style.padding = '12px 14px';
+                        img.style.transform = 'scale(1.22)';
+                    } else if (ratio < 1.45) {
+                        img.style.padding = '35px 62px';
+                        img.style.transform = 'none';
+                    } else {
+                        img.style.padding = '30px 40px';
+                        img.style.transform = 'none';
+                    }
                 }
             }
             img.style.opacity = '1';
@@ -750,6 +896,15 @@
                 (function(img) {
                     img.setAttribute('data-bound', '1');
                     var handleImgError = function() {
+                        if (img.hasAttribute('crossorigin') && !img.getAttribute('data-cors-retried')) {
+                            img.setAttribute('data-cors-retried', '1');
+                            img.removeAttribute('crossorigin');
+                            var retrySrc = img.getAttribute('src');
+                            if (retrySrc) {
+                                img.src = retrySrc;
+                                return;
+                            }
+                        }
                         var card = img.closest('.media-item');
                         var previewPath = card ? card.getAttribute('data-preview') : '';
                         if (previewPath && previewPath.indexOf('/') === 0 && iptvFrameCache[previewPath]) {
@@ -760,6 +915,7 @@
                         }
                         img.style.objectFit = 'cover';
                         img.style.padding = '0px';
+                        img.style.transform = 'none';
                         img.style.opacity = '1';
                         if (previewPath && previewPath.indexOf('/') === 0 && !img.getAttribute('data-thumb-retried')) {
                             img.setAttribute('data-thumb-retried', '1');
@@ -940,7 +1096,8 @@
                     ? ('https://live.fanmingming.com/tv/' + encodeURIComponent(cleanIconName) + '.png')
                     : DEFAULT_LOCAL_CARD_SVG;
                 var imgUrl = item.img ? optimizeImageUrl(item.img) : fallbackImg;
-                innerBox = '<div class="card-image-wrapper"><img id="card_img_' + rowId + '_' + index + '" decoding="async" loading="lazy" src="' + imgUrl + '" alt=""></div>';
+                var crossAttr = (rowId === 2 && imgUrl.indexOf('data:') !== 0) ? ' crossorigin="anonymous"' : '';
+                innerBox = '<div class="card-image-wrapper"><img id="card_img_' + rowId + '_' + index + '"' + crossAttr + ' decoding="async" loading="lazy" src="' + imgUrl + '" alt=""></div>';
             }
             var orgName = item.sub || '';
             var subText = item.sub || '';
@@ -1516,8 +1673,12 @@
         var macVideo = document.createElement('video');
         macVideo.id = 'mac-bg-video'; macVideo.autoplay = true; macVideo.muted = !appSettings.previewSound; macVideo.playsInline = true; 
         macVideo.crossOrigin = 'anonymous';
-        // 修复 7 (Round 4) & 任务 9 (Round 5)：锁定全视口尺寸 (inset:0 + min-width/min-height:100vw/100vh) 并等待首帧尺寸就绪后再显影，彻底消除预览/播放初段闪现小画面再放大的问题
-        macVideo.style.cssText = 'position: fixed; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100vw !important; height: 100vh !important; min-width: 100vw; min-height: 100vh; object-fit: cover; z-index: -2; transition: opacity 0.42s ease; opacity: 0; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity;';
+        macVideo.width = 1920;
+        macVideo.height = 1080;
+        macVideo.setAttribute('width', '1920');
+        macVideo.setAttribute('height', '1080');
+        // 修复 7 (Round 4) & 任务 4 (Round 7)：永不设置 visibility:hidden，隐藏态使用 opacity:0.002 保持 WebKit AVSampleBufferDisplayLayer 实时完成全屏几何布局，彻底根除预览与全屏闪现小画面再放大的 bug
+        macVideo.style.cssText = 'position: fixed; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100vw !important; height: 100vh !important; min-width: 100vw; min-height: 100vh; max-width: 100vw; max-height: 100vh; object-fit: cover; object-position: center center; z-index: -2; transition: none; opacity: 0.002; visibility: visible; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: opacity;';
         var heroOverlayEl = document.getElementById('heroOverlay');
         if (heroOverlayEl && heroOverlayEl.parentNode) {
             heroOverlayEl.parentNode.insertBefore(macVideo, heroOverlayEl);
@@ -1525,12 +1686,28 @@
             document.body.insertBefore(macVideo, document.body.firstChild);
         }
 
+        var lastVideoGeometryChangeTs = 0;
+        var objectFitTransitionTimer = null;
+        macVideo.addEventListener('resize', function() {
+            lastVideoGeometryChangeTs = performance.now();
+        });
+        macVideo.addEventListener('loadedmetadata', function() {
+            lastVideoGeometryChangeTs = performance.now();
+        });
+
         function setVideoLayerVisible(visible) {
+            if (objectFitTransitionTimer) {
+                clearTimeout(objectFitTransitionTimer);
+                objectFitTransitionTimer = null;
+            }
             if (visible) {
-                macVideo.style.visibility = 'visible';
+                macVideo.style.transition = 'opacity 0.38s ease';
                 macVideo.style.opacity = '1';
             } else {
-                macVideo.style.opacity = '0';
+                // 立即瞬切至 0.002（肉眼完全不可见，但对 WebKit GraphicsLayerCA 仍属 >0 激活态，使其在幕后立即完成 AVSampleBufferDisplayLayer 尺寸重排）
+                macVideo.style.transition = 'none';
+                macVideo.style.opacity = '0.002';
+                void macVideo.offsetWidth;
             }
             var bl = document.getElementById('baseLayer');
             // 任务 1 (Round 6)：全屏播放模式下始终保持动态波浪背景层透明 (opacity: 0)，彻底消除全屏上下切换视频时闪过动态背景的问题
@@ -1650,7 +1827,7 @@
             if (iptvHudTimer) { clearTimeout(iptvHudTimer); iptvHudTimer = null; }
         }
 
-        // 任务 2 (Round 6)：严格等待视频解码出真实画面且播放进度推进 (currentTime >= 0.06, videoWidth > 0, readyState >= 3)，并在隐藏态下强制完成全视口几何重排后再渐显，100% 根除预览与全屏初段闪现小画面的 bug
+        // 任务 4 (Round 7)：严格等待视频解码出真实画面、播放进度推进 (currentTime >= 0.16, videoWidth > 0, readyState >= 2)，且距离最后一次 resize/loadedmetadata 几何变更满 380ms（确保 macOS CoreAnimation 内部 AVSampleBufferDisplayLayer 250ms 隐式缩放动画在 opacity:0.002 幕后 100% 结束）后再平滑淡入
         var activeRevealCleanup = null;
         function revealVideoWhenFrameReady(reqSeq) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
@@ -1659,7 +1836,12 @@
                 activeRevealCleanup = null;
             }
             var revealed = false;
+            var revealWaitTimer = null;
             var cleanup = function() {
+                if (revealWaitTimer) {
+                    clearTimeout(revealWaitTimer);
+                    revealWaitTimer = null;
+                }
                 macVideo.removeEventListener('timeupdate', onCheckFrame);
                 macVideo.removeEventListener('playing', onCheckFrame);
                 macVideo.removeEventListener('loadeddata', onCheckFrame);
@@ -1673,22 +1855,23 @@
                     cleanup();
                     return;
                 }
-                if (macVideo.videoWidth > 0 && macVideo.videoHeight > 0 && macVideo.readyState >= 2 && macVideo.currentTime >= 0.05) {
+                if (macVideo.videoWidth > 0 && macVideo.videoHeight > 0 && macVideo.readyState >= 2 && macVideo.currentTime >= 0.16) {
+                    var sinceResize = performance.now() - lastVideoGeometryChangeTs;
+                    if (sinceResize < 380) {
+                        if (!revealWaitTimer) {
+                            revealWaitTimer = setTimeout(function() {
+                                revealWaitTimer = null;
+                                doReveal();
+                            }, Math.max(25, Math.ceil(385 - sinceResize)));
+                        }
+                        return;
+                    }
                     revealed = true;
                     cleanup();
                     activeRevealCleanup = null;
-                    // 在完全透明状态下先确立目标 object-fit 与全屏视口尺寸并强制同步重排，消除 AVPlayerLayer 初始小尺寸闪现
-                    macVideo.style.objectFit = (isFullScreen && fullScreenRow === 3) ? 'contain' : 'cover';
-                    macVideo.style.visibility = 'visible';
-                    void macVideo.offsetWidth;
-                    requestAnimationFrame(function() {
-                        requestAnimationFrame(function() {
-                            if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-                            isVideoReady = true;
-                            setVideoLayerVisible(true);
-                            onBackgroundVideoStarted();
-                        });
-                    });
+                    isVideoReady = true;
+                    setVideoLayerVisible(true);
+                    onBackgroundVideoStarted();
                 }
             };
 
@@ -1725,11 +1908,9 @@
                 activeRevealCleanup();
                 activeRevealCleanup = null;
             }
-            macVideo.style.opacity = '0';
-            macVideo.style.visibility = 'hidden';
-            var bl = document.getElementById('baseLayer');
-            if (bl) bl.style.opacity = isFullScreen ? '0' : '1';
+            setVideoLayerVisible(false);
             isVideoReady = false;
+            lastVideoGeometryChangeTs = performance.now();
             macVideo.style.objectFit = (isFullScreen && fullScreenRow === 3) ? 'contain' : 'cover';
             applyPreviewOrFullscreenAudio();
             if (typeof Hls !== 'undefined' && Hls.isSupported()) {
@@ -1750,6 +1931,7 @@
                 hlsInstance.loadSource(url);
                 hlsInstance.attachMedia(macVideo);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                    lastVideoGeometryChangeTs = performance.now();
                     startVideoPlaybackWithFallback(reqSeq);
                 });
                 hlsInstance.on(Hls.Events.ERROR, function(event, data) {
@@ -1765,6 +1947,7 @@
             } else {
                 macVideo.src = url;
                 macVideo.onloadedmetadata = function() {
+                    lastVideoGeometryChangeTs = performance.now();
                     startVideoPlaybackWithFallback(reqSeq);
                 };
             }
@@ -1811,6 +1994,7 @@
             }
             currentBgUrl = '';
             isVideoReady = false;
+            setVideoLayerVisible(false);
             if (hlsInstance) {
                 hlsInstance.stopLoad();
                 hlsInstance.destroy();
@@ -1818,10 +2002,6 @@
             }
             macVideo.onloadedmetadata = null;
             macVideo.pause();
-            macVideo.removeAttribute('src');
-            macVideo.load();
-            macVideo.style.visibility = 'hidden';
-            setVideoLayerVisible(false);
         }
 
         function executeItemAction(action, title) {
@@ -1834,8 +2014,8 @@
                 if (targetFolder && PORN_GROUPS[targetFolder]) {
                     activePornPrimaryTab = 'others';
                     activePornFolder = targetFolder;
-                    pornMenuLevel = 1;
-                    pornBarAnimType = 'collapse';
+                    pornMenuLevel = 2;
+                    pornBarAnimType = 'expand';
                     lastRowColMap[4] = 1;
                     currentTrackRow = -1;
                     renderTrack(4);
@@ -1879,9 +2059,9 @@
 
                 // 如果快速移动焦点并立即按回车进入全屏，此时预览尚未就绪，重新拉起流并取消静音
                 if (currentBgUrl !== url || !isVideoReady || macVideo.readyState < 2 || macVideo.videoWidth === 0) {
-                    macVideo.style.opacity = '0';
-                    macVideo.style.visibility = 'hidden';
+                    setVideoLayerVisible(false);
                     macVideo.style.objectFit = targetFit;
+                    lastVideoGeometryChangeTs = performance.now();
                     currentBgUrl = url;
                     currentPlayingStream = url;
                     var mySeq = ++streamReqSeq;
@@ -1891,13 +2071,17 @@
                     }).catch(() => {});
                 } else {
                     if (macVideo.style.objectFit !== targetFit) {
-                        macVideo.style.opacity = '0';
+                        setVideoLayerVisible(false);
                         macVideo.style.objectFit = targetFit;
+                        lastVideoGeometryChangeTs = performance.now();
                         void macVideo.offsetWidth;
-                        requestAnimationFrame(function() {
-                            applyPreviewOrFullscreenAudio();
+                        applyPreviewOrFullscreenAudio();
+                        var fitSeq = streamReqSeq;
+                        objectFitTransitionTimer = setTimeout(function() {
+                            objectFitTransitionTimer = null;
+                            if (fitSeq !== streamReqSeq) return;
                             macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
-                        });
+                        }, 360);
                     } else {
                         applyPreviewOrFullscreenAudio();
                         macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
@@ -2652,16 +2836,7 @@
             if (col >= 1 && row >= 1 && row <= 4) {
                 if (activeSeriesView) lastRowColMap.series = col;
                 else lastRowColMap[row] = col;
-                // 任务 4 (Round 6)：当焦点下移到流媒体或限制级的视频卡片时，展开的二级丸形菜单自动丝滑收起
-                if (row === 3 && douyinPillsExpanded) {
-                    douyinPillsExpanded = false;
-                    douyinBarAnimType = 'collapse';
-                    renderDouyinSeasonBar();
-                } else if (row === 4 && pornMenuLevel === 2) {
-                    pornMenuLevel = 1;
-                    pornBarAnimType = 'collapse';
-                    renderPornSeasonBar();
-                }
+                // 任务 1 (Round 7)：当进入二级菜单后，向下移动焦点选择卡片时保持在二级菜单，不再自动收起二级菜单
             }
 
             // 任务 13 (Round 5)：流媒体中焦点移动到本次加载的视频流结尾附近时自动预加载更多视频流
@@ -2784,7 +2959,19 @@
                     hideIptvFullscreenHud();
                     updateClock();
                     applyPreviewOrFullscreenAudio();
-                    macVideo.style.objectFit = 'cover';
+                    if (macVideo.style.objectFit !== 'cover') {
+                        setVideoLayerVisible(false);
+                        macVideo.style.objectFit = 'cover';
+                        lastVideoGeometryChangeTs = performance.now();
+                        void macVideo.offsetWidth;
+                        var exitSeq = streamReqSeq;
+                        objectFitTransitionTimer = setTimeout(function() {
+                            objectFitTransitionTimer = null;
+                            if (exitSeq === streamReqSeq && !isFullScreen && isVideoReady) {
+                                setVideoLayerVisible(true);
+                            }
+                        }, 360);
+                    }
                     document.getElementById('sidebar').style.opacity = '1';
                     document.getElementById('mainContent').style.opacity = '1';
                     document.getElementById('heroOverlay').style.opacity = '1';
