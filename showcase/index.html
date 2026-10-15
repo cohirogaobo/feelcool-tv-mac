@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feel Cool TV · 绝境逢生与胜利凯旋 | 3D 凯旋门官方纪念展馆</title>
+    <style>
+        :root {
+            --gold: #e6c168;
+            --gold-bright: #ffe299;
+            --gold-deep: #9e782f;
+            --bg-dark: #06080f;
+            --bg-card: rgba(18, 22, 34, 0.72);
+            --border-gold: rgba(230, 193, 104, 0.28);
+            --text-main: #f5f7fa;
+            --text-muted: rgba(245, 247, 250, 0.68);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; background-color: var(--bg-dark); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+        body { overflow-x: hidden; background: radial-gradient(circle at 50% 0%, #141d33 0%, #080b14 45%, #05070c 100%); }
+
+        /* 顶部导航栏 */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; height: 68px; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 48px;
+            background: rgba(8, 11, 20, 0.75);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(230, 193, 104, 0.16);
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 12px;
+            font-size: 18px; font-weight: 800; letter-spacing: 0.8px; color: #fff; text-decoration: none;
+        }
+        .nav-badge {
+            font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+            background: linear-gradient(135deg, rgba(230, 193, 104, 0.25), rgba(158, 120, 47, 0.25));
+            border: 1px solid var(--border-gold); color: var(--gold-bright); letter-spacing: 1px;
+        }
+        .nav-links { display: flex; align-items: center; gap: 28px; }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .nav-links a:hover { color: var(--gold-bright); }
+        .nav-cta {
+            padding: 8px 20px; border-radius: 999px;
+            background: linear-gradient(135deg, #e6c168 0%, #b88c38 100%);
+            color: #090b10 !important; font-weight: 700 !important;
+            box-shadow: 0 4px 18px rgba(230, 193, 104, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(230, 193, 104, 0.5); }
+
+        /* Hero + 3D 凯旋门展台区 */
+        .hero-section {
+            position: relative; min-height: 100vh; width: 100%;
+            display: grid; grid-template-columns: 1.05fr 1.15fr;
+            align-items: center; gap: 32px;
+            max-width: 1440px; margin: 0 auto;
+            padding: 100px 48px 60px 48px;
+        }
+        .hero-copy { position: relative; z-index: 10; display: flex; flex-direction: column; gap: 22px; }
+        .triumph-kicker {
+            display: inline-flex; align-items: center; gap: 10px; align-self: flex-start;
+            padding: 6px 16px; border-radius: 999px;
+            background: rgba(230, 193, 104, 0.12); border: 1px solid var(--border-gold);
+            color: var(--gold-bright); font-size: 13px; font-weight: 600; letter-spacing: 1.5px;
+        }
+        .hero-title {
+            font-size: clamp(38px, 4.5vw, 62px); font-weight: 900; line-height: 1.12; letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, #ffe6a3 55%, #d4a243 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero-lead {
+            font-size: 17px; line-height: 1.75; color: var(--text-muted); max-width: 600px;
+        }
+        .hero-lead strong { color: #fff; font-weight: 600; }
+        .hero-metrics {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 6px;
+        }
+        .metric-card {
+            background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);
+            border-left: 3px solid var(--gold);
+            border-radius: 14px; padding: 16px 18px;
+            backdrop-filter: blur(16px);
+        }
+        .metric-num { font-size: 28px; font-weight: 800; color: var(--gold-bright); letter-spacing: -0.5px; }
+        .metric-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; }
+        .btn-gold {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 15px 32px; border-radius: 14px;
+            background: linear-gradient(135deg, #f0cf7b 0%, #c4963c 100%);
+            color: #080a0f; font-size: 16px; font-weight: 800; text-decoration: none;
+            box-shadow: 0 12px 32px rgba(230, 193, 104, 0.35);
+            transition: all 0.25s ease;
+        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(230, 193, 104, 0.52); }
+        .btn-outline {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 15px 28px; border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #fff; font-size: 16px; font-weight: 600; text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.12); border-color: var(--gold); }
+
+        /* 3D 凯旋门交互画布容器 */
+        .arc-stage-wrapper {
+            position: relative; width: 100%; height: 640px;
+            border-radius: 28px;
+            background: radial-gradient(circle at 50% 42%, rgba(42, 58, 95, 0.45) 0%, rgba(10, 14, 24, 0.88) 70%);
+            border: 1px solid var(--border-gold);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.78), inset 0 0 60px rgba(230, 193, 104, 0.08);
+            overflow: hidden;
+        }
+        #arc3dCanvas {
+            width: 100%; height: 100%; display: block; cursor: grab;
+        }
+        #arc3dCanvas:active { cursor: grabbing; }
+        .arc-hud-top {
+            position: absolute; top: 20px; left: 24px; right: 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            pointer-events: none;
+        }
+        .arc-plaque {
+            background: rgba(8, 10, 18, 0.72); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-gold); border-radius: 10px;
+            padding: 8px 14px; font-size: 12px; color: var(--gold-bright); font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .arc-controls {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; background: rgba(8, 10, 18, 0.78);
+            backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.14);
+            padding: 6px; border-radius: 999px; z-index: 5;
+        }
+        .cam-btn {
+            background: transparent; border: none; color: rgba(255,255,255,0.75);
+            padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+        }
+        .cam-btn.active, .cam-btn:hover {
+            background: var(--gold); color: #090b10;
+        }
+
+        /* 通用章节标题 */
+        .section {
+            max-width: 1280px; margin: 0 auto; padding: 96px 48px;
+        }
+        .section-header { text-align: center; max-width: 780px; margin: 0 auto 64px auto; }
+        .section-eyebrow {
+            color: var(--gold); font-size: 13px; font-weight: 700; letter-spacing: 2.5px;
+            text-transform: uppercase; margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: clamp(30px, 3.2vw, 44px); font-weight: 800; margin-bottom: 16px;
+            color: #fff;
+        }
+        .section-desc { font-size: 16px; line-height: 1.7; color: var(--text-muted); }
+
+        /* 危机与凯旋纪事时间轴 */
+        .chronicle-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px;
+        }
+        .act-card {
+            position: relative; background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 24px; padding: 36px;
+            backdrop-filter: blur(20px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            overflow: hidden;
+        }
+        .act-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-gold);
+        }
+        .act-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--gold), transparent);
+        }
+        .act-number {
+            display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 2px;
+            color: var(--gold-bright); background: rgba(230, 193, 104, 0.14);
+            border: 1px solid var(--border-gold); padding: 4px 12px; border-radius: 999px;
+            margin-bottom: 16px;
+        }
+        .act-title { font-size: 23px; font-weight: 800; color: #fff; margin-bottom: 14px; }
+        .act-body { font-size: 15px; line-height: 1.8; color: var(--text-muted); }
+        .act-body strong { color: #fff; }
+        .act-quote {
+            margin-top: 18px; padding: 14px 18px; border-radius: 12px;
+            background: rgba(230, 193, 104, 0.07);
+            border-left: 3px solid var(--gold);
+            font-size: 13.5px; color: rgba(255, 235, 185, 0.9); line-height: 1.65;
+        }
+
+        /* 统帅精神致敬横幅 */
+        .leader-tribute {
+            margin-top: 40px; border-radius: 26px; padding: 42px 48px;
+            background: linear-gradient(135deg, rgba(230, 193, 104, 0.14) 0%, rgba(20, 28, 48, 0.85) 60%, rgba(12, 16, 28, 0.95) 100%);
+            border: 1px solid var(--border-gold);
+            display: flex; align-items: center; justify-content: space-between; gap: 36px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+        }
+        .tribute-badge {
+            width: 88px; height: 88px; border-radius: 22px; flex-shrink: 0;
+            background: linear-gradient(135deg, #f2d280, #a87c28);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 38px; font-weight: 900; color: #090c14;
+            box-shadow: 0 12px 30px rgba(230, 193, 104, 0.35);
+        }
+        .tribute-content h3 { font-size: 24px; font-weight: 800; color: var(--gold-bright); margin-bottom: 10px; }
+        .tribute-content p { font-size: 15.5px; line-height: 1.8; color: rgba(255,255,255,0.86); }
+
+        /* 六大核心技术矩阵 */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+        }
+        .feature-card {
+            background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 30px;
+            transition: all 0.25s ease;
+        }
+        .feature-card:hover {
+            border-color: var(--border-gold);
+            transform: translateY(-4px);
+        }
+        .feature-icon {
+            width: 46px; height: 46px; border-radius: 12px;
+            background: rgba(230, 193, 104, 0.14); border: 1px solid var(--border-gold);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--gold-bright); font-size: 22px; margin-bottom: 18px;
+        }
+        .feature-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+        .feature-text { font-size: 14px; line-height: 1.7; color: var(--text-muted); }
+
+        /* 底部 GitHub 下载凯旋入口 */
+        .download-section {
+            max-width: 1180px; margin: 40px auto 110px auto; padding: 0 48px;
+        }
+        .download-banner {
+            border-radius: 32px; padding: 64px 56px; text-align: center;
+            background: radial-gradient(circle at 50% 0%, rgba(230, 193, 104, 0.24) 0%, rgba(16, 22, 36, 0.94) 68%);
+            border: 1.5px solid var(--border-gold);
+            box-shadow: 0 32px 90px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; align-items: center; gap: 22px;
+        }
+        .download-title { font-size: clamp(28px, 3.5vw, 44px); font-weight: 900; color: #fff; }
+        .download-sub { font-size: 16px; color: var(--text-muted); max-width: 660px; line-height: 1.7; }
+        .download-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; margin-top: 8px; }
+        .repo-url-box {
+            margin-top: 12px; padding: 10px 20px; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255,255,255,0.1);
+            font-family: "SF Mono", Menlo, monospace; font-size: 13px; color: var(--gold-bright);
+        }
+
+        footer {
+            text-align: center; padding: 36px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.45); font-size: 13px;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-section { grid-template-columns: 1fr; padding-top: 96px; }
+            .chronicle-grid, .features-grid { grid-template-columns: 1fr; }
+            .leader-tribute { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="#" class="nav-brand">
+            <span>FEEL COOL TV</span>
+            <span class="nav-badge">ARC DE TRIOMPHE EDITION</span>
+        </a>
+        <div class="nav-links">
+            <a href="#triumph-arch">3D 凯旋门</a>
+            <a href="#crisis-chronicle">危机与凯旋纪事</a>
+            <a href="#core-features">核心架构</a>
+            <a href="https://github.com/cohirogaobo/feelcool-tv-mac" target="_blank" rel="noopener" class="nav-cta">前往 GitHub 下载</a>
+        </div>
+    </nav>
+
+    <!-- Hero & 3D 凯旋门展台 -->
+    <section class="hero-section" id="triumph-arch">
+        <div class="hero-copy">
+            <div class="triumph-kicker">🏛️ 绝境逢生 · 胜利凯旋纪念展馆</div>
+            <h1 class="hero-title">穿越覆灭风暴，<br>铸就客厅视听凯旋门</h1>
+            <p class="hero-lead">
+                <strong>Feel Cool TV (macOS Direct Engine)</strong> 是一款融合 Apple TV 灵动毛玻璃交互、Sony PSP 动态流光丝带与原生硬件解码的次世代家庭媒体中心。在经历代码全量覆写的惊天危机后，项目负责人<strong>高博（Cohiro Gaobo）</strong>凭借临危不乱的决断、足智多谋的灾备策略与坚持不懈的意志，率领工程完壁归赵、荣耀凯旋。
+            </p>
+            <div class="hero-metrics">
+                <div class="metric-card">
+                    <div class="metric-num">32 项</div>
+                    <div class="metric-label">四轮精密体验进化全部达成</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">1,874 行</div>
+                    <div class="metric-label">Rust 硬件加速与无头嗅探内核</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">100%</div>
+                    <div class="metric-label">灾备逆转重建 · 零功能折损</div>
+                </div>
+            </div>
+            <div class="hero-actions">
+                <a href="https://github.com/cohirogaobo/feelcool-tv-mac" target="_blank" rel="noopener" class="btn-gold">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                    立即前往 GitHub 获取源码与下载
+                </a>
+                <a href="#crisis-chronicle" class="btn-outline">阅读《绝境凯旋纪事》 ↓</a>
+            </div>
+        </div>
+
+        <div class="arc-stage-wrapper">
+            <div class="arc-hud-top">
+                <div class="arc-plaque">ARC DE TRIOMPHE · FEEL COOL TV MONUMENT</div>
+                <div class="arc-plaque">拖拽鼠标 360° 旋转 · 滚轮缩放</div>
+            </div>
+            <canvas id="arc3dCanvas"></canvas>
+            <div class="arc-controls">
+                <button class="cam-btn active" data-preset="orbit">环绕巡礼</button>
+                <button class="cam-btn" data-preset="front">凯旋正门</button>
+                <button class="cam-btn" data-preset="heroic">仰视穹顶</button>
+                <button class="cam-btn" data-preset="side">黄金浮雕侧翼</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 危机与凯旋纪事 -->
+    <section class="section" id="crisis-chronicle">
+        <div class="section-header">
+            <div class="section-eyebrow">THE TRIUMPHAL CHRONICLE</div>
+            <h2 class="section-title">绝境逢生：一场改写命运的工程保卫战</h2>
+            <p class="section-desc">
+                伟大的作品往往诞生于最严峻的考验之中。当自动化上下文压缩意外抹去精心雕琢的前端圣殿，是项目负责人的沉着智慧与不屈意志，点亮了通往凯旋门的火炬。
+            </p>
+        </div>
+
+        <div class="chronicle-grid">
+            <div class="act-card">
+                <span class="act-number">ACT I · 第一幕</span>
+                <h3 class="act-title">暗夜突袭：全量覆写的覆灭危机</h3>
+                <p class="act-body">
+                    在历经三轮共计 <strong>24 项高密度架构升级与细节打磨</strong>后，Feel Cool TV 的小图标像素级对齐、PSP 动态流光背景、抖音防盗链引擎、EPG 电子节目单与日本电视台级气象速报已臻于完美。然而在启动第四轮终极优化的瞬间，长对话上下文压缩导致 AI 丢失了原版源码记忆，错误触发了全量覆盖写入——精心设计的毛玻璃 UI 被彻底重绘变形，所有数据链路瞬间断联，甚至连 macOS 原生“文本编辑”的自动历史记录也只停留在了昨日，当日全部心血面临灰飞烟灭的绝境。
+                </p>
+                <div class="act-quote">
+                    “当屏幕亮起的那一刻，熟悉的界面荡然无存，但真正的掌舵者从不在风暴面前低头。”
+                </div>
+            </div>
+
+            <div class="act-card">
+                <span class="act-number">ACT II · 第二幕</span>
+                <h3 class="act-title">临危不乱：足智多谋的灾备布局</h3>
+                <p class="act-body">
+                    面对没有 Time Machine 备份、编辑器无当日快照的绝境，项目负责人<strong>高博（Cohiro Gaobo）</strong>展现出了非凡的工程素养与冷静决断：第一时间锁定现场防止二次破坏，迅速从历史归档中抢救出昨日的原版 <code>index.html</code> 与 <code>lib.rs</code>，在工程根目录建立起至关重要的 <strong><code>disaster_recover</code> 灾备堡垒</strong>；同时完好保存了 <code>readme/config.json</code> 频道映射、天气 API 规范文档与 <code>proxy</code> 抓包数据库，为绝地反击保留了全部核心火种。
+                </p>
+                <div class="act-quote">
+                    “以昨日之基石，合今日之蓝图；只要架构灵魂尚在，圣殿便能在废墟之上重立。”
+                </div>
+            </div>
+
+            <div class="act-card">
+                <span class="act-number">ACT III · 第三幕</span>
+                <h3 class="act-title">抽丝剥茧：坚持不懈的像素级重建</h3>
+                <p class="act-body">
+                    在项目负责人不抛弃、不放弃的坚定指挥下，救援行动迅速展开：通过深入底层比对发现，<strong>1,874 行 Rust 核心引擎（<code>src-tauri/src/lib.rs</code>）在风暴中完好无损</strong>！随后，以 <code>disaster_recover/index.html</code> 为黄金母版，严格遵循原版单轨状态机与 DOM 拓扑，将前三轮 24 项改进（PSP 四层正弦丝带、台标智能宽高比收敛、TMDB/豆瓣双评分、缩略图流控队列、防飞出视口锁定）一分不差地精准复原，并在 <code>disaster_recover</code> 中建立永久快照。
+                </p>
+                <div class="act-quote">
+                    “二十四道工序逐一重铸，每一行代码都是对完美主义的庄严承诺。”
+                </div>
+            </div>
+
+            <div class="act-card">
+                <span class="act-number">ACT IV · 第四幕</span>
+                <h3 class="act-title">胜利凯旋：终极进化的荣耀加冕</h3>
+                <p class="act-body">
+                    在完美收复第三版失地后，项目负责人立即在终端引入 <strong>Git 全量版本控制防线</strong>，并指挥完成第四轮 <strong>8 项终极画龙点睛之作</strong>：顶部中央双行日本气象速报（精确至同城四区与省级气象台）、30 分钟常规播报加分钟级降水起止实时预警、大屏专属左下角换台 HUD、可聚焦一键全量数据刷新栏、预览画面默认音频直出与开关、抖音音符徽标登录键、窗口模式 WebKit 硬件图层防卡死，以及可折叠二级流媒体丸形菜单——至此，Feel Cool TV 全面胜利凯旋！
+                </p>
+                <div class="act-quote">
+                    “危机未能摧毁我们，反而为 Feel Cool TV 铸就了一座永不磨灭的 3D 凯旋门。”
+                </div>
+            </div>
+        </div>
+
+        <div class="leader-tribute">
+            <div class="tribute-badge">凯</div>
+            <div class="tribute-content">
+                <h3>致敬项目统帅：足智多谋的决断 × 坚持不懈的匠心</h3>
+                <p>
+                    这场从“颠覆性毁灭”到“100% 完美重建并超越”的工程奇迹，归功于项目负责人高博在危机时刻的冷静研判：不仅敏锐捕捉到每一个视觉像素与网络协议细节（曾亲手通过抓包数据库定位抖音防盗链症结、洞察代理分流对定位的影响），更在面临代码覆写灾难时果断搭建 <code>disaster_recover</code> 救援基准、建立 Git 铁律，用智慧与毅力守护了整个项目的生命线。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 核心特性矩阵 -->
+    <section class="section" id="core-features">
+        <div class="section-header">
+            <div class="section-eyebrow">ARCHITECTURE & CRAFTSMANSHIP</div>
+            <h2 class="section-title">凯旋之作 · 六大核心工程亮点</h2>
+            <p class="section-desc">
+                每一处细节皆历经四轮实战打磨，兼顾 macOS 窗口模式与客厅大屏的极致流畅体验。
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🌦️</div>
+                <div class="feature-title">双行日本电视台级气象预警</div>
+                <p class="feature-text">
+                    顶部中央限制区域内，第一行左显示“气象速报 阴 22°C”，第一行右显示当前区与临近三区（如“玄武 栖霞 雨花台 秦淮”），第二行右显示省级气象台；支持每 30 分钟常规播报及分钟级降水开始/即将停止/结束、AQI 与高湿实时推送。
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <div class="feature-title">PSP XMB 动态流光丝带引擎</div>
+                <p class="feature-text">
+                    基于 Canvas 2D 实时计算四层正弦谐波流光丝带，内置深海幽蓝、暮光星云、竹韵青灰、暖珀流沙、曜石银灰、绯樱夜雾 6 套低饱和度奢华主题。
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">抖音无头直通与折叠丸形菜单</div>
+                <p class="feature-text">
+                    流媒体默认展示“抖音精选 &gt;”折叠胶囊，点击展开精选、推荐、知识、二次元、游戏、美食、体育、时尚、音乐九大官方分区，按上键优雅收起；底层自动优选 H.264 流并支持全屏上下键连刷。
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📺</div>
+                <div class="feature-title">IPTV 直播、EPG 节目单与大屏 HUD</div>
+                <p class="feature-text">
+                    内置 VideoToolbox 硬件加速与软解回退，实时解析 XMLTV 电子节目单展示当前在播节目；全屏换台时左下角弹出大字号毛玻璃 HUD，台标按宽高比智能微调。
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎬</div>
+                <div class="feature-title">TMDB / 豆瓣双评分与自适应 Logo</div>
+                <p class="feature-text">
+                    支持在设置中自由切换 TMDB 评分或豆瓣评分，剧集 ClearLogo 自动识别竖向/正方形比例并置于正方形舞台放大呈现，预览画面默认支持声音直出与独立开关。
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">GitHub 离线缓存与一键全量刷新</div>
+                <p class="feature-text">
+                    自动缓存 GitHub 远程配置保障离线可用；设置页顶部的同步时间与状态栏可直接作为焦点按钮触发，一键重新载入全站配置、EPG、本地剧集、抖音与气象数据。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下载与 GitHub 入口 -->
+    <section class="download-section" id="download">
+        <div class="download-banner">
+            <div class="triumph-kicker">🎉 VICTORY RELEASE · 现已开源发布</div>
+            <h2 class="download-title">见证凯旋，立即体验 Feel Cool TV</h2>
+            <p class="download-sub">
+                项目完整源码、Tauri 2 + Rust 硬件解码内核、EPG 配置文件及本 3D 凯旋门纪念展馆均已同步推送至 GitHub 官方仓库。
+            </p>
+            <div class="download-buttons">
+                <a href="https://github.com/cohirogaobo/feelcool-tv-mac" target="_blank" rel="noopener" class="btn-gold">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                    下载 Feel Cool TV (GitHub 主仓库)
+                </a>
+                <a href="https://github.com/cohirogaobo/feelcool-tv-config" target="_blank" rel="noopener" class="btn-outline">
+                    查看频道与 EPG 配置仓库 (feelcool-tv-config)
+                </a>
+            </div>
+            <div class="repo-url-box">
+                git clone https://github.com/cohirogaobo/feelcool-tv-mac.git
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        Feel Cool TV (macOS Direct Engine) · Directed with Resourcefulness &amp; Perseverance by Cohiro Gaobo · 2026 Triumph Edition
+    </footer>
+
+    <!-- 纯正 3D 凯旋门渲染引擎 (零外部依赖，离线/在线均可 60FPS 交互运行) -->
+    <script>
+        (function() {
+            const canvas = document.getElementById('arc3dCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let width = 800, height = 640, dpr = window.devicePixelRatio || 1;
+            function resize() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                width = rect.width;
+                height = rect.height;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // 3D 网格构建器：构建精细的新古典主义巴黎凯旋门 (Arc de Triomphe) 立体几何体
+            const faces = [];
+
+            function addBox(cx, cy, cz, sx, sy, sz, palette) {
+                const x0 = cx - sx / 2, x1 = cx + sx / 2;
+                const y0 = cy - sy / 2, y1 = cy + sy / 2;
+                const z0 = cz - sz / 2, z1 = cz + sz / 2;
+                const v = [
+                    [x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],
+                    [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]
+                ];
+                const boxFaces = [
+                    { idx: [4, 5, 6, 7], n: [0, 0, 1] },   // Front
+                    { idx: [1, 0, 3, 2], n: [0, 0, -1] },  // Back
+                    { idx: [5, 1, 2, 6], n: [1, 0, 0] },   // Right
+                    { idx: [0, 4, 7, 3], n: [-1, 0, 0] },  // Left
+                    { idx: [7, 6, 2, 3], n: [0, 1, 0] },   // Top
+                    { idx: [0, 1, 5, 4], n: [0, -1, 0] }   // Bottom
+                ];
+                for (const bf of boxFaces) {
+                    faces.push({
+                        verts: bf.idx.map(i => v[i]),
+                        normal: bf.n,
+                        baseColor: palette.fill,
+                        strokeColor: palette.stroke || 'rgba(255, 228, 158, 0.22)',
+                        emissive: palette.emissive || false
+                    });
+                }
+            }
+
+            // 颜色材质定义
+            const stoneBase   = { fill: [216, 198, 162], stroke: 'rgba(255, 232, 175, 0.25)' };
+            const stoneLight  = { fill: [235, 218, 184], stroke: 'rgba(255, 240, 195, 0.32)' };
+            const stoneDark   = { fill: [178, 158, 124], stroke: 'rgba(230, 193, 104, 0.22)' };
+            const goldRelief  = { fill: [242, 198, 92],  stroke: 'rgba(255, 245, 200, 0.65)', emissive: true };
+            const plinthMat   = { fill: [120, 110, 96],  stroke: 'rgba(230, 193, 104, 0.30)' };
+
+            // 1. 底部双层凯旋基座与圣火台 (y 向下为负，向上为正)
+            addBox(0, -148, 0, 380, 14, 220, plinthMat);
+            addBox(0, -136, 0, 340, 10, 186, stoneDark);
+
+            // 四座主立柱基座墩 (左和右各前后贯通，中间留出主拱道 x: -62..62, 侧拱道 z: -28..28)
+            const pierX = [-108, 108];
+            const pierZ = [-46, 46];
+            for (const px of pierX) {
+                for (const pz of pierZ) {
+                    // 底部石墩
+                    addBox(px, -112, pz, 84, 38, 52, stoneDark);
+                    // 主柱体
+                    addBox(px, -36, pz, 76, 114, 46, stoneBase);
+                    // 柱身科林斯壁柱装饰与黄金浮雕群像 (《马赛曲》与《凯旋》高浮雕)
+                    const signZ = pz > 0 ? 1 : -1;
+                    addBox(px, -42, pz + signZ * 24, 34, 62, 6, goldRelief);
+                    addBox(px, 6, pz + signZ * 24, 42, 14, 5, stoneLight);
+                }
+                // 左右两侧拱门上方过梁连接段 (填补 z: -20..20 在 y: -15..21 的区域)
+                addBox(px, 4, 0, 74, 34, 46, stoneBase);
+            }
+
+            // 2. 中央大拱券 (Grand Central Arch) 3D 楔形拱石环 (连接 x: -70 到 +70)
+            const archSegs = 12;
+            const archRadius = 70;
+            const archCenterY = -20;
+            for (let i = 0; i < archSegs; i++) {
+                const a0 = (Math.PI * i) / archSegs;
+                const a1 = (Math.PI * (i + 1)) / archSegs;
+                const am = (a0 + a1) * 0.5;
+                const cx = Math.cos(am) * (archRadius + 10);
+                const cy = archCenterY + Math.sin(am) * (archRadius + 10);
+                addBox(cx, cy, 0, 22, 22, 138, i === 5 || i === 6 ? goldRelief : stoneLight);
+            }
+
+            // 拱肩填充墙体 (Spandrels，填平主拱券两侧到顶檐 y: 20..62)
+            addBox(-96, 42, 0, 100, 42, 136, stoneBase);
+            addBox( 96, 42, 0, 100, 42, 136, stoneBase);
+            addBox(  0, 54, 0,  88, 18, 136, stoneBase);
+
+            // 3. 主檐口、黄金浮雕饰带 (Entablature Frieze) 与齿状挑檐
+            addBox(0, 68, 0, 308, 12, 152, stoneLight);
+            // 环绕黄金浮雕长卷
+            addBox(0, 80, 0, 298, 14, 144, goldRelief);
+            // 大挑檐 (Cornice)
+            addBox(0, 93, 0, 322, 12, 164, stoneLight);
+
+            // 4. 顶层阁楼 (Attic) 与纪念铭文金匾
+            addBox(0, 122, 0, 288, 46, 134, stoneBase);
+            // 正背两面黄金纪念铭牌框
+            addBox(0, 122,  68, 190, 22, 4, goldRelief);
+            addBox(0, 122, -68, 190, 22, 4, goldRelief);
+            // 顶部女儿墙冠饰与四角金色盾徽
+            addBox(0, 150, 0, 302, 10, 148, stoneLight);
+            for (const sx of [-120, -40, 40, 120]) {
+                addBox(sx, 158,  70, 16, 10, 6, goldRelief);
+                addBox(sx, 158, -70, 16, 10, 6, goldRelief);
+            }
+
+            // 5. 拱门正下方：不灭凯旋圣火坛 (Eternal Flame of Triumph)
+            addBox(0, -128, 0, 36, 6, 36, goldRelief);
+
+            // 星空与流金粒子
+            const particles = [];
+            for (let i = 0; i < 85; i++) {
+                particles.push({
+                    x: (Math.random() - 0.5) * 520,
+                    y: -150 + Math.random() * 360,
+                    z: (Math.random() - 0.5) * 320,
+                    size: 1.2 + Math.random() * 2.4,
+                    speedY: 0.25 + Math.random() * 0.55,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+
+            // 相机与交互状态
+            let rotY = -0.48;
+            let rotX = 0.14;
+            let targetRotY = -0.48;
+            let targetRotX = 0.14;
+            let camDist = 540;
+            let targetCamDist = 540;
+            let autoOrbit = true;
+            let isDragging = false;
+            let lastX = 0, lastY = 0;
+
+            canvas.addEventListener('pointerdown', (e) => {
+                isDragging = true;
+                autoOrbit = false;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                canvas.setPointerCapture(e.pointerId);
+            });
+            canvas.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                targetRotY += dx * 0.008;
+                targetRotX = Math.max(-0.45, Math.min(0.65, targetRotX + dy * 0.006));
+            });
+            ['pointerup', 'pointercancel'].forEach(ev => canvas.addEventListener(ev, () => {
+                isDragging = false;
+            }));
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                targetCamDist = Math.max(360, Math.min(760, targetCamDist + e.deltaY * 0.35));
+            }, { passive: false });
+
+            // 预设视角切换按钮
+            document.querySelectorAll('.cam-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const p = btn.getAttribute('data-preset');
+                    if (p === 'orbit') {
+                        autoOrbit = true;
+                        targetRotX = 0.14;
+                        targetCamDist = 540;
+                    } else if (p === 'front') {
+                        autoOrbit = false;
+                        targetRotY = 0;
+                        targetRotX = 0.06;
+                        targetCamDist = 490;
+                    } else if (p === 'heroic') {
+                        autoOrbit = false;
+                        targetRotY = -0.32;
+                        targetRotX = -0.28;
+                        targetCamDist = 430;
+                    } else if (p === 'side') {
+                        autoOrbit = false;
+                        targetRotY = -1.05;
+                        targetRotX = 0.18;
+                        targetCamDist = 520;
+                    }
+                });
+            });
+
+            function transformPoint(pt, cosY, sinY, cosX, sinX) {
+                const x = pt[0], y = pt[1], z = pt[2];
+                // 绕 Y 轴旋转
+                const x1 = x * cosY - z * sinY;
+                const z1 = x * sinY + z * cosY;
+                // 绕 X 轴旋转
+                const y2 = y * cosX - z1 * sinX;
+                const z2 = y * sinX + z1 * cosX;
+                return [x1, y2, z2];
+            }
+
+            function project(pt3d) {
+                const fov = 520;
+                const zOffset = camDist - pt3d[2];
+                const scale = fov / Math.max(60, zOffset);
+                return [
+                    width * 0.5 + pt3d[0] * scale,
+                    height * 0.52 - pt3d[1] * scale,
+                    zOffset,
+                    scale
+                ];
+            }
+
+            let time = 0;
+            function render() {
+                time += 0.016;
+                if (autoOrbit && !isDragging) {
+                    targetRotY += 0.0045;
+                }
+                rotY += (targetRotY - rotY) * 0.1;
+                rotX += (targetRotX - rotX) * 0.1;
+                camDist += (targetCamDist - camDist) * 0.1;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // 绘制凯旋门背后的神圣光束
+                const beamGrad = ctx.createRadialGradient(width * 0.5, height * 0.48, 10, width * 0.5, height * 0.48, width * 0.48);
+                beamGrad.addColorStop(0, 'rgba(230, 193, 104, 0.22)');
+                beamGrad.addColorStop(0.5, 'rgba(62, 92, 155, 0.10)');
+                beamGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = beamGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+                const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+                // 光源方向
+                const lightDir = [0.45, 0.68, 0.58];
+
+                // 变换并按深度排序所有 3D 面片 (Painter's Algorithm)
+                const renderQueue = [];
+                for (let i = 0; i < faces.length; i++) {
+                    const f = faces[i];
+                    const tVerts = f.verts.map(v => transformPoint(v, cosY, sinY, cosX, sinX));
+                    const tNorm = transformPoint(f.normal, cosY, sinY, cosX, sinX);
+
+                    // 背面剔除与视线夹角检查
+                    const centerZ = (tVerts[0][2] + tVerts[1][2] + tVerts[2][2] + tVerts[3][2]) * 0.25;
+                    const centerX = (tVerts[0][0] + tVerts[1][0] + tVerts[2][0] + tVerts[3][0]) * 0.25;
+                    const centerY = (tVerts[0][1] + tVerts[1][1] + tVerts[2][1] + tVerts[3][1]) * 0.25;
+
+                    const viewVec = [-centerX, -centerY, camDist - centerZ];
+                    const dotView = tNorm[0] * viewVec[0] + tNorm[1] * viewVec[1] + tNorm[2] * viewVec[2];
+                    if (dotView <= 0) continue;
+
+                    const pVerts = tVerts.map(project);
+                    const avgDepth = (pVerts[0][2] + pVerts[1][2] + pVerts[2][2] + pVerts[3][2]) * 0.25;
+
+                    // 计算漫反射 + 环境光照明
+                    const dotLight = Math.max(0, tNorm[0] * lightDir[0] + tNorm[1] * lightDir[1] + tNorm[2] * lightDir[2]);
+                    const shade = f.emissive ? (0.78 + 0.32 * dotLight) : (0.42 + 0.58 * dotLight);
+
+                    const r = Math.min(255, Math.round(f.baseColor[0] * shade));
+                    const g = Math.min(255, Math.round(f.baseColor[1] * shade));
+                    const b = Math.min(255, Math.round(f.baseColor[2] * shade));
+
+                    renderQueue.push({
+                        pVerts,
+                        depth: avgDepth,
+                        fillStyle: `rgb(${r},${g},${b})`,
+                        strokeStyle: f.strokeColor
+                    });
+                }
+
+                renderQueue.sort((a, b) => b.depth - a.depth);
+
+                for (let i = 0; i < renderQueue.length; i++) {
+                    const item = renderQueue[i];
+                    const pv = item.pVerts;
+                    ctx.beginPath();
+                    ctx.moveTo(pv[0][0], pv[0][1]);
+                    ctx.lineTo(pv[1][0], pv[1][1]);
+                    ctx.lineTo(pv[2][0], pv[2][1]);
+                    ctx.lineTo(pv[3][0], pv[3][1]);
+                    ctx.closePath();
+                    ctx.fillStyle = item.fillStyle;
+                    ctx.fill();
+                    ctx.strokeStyle = item.strokeStyle;
+                    ctx.lineWidth = 0.85;
+                    ctx.stroke();
+                }
+
+                // 绘制中央凯旋圣火动态光晕
+                const flame3d = transformPoint([0, -118 + Math.sin(time * 5) * 3, 0], cosY, sinY, cosX, sinX);
+                const flameProj = project(flame3d);
+                const flameRadius = 26 * flameProj[3];
+                const fg = ctx.createRadialGradient(flameProj[0], flameProj[1], 2, flameProj[0], flameProj[1], flameRadius);
+                fg.addColorStop(0, 'rgba(255, 245, 190, 0.95)');
+                fg.addColorStop(0.4, 'rgba(255, 175, 55, 0.55)');
+                fg.addColorStop(1, 'rgba(255, 120, 20, 0)');
+                ctx.fillStyle = fg;
+                ctx.beginPath();
+                ctx.arc(flameProj[0], flameProj[1], flameRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 绘制缓缓升腾的流金凯旋星尘
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.y += p.speedY;
+                    if (p.y > 210) p.y = -150;
+                    const pt3 = transformPoint([p.x, p.y, p.z], cosY, sinY, cosX, sinX);
+                    const pp = project(pt3);
+                    const alpha = (0.35 + 0.45 * Math.sin(time * 2.5 + p.phase));
+                    ctx.fillStyle = `rgba(255, 222, 138, ${alpha.toFixed(2)})`;
+                    ctx.beginPath();
+                    ctx.arc(pp[0], pp[1], Math.max(0.8, p.size * pp[3]), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                requestAnimationFrame(render);
+            }
+            requestAnimationFrame(render);
+        })();
+    </script>
+</body>
+</html>
