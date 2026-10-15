@@ -17,10 +17,10 @@
         .top-right-clock { position: fixed; top: 28px; right: 38px; z-index: 80; background: rgba(28, 28, 30, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 16px; border-radius: 999px; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.9); letter-spacing: 0.5px; opacity: 0; transform: translateY(-8px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .top-right-clock.visible { opacity: 1; transform: translateY(0); }
 
-        /* 修复 1 (Round 4)：日本电视台风格顶部中央两行天气速报/预警，字号加大、位置微调下移 */
+        /* 修复 1 (Round 4) & 任务 11 (Round 5)：日本电视台风格顶部中央两行天气速报/预警，位置再微调下移 */
         .jp-weather-telop {
             position: fixed;
-            top: 40px;
+            top: 58px;
             left: 50%;
             transform: translateX(-50%) translateY(-8px);
             width: min(680px, 60vw);
@@ -133,7 +133,7 @@
         .sidebar.collapsed .user-name, .sidebar.collapsed .sidebar-clock, .sidebar.collapsed .nav-section-title { opacity: 0; max-width: 0; max-height: 0; margin: 0; display: none; }
         
         .nav-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; overflow-x: hidden; flex-grow: 1; padding: 4px; margin: -4px; }
-        .settings-section { flex-shrink: 0; display: flex; flex-direction: column; }
+        .settings-section { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
         .nav-item { display: flex; align-items: center; width: 170px; height: 44px; padding: 0 12px; margin: 0 auto; box-sizing: border-box; border-radius: 12px; flex-shrink: 0; font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.65); white-space: nowrap; cursor: pointer; outline: none; transition: width var(--animation-speed) cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
         .sidebar.collapsed .nav-item { width: 44px; padding: 0; justify-content: center; }
         .nav-item svg { width: 20px; height: 20px; margin-right: 12px; fill: currentColor; opacity: 0.8; display: block; flex-shrink: 0; }
@@ -143,8 +143,8 @@
         .nav-item:focus, .nav-item.focused { background-color: rgba(255, 255, 255, 0.88); color: rgba(0, 0, 0, 0.9) !important; transform: scale3d(1.04, 1.04, 1); box-shadow: 0 6px 16px rgba(0,0,0,0.18); z-index: 2; }
         .sidebar.collapsed .nav-item.focused svg { color: rgba(0,0,0,0.9); }
         .nav-item.active-row { background-color: rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.95); }
-        .nav-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 10px; flex-shrink: 0; }
-        .nav-section-title { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; margin: 0 10px 8px 10px; flex-shrink: 0; }
+        .nav-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 10px 8px 10px; flex-shrink: 0; }
+        .nav-section-title { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; margin: 0 10px 4px 10px; flex-shrink: 0; }
 
         .main-content { position: absolute; top: 0; bottom: 0; z-index: 2; left: 88px; width: calc(100% - 88px); display: flex; flex-direction: column; justify-content: flex-end; padding: 40px 45px; box-sizing: border-box; transform: translateX(137px); transition: transform var(--animation-speed) cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease; will-change: transform; overflow: hidden; }
         .main-content.expanded { transform: translateX(0); }
@@ -189,9 +189,12 @@
 
         .season-bar { display: none; gap: 10px; margin-bottom: 10px; align-items: center; z-index: 6; flex-wrap: wrap; }
         .season-bar.active { display: flex; }
-        .season-pill { padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s ease; }
+        /* 任务 2 (Round 5)：丸形菜单内嵌精致右向/左向 SVG 箭头对齐样式 */
+        .season-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s ease; }
         .season-pill.current { background: rgba(255,255,255,0.22); color: #fff; }
         .season-pill.focused, .season-pill:focus { background: #fff !important; color: #000 !important; border-color: #fff; transform: scale(1.06); box-shadow: 0 6px 16px rgba(0,0,0,0.35); }
+        .pill-chevron-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-right: -2px; }
+        .pill-chevron-left-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-left: -2px; }
 
         .carousel-container { width: calc(100% + 90px); height: 240px; margin: -20px -45px; padding: 20px 45px; position: relative; box-sizing: border-box; overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent 0px, black 45px, black calc(100% - 45px), transparent 100%); }
         .carousel-track { display: flex; gap: 20px; padding: 5px 0; z-index: 5; width: max-content; transform: translate3d(0, 0, 0); transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
@@ -228,7 +231,6 @@
         .sync-status-bar:focus, .sync-status-bar.modal-focused { border-color: #fff !important; background: #fff !important; color: #000 !important; transform: scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
         .sync-status-bar:focus .sync-status-time, .sync-status-bar.modal-focused .sync-status-time { color: #008a4b !important; }
         .sync-status-bar:focus .sync-status-time.offline, .sync-status-bar.modal-focused .sync-status-time.offline { color: #b27b00 !important; }
-        .douyin-btn-logo { width: 16px; height: 16px; display: inline-block; flex-shrink: 0; vertical-align: middle; margin: 0 2px; filter: drop-shadow(-1.2px -0.6px 0 #25F4EE) drop-shadow(1.2px 0.6px 0 #FE2C55); }
         .form-group { margin-bottom: 14px; }
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
         .form-label { display: block; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
@@ -238,6 +240,7 @@
         .btn { height: 44px; padding: 0 24px; border-radius: 12px; border: 2px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s ease; }
         .btn-cancel { background: rgba(255,255,255,0.12); color: #fff; }
         .btn-primary { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.25); color: #fff; }
+        .btn-danger { background: rgba(255, 69, 58, 0.22); border-color: rgba(255, 69, 58, 0.42); color: #ff6961; }
         .btn-full { width: 100%; height: 42px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.15); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; font-size: 13px; }
         .btn:focus, .btn.modal-focused { border-color: #fff !important; transform: scale(1.04); box-shadow: 0 8px 24px rgba(0,0,0,0.5); background: #fff !important; color: #000 !important; }
     </style>
@@ -286,9 +289,12 @@
 
         <div class="settings-section">
             <div class="nav-divider"></div>
-            <div class="nav-section-title">设置</div>
-            <div class="nav-item focusable" tabindex="0" data-row="5" data-col="0" data-section-name="系统设置" data-title="偏好设置" data-sub="管理媒体库路径与账户连接" data-action="modal:settings">
+            <div class="nav-section-title">设置和电源</div>
+            <div class="nav-item focusable" tabindex="0" data-row="5" data-col="0" data-section-name="设置和电源" data-title="偏好设置" data-sub="管理媒体库路径与账户连接" data-action="modal:settings">
                 <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49-.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg><span class="item-text">系统设置</span>
+            </div>
+            <div class="nav-item focusable" id="navPowerItem" tabindex="0" data-row="6" data-col="0" data-section-name="设置和电源" data-title="电源管理" data-sub="重新启动或退出关闭 Feel Cool TV" data-action="modal:power">
+                <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg><span class="item-text">电源</span>
             </div>
         </div>
     </div>
@@ -312,7 +318,7 @@
     <div class="glass-modal-mask" id="settingsModal">
         <div class="glass-modal">
             <h2 class="modal-title">媒体中心偏好设置</h2>
-            <div class="modal-desc">使用方向键 ↑↓ 切换选项，配置文件夹路径、EPG 节目单来源、评分体系与背景配色。</div>
+            <div class="modal-desc">使用方向键 ↑↓ 切换选项，配置文件夹路径、EPG 节目单来源、UI 缩放、音量均衡与背景配色。</div>
             <button type="button" class="sync-status-bar" id="btnRefreshAllData">
                 <div class="sync-status-inner">
                     <span>GitHub 数据同步状态</span>
@@ -356,11 +362,19 @@
                     <button type="button" class="btn btn-full" id="btnTogglePreviewSound">预览声音：开启</button>
                 </div>
                 <div>
+                    <label class="form-label">智能音量均衡限幅</label>
+                    <button type="button" class="btn btn-full" id="btnToggleVolumeNorm">音量均衡：开启</button>
+                </div>
+            </div>
+            <div class="form-row-2">
+                <div>
+                    <label class="form-label">大屏界面缩放等级</label>
+                    <button type="button" class="btn btn-full" id="btnToggleUiScale">界面缩放：大屏 (115%)</button>
+                </div>
+                <div>
                     <label class="form-label">流媒体账号连接</label>
                     <button type="button" class="btn btn-full" id="btnDouyinLogin">
-                        <span>登录</span>
-                        <svg class="douyin-btn-logo" viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg>
-                        <span>抖音</span>
+                        <span>登录抖音</span>
                     </button>
                 </div>
             </div>
@@ -381,6 +395,18 @@
             <div class="modal-actions" style="margin-top: 32px; justify-content: space-between;">
                 <button type="button" class="btn btn-cancel" id="btnCancelPwd" style="width: 47%; height: 52px; font-size: 17px; border-radius: 14px;">取消</button>
                 <button type="button" class="btn btn-primary" id="btnConfirmPwd" style="width: 47%; height: 52px; font-size: 17px; border-radius: 14px;">解锁</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-modal-mask" id="powerModal">
+        <div class="glass-modal" style="width: 480px; padding: 34px 38px;">
+            <h2 class="modal-title" style="font-size: 26px; margin-bottom: 8px;">电源管理</h2>
+            <div class="modal-desc" style="font-size: 14px; margin-bottom: 24px;">使用方向键选择操作并按回车确认，关闭或重新启动 Feel Cool TV。</div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 50px; font-size: 16px; border-radius: 14px;">关闭并退出 Feel Cool TV</button>
+                <button type="button" class="btn btn-primary btn-full" id="btnPowerRestart" style="height: 50px; font-size: 16px; border-radius: 14px;">重新启动应用</button>
+                <button type="button" class="btn btn-cancel btn-full" id="btnPowerCancel" style="height: 48px; font-size: 15px; border-radius: 14px;">取消 (Esc)</button>
             </div>
         </div>
     </div>
@@ -409,8 +435,24 @@
         }
         window.addEventListener('scroll', lockViewportScroll, true);
 
+        // 任务 4 (Round 5)：增大默认大屏缩放比例 (默认 1.15x 大屏增强)，并支持在设置中自由切换 UI 缩放等级，保持原 UI 结构不变
+        const UI_SCALE_PRESETS = [
+            { id: '1.00', label: '标准 (100%)', factor: 1.00 },
+            { id: '1.08', label: '适中 (108%)', factor: 1.08 },
+            { id: '1.15', label: '大屏 (115%)', factor: 1.15 },
+            { id: '1.22', label: '放大 (122%)', factor: 1.22 },
+            { id: '1.30', label: '影院 (130%)', factor: 1.30 },
+            { id: '1.38', label: '巨幕 (138%)', factor: 1.38 }
+        ];
+
+        function getCurrentUiScalePreset() {
+            var saved = localStorage.getItem('fc_ui_scale') || '1.15';
+            return UI_SCALE_PRESETS.find(p => p.id === saved) || UI_SCALE_PRESETS[2];
+        }
+
         function autoScaleUI() {
-            var scale = window.innerWidth / 1440; 
+            var preset = getCurrentUiScalePreset();
+            var scale = (window.innerWidth / 1440) * preset.factor;
             var sidebar = document.getElementById('sidebar'), mainContent = document.getElementById('mainContent');
             if (sidebar && mainContent) { sidebar.style.zoom = scale; mainContent.style.zoom = scale; }
         }
@@ -577,7 +619,32 @@
                 .trim();
         }
 
-        // 修复 7 (含第2、3轮回调)：只针对显示过大的近方形/窄台标轻微缩小，原本比例完美的宽幅台标（如 CCTV）完全保持 24px 不变
+        // 内置高质感深色流光 SVG 占位封面（彻底杜绝任何网络异常或缩略图未就绪时 Safari/WebKit 出现蓝色问号裂图）
+        const DEFAULT_LOCAL_CARD_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 248" width="440" height="248">' +
+            '<defs>' +
+            '<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">' +
+            '<stop offset="0%" stop-color="#141b2d"/>' +
+            '<stop offset="52%" stop-color="#1e2942"/>' +
+            '<stop offset="100%" stop-color="#0d121d"/>' +
+            '</linearGradient>' +
+            '<radialGradient id="glow" cx="70%" cy="30%" r="65%">' +
+            '<stop offset="0%" stop-color="rgba(90,145,225,0.28)"/>' +
+            '<stop offset="100%" stop-color="rgba(0,0,0,0)"/>' +
+            '</radialGradient>' +
+            '</defs>' +
+            '<rect width="440" height="248" fill="url(#bg)"/>' +
+            '<rect width="440" height="248" fill="url(#glow)"/>' +
+            '<circle cx="220" cy="124" r="30" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>' +
+            '<path d="M213 111l20 13-20 13z" fill="rgba(255,255,255,0.55)"/>' +
+            '</svg>'
+        );
+
+        // 任务 2 (Round 5)：精致右向与左向 SVG 箭头图标（替代原本不够美观的纯文本 >）
+        const PILL_CHEVRON_RIGHT_SVG = '<svg class="pill-chevron-svg" viewBox="0 0 24 24"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41.01z"/></svg>';
+        const PILL_CHEVRON_LEFT_SVG = '<svg class="pill-chevron-left-svg" viewBox="0 0 24 24"><path d="M14.71 6.71a1 1 0 0 1 0 1.41L10.83 12l3.88 3.88a1 1 0 1 1-1.41 1.41L8.71 13.7a1 1 0 0 1 0-1.41L13.3 6.7a1 1 0 0 1 1.41.01z"/></svg>';
+
+        // 任务 8 (Round 5)：有线电视部分偏小的台标再适当放大一点点，兼顾窄台标与超宽台标的饱满度
         function fitSingleImage(img) {
             if (!img) return;
             var itemEl = img.closest('.media-item');
@@ -597,26 +664,49 @@
                     img.style.padding = '0px';
                 } else if (ratio < 1.95) {
                     img.style.objectFit = 'contain';
-                    img.style.padding = '29px 34px';
+                    img.style.padding = '21px 25px';
+                    img.style.boxSizing = 'border-box';
+                } else if (ratio <= 2.65) {
+                    img.style.objectFit = 'contain';
+                    img.style.padding = '17px 19px';
                     img.style.boxSizing = 'border-box';
                 } else {
                     img.style.objectFit = 'contain';
-                    img.style.padding = '24px';
+                    img.style.padding = '12px 14px';
                     img.style.boxSizing = 'border-box';
                 }
             }
             img.style.opacity = '1';
         }
 
+        // 任务 7 (Round 5)：彻底拦截图片加载失败，自动替换为内置流光 SVG 封面并触发后台补帧，杜绝 WebKit 蓝色问号
         function bindTrackImages(container) {
             var imgs = container.querySelectorAll('.card-image-wrapper img:not([data-bound="1"])');
             for (var i = 0; i < imgs.length; i++) {
                 (function(img) {
                     img.setAttribute('data-bound', '1');
-                    if (img.complete) fitSingleImage(img);
-                    else {
-                        img.onload = function() { fitSingleImage(this); };
-                        img.onerror = function() { this.style.opacity = '1'; };
+                    var handleImgError = function() {
+                        var card = img.closest('.media-item');
+                        var previewPath = card ? card.getAttribute('data-preview') : '';
+                        if (previewPath && previewPath.indexOf('/') === 0 && iptvFrameCache[previewPath]) {
+                            delete iptvFrameCache[previewPath];
+                        }
+                        if (img.src !== DEFAULT_LOCAL_CARD_SVG) {
+                            img.src = DEFAULT_LOCAL_CARD_SVG;
+                        }
+                        img.style.objectFit = 'cover';
+                        img.style.padding = '0px';
+                        img.style.opacity = '1';
+                        if (previewPath && previewPath.indexOf('/') === 0 && !img.getAttribute('data-thumb-retried')) {
+                            img.setAttribute('data-thumb-retried', '1');
+                            enqueueSingleThumbTask(previewPath, img.id);
+                        }
+                    };
+                    img.onload = function() { fitSingleImage(this); };
+                    img.onerror = handleImgError;
+                    if (img.complete) {
+                        if (!img.naturalWidth || img.naturalWidth === 0) handleImgError();
+                        else fitSingleImage(img);
                     }
                 })(imgs[i]);
             }
@@ -653,7 +743,18 @@
         };
 
         var currentPlayingStream = null, iptvFrameCache = {}, localTmdbCache = {}, tmdbLogoCache = {};
-        try { iptvFrameCache = JSON.parse(localStorage.getItem('iptv_frames') || '{}'); } catch(e){}
+        try {
+            var rawFrames = JSON.parse(localStorage.getItem('iptv_frames') || '{}');
+            // 清理指向 /tmp 临时目录的历史 127.0.0.1:8765/thumbs 链接，防止重启后因 /tmp 清理导致出现蓝色问号
+            for (var fk in rawFrames) {
+                if (Object.prototype.hasOwnProperty.call(rawFrames, fk)) {
+                    var fv = rawFrames[fk];
+                    if (typeof fv === 'string' && fv.indexOf('127.0.0.1:8765/thumbs/') === -1) {
+                        iptvFrameCache[fk] = fv;
+                    }
+                }
+            }
+        } catch(e){}
         try { localTmdbCache = JSON.parse(localStorage.getItem('local_tmdb_meta_v4') || '{}'); } catch(e){}
         try { tmdbLogoCache = JSON.parse(localStorage.getItem('tmdb_logo_cache') || '{}'); } catch(e){}
 
@@ -664,7 +765,9 @@
             epgUrl: localStorage.getItem('fc_epg_url') || DEFAULT_EPG_URL,
             ratingSource: localStorage.getItem('fc_rating_source') || 'tmdb',
             bgTheme: localStorage.getItem('fc_bg_theme') || 'ocean',
-            previewSound: localStorage.getItem('fc_preview_sound') !== 'false'
+            previewSound: localStorage.getItem('fc_preview_sound') !== 'false',
+            volumeNorm: localStorage.getItem('fc_volume_norm') !== 'false',
+            uiScale: localStorage.getItem('fc_ui_scale') || '1.15'
         };
 
         // 启动 PSP 动态流光背景渲染循环
@@ -673,9 +776,26 @@
         var pornUnlocked = false, isModalOpen = false;
         var activeSeriesView = null, activeSeasonNum = 1, SERIES_GROUPS = {};
         var PORN_GROUPS = {}, PORN_FOLDER_LIST = [], activePornFolder = '';
+        // 任务 6 (Round 5)：限制级引入流媒体同款丸形按钮二级菜单与自动折叠
+        // 一级菜单：'brands' (厂牌，预留从 GitHub config.json 读取 logo、文字介绍、卡片图) 与 'others' (其他，下辖原默认子文件夹二级菜单)
+        var activePornPrimaryTab = 'others'; // 'brands' | 'others'
+        var pornMenuLevel = 1;               // 1: 一级菜单(厂牌 / 其他), 2: 其他下的子文件夹二级菜单
+        var pornPillsExpanded = false;       // 焦点下移到卡片时自动折叠为单个丸形按钮
+        var activePornBrandKey = '';         // 当在厂牌下点进某个关联子文件夹时记录
+        var PORN_BRANDS_CONFIG = [
+            {
+                title: "厂牌精选专区 (GitHub 预留)",
+                sub: "可在 GitHub config.json 的 porn_brands 字段配置专属厂牌",
+                desc: "支持在 GitHub 配置文件中自定义每个厂牌的名称、透明 Logo (logo_url)、厂牌文字介绍 (desc)、高清卡片封面图 (img) 以及关联的本地子文件夹名称 (folder)。",
+                img: DEFAULT_LOCAL_CARD_SVG,
+                logo_url: "",
+                folder: "",
+                action: ""
+            }
+        ];
         var lastRowColMap = { 1: 1, 2: 1, 3: 1, 4: 1, series: 1 };
 
-        // 修复 8 (Round 4)：抖音自带分类支持，默认抖音精选，丸形菜单默认折叠只显示一个带 > 的按钮
+        // 修复 8 (Round 4)：抖音自带分类支持，默认抖音精选，丸形菜单默认折叠只显示一个带 SVG 箭头的按钮
         const DOUYIN_CATEGORIES = [
             { id: 'discover',  name: '抖音精选' },
             { id: 'recommend', name: '抖音推荐' },
@@ -689,6 +809,7 @@
         ];
         var activeDouyinCategory = 'discover';
         var douyinPillsExpanded = false;
+        var pendingAutoAdvanceDouyin = false;
 
         var globalConfig = { user: { name: "高博", avatar_url: "" }, api: { tmdb_api_key: "f7762624a95e4c3823500736d40162cd", epg_url: DEFAULT_EPG_URL } };
         var currentFocusEl = null, currentTrackRow = -1, bgPreviewTimeout = null;
@@ -750,7 +871,10 @@
             } else {
                 var iconName = item.icon_name || item.title;
                 var cleanIconName = iconName.replace(/(HD|FHD|4K|1080p|720p)/ig, '').trim();
-                var imgUrl = item.img ? optimizeImageUrl(item.img) : ('https://live.fanmingming.com/tv/' + encodeURIComponent(cleanIconName) + '.png');
+                var fallbackImg = (rowId === 2)
+                    ? ('https://live.fanmingming.com/tv/' + encodeURIComponent(cleanIconName) + '.png')
+                    : DEFAULT_LOCAL_CARD_SVG;
+                var imgUrl = item.img ? optimizeImageUrl(item.img) : fallbackImg;
                 innerBox = '<div class="card-image-wrapper"><img id="card_img_' + rowId + '_' + index + '" decoding="async" loading="lazy" src="' + imgUrl + '" alt=""></div>';
             }
             var orgName = item.sub || '';
@@ -762,11 +886,23 @@
             }
 
             var cleanDesc = cleanOverviewText(item.desc || '');
+            var brandLogoUrl = item.logo_url || item.logo || '';
 
-            return '<div class="media-item focusable" tabindex="0" data-row="' + rowId + '" data-col="' + col + '" data-title="' + (item.title || '').replace(/"/g, '&quot;') + '" data-epg-name="' + epgName.replace(/"/g, '&quot;') + '" data-org="' + orgName.replace(/"/g, '&quot;') + '" data-sub="' + subText.replace(/"/g, '&quot;') + '" data-desc="' + cleanDesc.replace(/"/g, '&quot;') + '" data-series-key="' + (item.seriesKey || '') + '" data-preview="' + (item.previewUrl || '') + '" data-action="' + (item.action || '') + '">' +
+            return '<div class="media-item focusable" tabindex="0" data-row="' + rowId + '" data-col="' + col + '" data-title="' + (item.title || '').replace(/"/g, '&quot;') + '" data-epg-name="' + epgName.replace(/"/g, '&quot;') + '" data-org="' + orgName.replace(/"/g, '&quot;') + '" data-sub="' + subText.replace(/"/g, '&quot;') + '" data-desc="' + cleanDesc.replace(/"/g, '&quot;') + '" data-brand-logo="' + brandLogoUrl.replace(/"/g, '&quot;') + '" data-series-key="' + (item.seriesKey || '') + '" data-preview="' + (item.previewUrl || '') + '" data-action="' + (item.action || '') + '">' +
                         innerBox +
                         '<div class="card-info"><div class="card-title">' + item.title + '</div><div class="card-meta">' + subText + '</div></div>' +
                    '</div>';
+        }
+
+        // 任务 13 & 14 (Round 5)：确保流媒体靠近结尾自动加载更多视频流可靠追加到 DOM，并支持全屏自动连播续流
+        function requestMoreDouyinStreams() {
+            var nowTs = Date.now();
+            if (nowTs - lastLoadMoreTime < 900) return;
+            lastLoadMoreTime = nowTs;
+            loadDouyinNativeFeed(false, true);
+            setTimeout(() => loadDouyinNativeFeed(false, false), 1100);
+            setTimeout(() => loadDouyinNativeFeed(false, false), 2400);
+            setTimeout(() => loadDouyinNativeFeed(false, false), 3800);
         }
 
         async function loadDouyinNativeFeed(forceRefresh, requestMore) {
@@ -775,6 +911,7 @@
                 if (douyinPollTimer) { clearInterval(douyinPollTimer); douyinPollTimer = null; }
                 lastDouyinCount = 0;
                 lastRowColMap[3] = 1;
+                pendingAutoAdvanceDouyin = false;
                 ROW_DATA[3] = [{ title: "正在刷新" + catObj.name + "视频流...", sub: "请稍候", desc: "", isRefreshCard: true, action: "douyin:refresh" }];
                 if (currentTrackRow === 3) {
                     currentTrackRow = -1;
@@ -790,10 +927,14 @@
             try {
                 const list = await invoke('get_douyin_feed', { refresh: false, loadMore: !!requestMore, category: activeDouyinCategory });
                 if (list && list.length > 0) {
-                    var cappedList = list.slice(0, 80);
-                    if (cappedList.length !== lastDouyinCount) {
-                        var wasPlaceholder = (lastDouyinCount === 0);
-                        var oldVideoCount = lastDouyinCount;
+                    var cappedList = list.slice(0, 200);
+                    var track = document.getElementById('mainTrack');
+                    var domVideoCards = (currentTrackRow === 3 && track)
+                        ? track.querySelectorAll('.media-item[data-row="3"]:not([data-action="douyin:refresh"])').length
+                        : lastDouyinCount;
+
+                    if (cappedList.length !== lastDouyinCount || (currentTrackRow === 3 && domVideoCards < cappedList.length)) {
+                        var wasPlaceholder = (lastDouyinCount === 0 || (currentTrackRow === 3 && domVideoCards === 0));
                         lastDouyinCount = cappedList.length;
 
                         var cards = cappedList.map((item, idx) => ({
@@ -813,23 +954,22 @@
                         });
                         ROW_DATA[3] = cards;
 
-                        if (currentTrackRow === 3) {
+                        if (currentTrackRow === 3 && track) {
                             if (wasPlaceholder) {
                                 var focusedRow = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-row')) : 3;
                                 var focusedCol = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-col')) : 0;
                                 currentTrackRow = -1;
                                 renderTrack(3);
-                                if (focusedRow === 3) {
+                                if (focusedRow === 3 && !isFullScreen) {
                                     var targetFocus = document.querySelector('.focusable[data-row="3"][data-col="' + (focusedCol > 0 ? 1 : 0) + '"]');
                                     if (targetFocus) setFocus(targetFocus);
                                 }
                             } else {
-                                var track = document.getElementById('mainTrack');
                                 var refreshCardEl = track.querySelector('.media-item[data-action="douyin:refresh"]');
-                                if (refreshCardEl && cappedList.length > oldVideoCount) {
+                                if (refreshCardEl && cappedList.length > domVideoCards) {
                                     var frag = document.createDocumentFragment();
                                     var tempDiv = document.createElement('div');
-                                    for (var n = oldVideoCount; n < cappedList.length; n++) {
+                                    for (var n = domVideoCards; n < cappedList.length; n++) {
                                         tempDiv.innerHTML = buildMediaCardHTML(3, cards[n], n + 1, n);
                                         frag.appendChild(tempDiv.firstChild);
                                     }
@@ -838,6 +978,11 @@
                                     bindTrackImages(track);
                                 }
                             }
+                        }
+
+                        if (pendingAutoAdvanceDouyin && isFullScreen && fullScreenRow === 3 && cappedList.length > fullScreenCol) {
+                            pendingAutoAdvanceDouyin = false;
+                            switchFullScreenVideo(1);
                         }
                     }
                 }
@@ -962,11 +1107,44 @@
             }).catch(() => {});
         }
 
+        function syncPornRowData() {
+            if (activePornPrimaryTab === 'brands') {
+                if (activePornBrandKey && PORN_GROUPS[activePornBrandKey]) {
+                    ROW_DATA[4] = PORN_GROUPS[activePornBrandKey];
+                } else {
+                    ROW_DATA[4] = PORN_BRANDS_CONFIG.map(b => {
+                        var folderMatch = b.folder && PORN_GROUPS[b.folder] ? PORN_GROUPS[b.folder] : null;
+                        var firstPreview = b.previewUrl || (folderMatch && folderMatch[0] ? folderMatch[0].previewUrl : '');
+                        var act = b.action || (b.folder && PORN_GROUPS[b.folder] ? ('porn_brand_folder:' + b.folder) : (firstPreview ? ('local:' + firstPreview) : ''));
+                        return {
+                            title: b.title || b.name || '厂牌专区',
+                            sub: b.sub || (folderMatch ? ('共 ' + folderMatch.length + ' 部作品') : '厂牌精选'),
+                            desc: b.desc || '',
+                            img: b.img || DEFAULT_LOCAL_CARD_SVG,
+                            logo_url: b.logo_url || b.logo || '',
+                            previewUrl: firstPreview,
+                            action: act
+                        };
+                    });
+                }
+            } else {
+                if (!activePornFolder && PORN_FOLDER_LIST.length > 0) {
+                    activePornFolder = PORN_FOLDER_LIST[0];
+                }
+                ROW_DATA[4] = PORN_GROUPS[activePornFolder] || [];
+            }
+        }
+
         async function scrapeLocalMediaFolder(folderPath, targetRowId, isPorn) {
             if (!folderPath) {
                 if (targetRowId === 1) {
-                    ROW_DATA[1] = [{ title: "点击配置本地影视库", sub: "前往【系统设置】填入文件夹路径", desc: "", img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1000", action: "modal:settings" }];
+                    ROW_DATA[1] = [{ title: "点击配置本地影视库", sub: "前往【系统设置】填入文件夹路径", desc: "", img: DEFAULT_LOCAL_CARD_SVG, action: "modal:settings" }];
                     if (currentTrackRow === 1) { currentTrackRow = -1; renderTrack(1); }
+                } else if (isPorn) {
+                    PORN_GROUPS = {};
+                    PORN_FOLDER_LIST = [];
+                    syncPornRowData();
+                    if (currentTrackRow === 4) { currentTrackRow = -1; renderTrack(4); }
                 }
                 return;
             }
@@ -974,7 +1152,7 @@
             try {
                 const files = await invoke('scan_local_folder', { path: folderPath });
                 if (!files || files.length === 0) {
-                    ROW_DATA[targetRowId] = [{ title: "文件夹为空", sub: "未在 " + folderPath + " 下找到视频文件", desc: "", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1000", action: "modal:settings" }];
+                    ROW_DATA[targetRowId] = [{ title: "文件夹为空", sub: "未在 " + folderPath + " 下找到视频文件", desc: "", img: DEFAULT_LOCAL_CARD_SVG, action: "modal:settings" }];
                     if (currentTrackRow === targetRowId) { currentTrackRow = -1; renderTrack(targetRowId); }
                     return;
                 }
@@ -982,24 +1160,28 @@
                 if (isPorn) {
                     PORN_GROUPS = {};
                     PORN_FOLDER_LIST = [];
-                    files.forEach(f => {
-                        let folderName = extractPornSubfolder(folderPath, f[1]);
+                    for (var pi = 0; pi < files.length; pi++) {
+                        var f = files[pi];
+                        var rawFileName = f[0] || f[1].split('/').pop().replace(/\.[^/.]+$/, '') || ('视频 #' + (pi + 1));
+                        var folderName = extractPornSubfolder(folderPath, f[1]);
                         if (!PORN_GROUPS[folderName]) {
                             PORN_GROUPS[folderName] = [];
                             PORN_FOLDER_LIST.push(folderName);
                         }
-                        let cachedFrame = iptvFrameCache[f[1]] || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800';
+                        var cachedFrame = iptvFrameCache[f[1]] || DEFAULT_LOCAL_CARD_SVG;
                         PORN_GROUPS[folderName].push({
-                            title: f[0],
+                            title: rawFileName,
                             sub: folderName,
                             desc: "",
                             img: cachedFrame,
                             previewUrl: f[1],
                             action: "local:" + f[1]
                         });
-                    });
-                    activePornFolder = PORN_FOLDER_LIST[0] || '';
-                    ROW_DATA[4] = PORN_GROUPS[activePornFolder] || [];
+                    }
+                    if (!activePornFolder || !PORN_GROUPS[activePornFolder]) {
+                        activePornFolder = PORN_FOLDER_LIST[0] || '';
+                    }
+                    syncPornRowData();
                     lastRowColMap[4] = 1;
                     if (currentTrackRow === 4) { currentTrackRow = -1; renderTrack(4); }
                     return;
@@ -1007,12 +1189,15 @@
 
                 SERIES_GROUPS = {};
                 var groupOrder = [];
+                var rawFallbackMap = {};
                 for (let i = 0; i < files.length; i++) {
-                    let rawName = files[i][0], fullPath = files[i][1];
-                    let cleanKey = deriveSeriesKey(folderPath, fullPath, rawName);
+                    let rawName = files[i][0] || files[i][1].split('/').pop().replace(/\.[^/.]+$/, '');
+                    let fullPath = files[i][1];
+                    let cleanKey = deriveSeriesKey(folderPath, fullPath, rawName) || rawName;
                     if (!SERIES_GROUPS[cleanKey]) {
                         SERIES_GROUPS[cleanKey] = [];
                         groupOrder.push(cleanKey);
+                        rawFallbackMap[cleanKey] = rawName;
                     }
                     let info = parseSeasonAndEp(fullPath, rawName, SERIES_GROUPS[cleanKey].length);
                     SERIES_GROUPS[cleanKey].push({ rawName: rawName, fullPath: fullPath, season: info.season, ep: info.ep, label: info.label });
@@ -1023,6 +1208,7 @@
 
                 for (let k = 0; k < groupOrder.length; k++) {
                     let cleanTitle = groupOrder[k];
+                    let fallbackFileName = rawFallbackMap[cleanTitle] || cleanTitle;
                     let epList = SERIES_GROUPS[cleanTitle];
                     epList.sort((a, b) => (a.season - b.season) || (a.ep - b.ep));
                     let firstPath = epList[0].fullPath;
@@ -1038,20 +1224,20 @@
                         ensureDoubanScoreForSeries(cleanTitle, cached.title || cleanTitle);
                         let scorePrefix = getSeriesScorePrefix(cached);
                         items.push({
-                            title: cached.title,
+                            title: cached.title || fallbackFileName,
                             sub: scorePrefix + (isMultiEp ? (' · 共 ' + epList.length + ' 集') : ''),
                             desc: cached.desc || '',
-                            img: cached.img,
+                            img: cached.img || DEFAULT_LOCAL_CARD_SVG,
                             seriesKey: cleanTitle,
                             previewUrl: firstPath,
                             action: actionStr
                         });
                     } else {
                         let defaultItem = {
-                            title: cleanTitle,
-                            sub: isMultiEp ? ('TMDB · 共 ' + epList.length + ' 集') : '本地媒体',
+                            title: fallbackFileName,
+                            sub: isMultiEp ? ('本地剧集 · 共 ' + epList.length + ' 集') : '本地媒体',
                             desc: '',
-                            img: iptvFrameCache[firstPath] || "https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800",
+                            img: iptvFrameCache[firstPath] || DEFAULT_LOCAL_CARD_SVG,
                             seriesKey: cleanTitle,
                             previewUrl: firstPath,
                             action: actionStr
@@ -1063,7 +1249,7 @@
                             .then(data => {
                                 if (data && data.results && data.results.length > 0) {
                                     let hit = data.results[0];
-                                    let realTitle = hit.name || hit.title || cleanTitle;
+                                    let realTitle = hit.name || hit.title || fallbackFileName;
                                     let tmdbScore = hit.vote_average ? hit.vote_average.toFixed(1) : '';
                                     let scoreLine = 'TMDB ' + (tmdbScore ? tmdbScore + '分' : '精选');
                                     let overview = cleanOverviewText(hit.overview || '');
@@ -1099,21 +1285,38 @@
             } catch (err) {}
         }
 
-        // 修复 10：流控串行缩略图提取队列，防止限制级或大剧集目录一次性并发卡死系统
+        // 任务 5 & 7 (Round 5)：可视窗口优先 + 延迟节流串行缩略图提取队列，彻底消除开启限制级或切换目录时的卡顿
         var thumbQueue = [];
         var thumbWorkerBusy = false;
         var thumbBatchToken = 0;
+        var thumbDelayTimer = null;
 
-        function scheduleThumbTasks(tasks) {
+        function scheduleThumbTasks(tasks, centerIndex) {
             var myToken = ++thumbBatchToken;
-            thumbQueue = tasks.slice();
-            if (!thumbWorkerBusy) processNextThumbTask(myToken);
+            if (thumbDelayTimer) { clearTimeout(thumbDelayTimer); thumbDelayTimer = null; }
+            var startIdx = Math.max(0, (centerIndex || 0) - 2);
+            var endIdx = Math.min(tasks.length, startIdx + 14);
+            var windowed = tasks.slice(startIdx, endIdx);
+            thumbQueue = windowed;
+            thumbDelayTimer = setTimeout(function() {
+                processNextThumbTask(myToken);
+            }, 420);
+        }
+
+        function enqueueSingleThumbTask(path, imgId) {
+            if (!path || !imgId) return;
+            var exists = thumbQueue.some(t => t.path === path && t.imgId === imgId);
+            if (!exists) {
+                thumbQueue.unshift({ path: path, imgId: imgId });
+                if (!thumbWorkerBusy) processNextThumbTask(thumbBatchToken);
+            }
         }
 
         async function processNextThumbTask(token) {
             if (thumbWorkerBusy) return;
             thumbWorkerBusy = true;
             while (thumbQueue.length > 0) {
+                if (token !== thumbBatchToken) break;
                 var task = thumbQueue.shift();
                 if (!task || !task.path) continue;
                 var imgEl = document.getElementById(task.imgId);
@@ -1125,6 +1328,7 @@
                 }
                 try {
                     var thumbUrl = await invoke('extract_video_thumb', { path: task.path });
+                    if (token !== thumbBatchToken) break;
                     if (thumbUrl) {
                         iptvFrameCache[task.path] = thumbUrl;
                         var targetImg = document.getElementById(task.imgId);
@@ -1133,7 +1337,14 @@
                             fitSingleImage(targetImg);
                         }
                     }
-                } catch (_) {}
+                } catch (_) {
+                    var fallbackEl = document.getElementById(task.imgId);
+                    if (fallbackEl && fallbackEl.src !== DEFAULT_LOCAL_CARD_SVG) {
+                        fallbackEl.src = DEFAULT_LOCAL_CARD_SVG;
+                        fallbackEl.style.opacity = '1';
+                    }
+                }
+                await new Promise(r => setTimeout(r, 110));
             }
             thumbWorkerBusy = false;
         }
@@ -1210,8 +1421,9 @@
 
         var macVideo = document.createElement('video');
         macVideo.id = 'mac-bg-video'; macVideo.autoplay = true; macVideo.muted = !appSettings.previewSound; macVideo.playsInline = true; 
-        // 修复 7 (Round 4)：严格恢复 z-index: -2 (位于 .base-layer z-index:-3 之上、.hero-overlay z-index:-1 之下)，并置于 #baseLayer 之后，配合 GPU 独立层与背景淡出彻底解决视频被遮挡及窗口模式切块卡死
-        macVideo.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -2; transition: opacity 0.5s ease; opacity: 0; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity;';
+        macVideo.crossOrigin = 'anonymous';
+        // 修复 7 (Round 4) & 任务 9 (Round 5)：锁定全视口尺寸 (inset:0 + min-width/min-height:100vw/100vh) 并等待首帧尺寸就绪后再显影，彻底消除预览/播放初段闪现小画面再放大的问题
+        macVideo.style.cssText = 'position: fixed; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100vw !important; height: 100vh !important; min-width: 100vw; min-height: 100vh; object-fit: cover; z-index: -2; transition: opacity 0.42s ease; opacity: 0; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity;';
         var heroOverlayEl = document.getElementById('heroOverlay');
         if (heroOverlayEl && heroOverlayEl.parentNode) {
             heroOverlayEl.parentNode.insertBefore(macVideo, heroOverlayEl);
@@ -1224,6 +1436,98 @@
             var bl = document.getElementById('baseLayer');
             if (bl) bl.style.opacity = visible ? '0' : '1';
         }
+
+        // 任务 1 (Round 5)：前端 Web Audio API 实时动态压缩限幅器 + 响度上限控制，确保不改变系统音量下所有视频（尤其抖音）音量不超过安全阈值
+        var audioCtx = null;
+        var audioSourceNode = null;
+        var audioCompressorNode = null;
+        var audioGainNode = null;
+
+        function ensureAudioNormalizerGraph() {
+            if (audioCtx || !window.AudioContext && !window.webkitAudioContext) return;
+            try {
+                var CtxClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new CtxClass();
+                audioSourceNode = audioCtx.createMediaElementSource(macVideo);
+                audioCompressorNode = audioCtx.createDynamicsCompressor();
+                audioCompressorNode.threshold.setValueAtTime(-22, audioCtx.currentTime);
+                audioCompressorNode.knee.setValueAtTime(14, audioCtx.currentTime);
+                audioCompressorNode.ratio.setValueAtTime(12, audioCtx.currentTime);
+                audioCompressorNode.attack.setValueAtTime(0.003, audioCtx.currentTime);
+                audioCompressorNode.release.setValueAtTime(0.18, audioCtx.currentTime);
+                audioGainNode = audioCtx.createGain();
+                audioSourceNode.connect(audioCompressorNode);
+                audioCompressorNode.connect(audioGainNode);
+                audioGainNode.connect(audioCtx.destination);
+            } catch (e) {}
+        }
+
+        function isCurrentStreamDouyin() {
+            var u = String(currentBgUrl || currentPlayingStream || '');
+            return u.indexOf('douyin:') === 0 || currentTrackRow === 3 || (isFullScreen && fullScreenRow === 3);
+        }
+
+        function applyPreviewOrFullscreenAudio() {
+            if (!macVideo) return;
+            macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
+            var isDy = isCurrentStreamDouyin();
+            if (appSettings.volumeNorm) {
+                macVideo.volume = isDy ? 0.52 : 0.78;
+                ensureAudioNormalizerGraph();
+                if (audioCtx && audioCtx.state === 'suspended' && !macVideo.muted) {
+                    audioCtx.resume().catch(() => {});
+                }
+                if (audioGainNode && audioCtx) {
+                    var targetGain = isDy ? 0.72 : 0.90;
+                    audioGainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.04);
+                }
+            } else {
+                macVideo.volume = 1.0;
+                if (audioGainNode && audioCtx) {
+                    audioGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.04);
+                }
+            }
+        }
+        window.addEventListener('mousedown', applyPreviewOrFullscreenAudio, { passive: true });
+
+        // 任务 14 (Round 5)：抖音视频正式全屏播放页面支持自动连播，并在靠近结尾时自动预加载更多视频流
+        var lastAutoAdvanceTs = 0;
+        function triggerDouyinAutoNextIfNeeded() {
+            if (!isFullScreen || fullScreenRow !== 3) return;
+            var now = Date.now();
+            if (now - lastAutoAdvanceTs < 1200) return;
+            lastAutoAdvanceTs = now;
+            if (ROW_DATA[3] && fullScreenCol >= Math.max(1, ROW_DATA[3].length - 6)) {
+                requestMoreDouyinStreams();
+            }
+            var nextCol = fullScreenCol + 1;
+            var nextCard = document.querySelector('.focusable[data-row="3"][data-col="' + nextCol + '"]');
+            var nextAct = nextCard ? nextCard.getAttribute('data-action') : '';
+            if (!nextCard || nextAct === 'douyin:refresh') {
+                pendingAutoAdvanceDouyin = true;
+                requestMoreDouyinStreams();
+                return;
+            }
+            switchFullScreenVideo(1);
+        }
+
+        macVideo.addEventListener('ended', function() {
+            if (isFullScreen && fullScreenRow === 3) {
+                triggerDouyinAutoNextIfNeeded();
+            }
+        });
+
+        macVideo.addEventListener('timeupdate', function() {
+            if (!isFullScreen || fullScreenRow !== 3) return;
+            if (ROW_DATA[3] && fullScreenCol >= Math.max(1, ROW_DATA[3].length - 6)) {
+                requestMoreDouyinStreams();
+            }
+            if (macVideo.duration && isFinite(macVideo.duration) && macVideo.duration > 1.5) {
+                if (macVideo.currentTime >= macVideo.duration - 0.18) {
+                    triggerDouyinAutoNextIfNeeded();
+                }
+            }
+        });
 
         var iptvHudTimer = null;
         function showIptvFullscreenHud(title, sub) {
@@ -1246,43 +1550,73 @@
             if (iptvHudTimer) { clearTimeout(iptvHudTimer); iptvHudTimer = null; }
         }
 
-        function applyPreviewOrFullscreenAudio() {
-            if (!macVideo) return;
-            macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
-            macVideo.volume = 1.0;
+        // 任务 9 (Round 5)：确保首帧解码且 videoWidth/videoHeight 布局稳定后再淡入视频图层，防止先闪现小画面再放大
+        function revealVideoWhenFrameReady(reqSeq) {
+            if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+            var revealed = false;
+            var doReveal = function() {
+                if (revealed) return;
+                if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                if (macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
+                    revealed = true;
+                    isVideoReady = true;
+                    setTimeout(function() {
+                        if (reqSeq === undefined || reqSeq === streamReqSeq) {
+                            setVideoLayerVisible(true);
+                        }
+                    }, 95);
+                    onBackgroundVideoStarted();
+                }
+            };
+            if (macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
+                doReveal();
+                return;
+            }
+            var onFrameEvt = function() {
+                if (macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
+                    macVideo.removeEventListener('loadeddata', onFrameEvt);
+                    macVideo.removeEventListener('playing', onFrameEvt);
+                    macVideo.removeEventListener('resize', onFrameEvt);
+                    doReveal();
+                }
+            };
+            macVideo.addEventListener('loadeddata', onFrameEvt);
+            macVideo.addEventListener('playing', onFrameEvt);
+            macVideo.addEventListener('resize', onFrameEvt);
+            setTimeout(function() {
+                macVideo.removeEventListener('loadeddata', onFrameEvt);
+                macVideo.removeEventListener('playing', onFrameEvt);
+                macVideo.removeEventListener('resize', onFrameEvt);
+                if (!revealed && (reqSeq === undefined || reqSeq === streamReqSeq) && !macVideo.paused) {
+                    revealed = true;
+                    isVideoReady = true;
+                    setVideoLayerVisible(true);
+                    onBackgroundVideoStarted();
+                }
+            }, 750);
         }
-        window.addEventListener('mousedown', applyPreviewOrFullscreenAudio, { passive: true });
 
         function startVideoPlaybackWithFallback(reqSeq) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-            macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
+            applyPreviewOrFullscreenAudio();
             macVideo.play().then(function() {
                 if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-                isVideoReady = true;
-                setTimeout(function() {
-                    if (reqSeq === undefined || reqSeq === streamReqSeq) {
-                        setVideoLayerVisible(true);
-                    }
-                }, 80);
-                onBackgroundVideoStarted();
+                revealVideoWhenFrameReady(reqSeq);
             }).catch(function() {
                 if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
                 macVideo.muted = true;
                 macVideo.play().then(function() {
                     if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-                    isVideoReady = true;
-                    setVideoLayerVisible(true);
-                    onBackgroundVideoStarted();
+                    revealVideoWhenFrameReady(reqSeq);
                 }).catch(function() {});
             });
         }
 
         function loadAndPlayVideo(url, isMuted, reqSeq) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-            var targetMuted = isFullScreen ? false : !appSettings.previewSound;
-            macVideo.muted = targetMuted;
             setVideoLayerVisible(false);
             isVideoReady = false;
+            applyPreviewOrFullscreenAudio();
             if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                 if (hlsInstance) hlsInstance.destroy();
                 hlsInstance = new Hls({
@@ -1346,7 +1680,7 @@
                     loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), isFullScreen ? false : previewMuted, mySeq);
                 }).catch(e => {}); 
             } else {
-                macVideo.muted = previewMuted;
+                applyPreviewOrFullscreenAudio();
                 macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {
                     macVideo.muted = true;
                     macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
@@ -1374,11 +1708,28 @@
         function executeItemAction(action, title) {
             if (!action) return;
             if (action === 'modal:settings') { openSettingsModal(); return; }
+            if (action === 'modal:power') { openPowerModal(); return; }
             if (action.startsWith('series:')) { openSeriesEpisodes(action.substring(7)); return; }
+            if (action.startsWith('porn_brand_folder:')) {
+                var targetFolder = action.substring(18);
+                if (targetFolder && PORN_GROUPS[targetFolder]) {
+                    activePornPrimaryTab = 'others';
+                    activePornFolder = targetFolder;
+                    pornMenuLevel = 2;
+                    pornPillsExpanded = false;
+                    lastRowColMap[4] = 1;
+                    currentTrackRow = -1;
+                    renderTrack(4);
+                    var firstCard = document.querySelector('.focusable[data-row="4"][data-col="1"]');
+                    if (firstCard) setFocus(firstCard);
+                }
+                return;
+            }
             if (action === 'douyin:refresh') { loadDouyinNativeFeed(true, false); return; }
             if (action.startsWith('iptv:') || action.startsWith('local:') || action.startsWith('douyin:')) {
                 var url = action.startsWith('douyin:') ? action : (action.startsWith('iptv:') ? action.substring(5) : action.substring(6));
                 isFullScreen = true;
+                pendingAutoAdvanceDouyin = false;
                 updateClock();
                 clearTimeout(bgPreviewTimeout);
                 document.getElementById('sidebar').style.opacity = '0';
@@ -1400,6 +1751,9 @@
                 if (fullScreenRow === 2 && hudTitle) {
                     showIptvFullscreenHud(hudTitle, hudSub);
                 }
+                if (fullScreenRow === 3 && ROW_DATA[3] && fullScreenCol >= Math.max(1, ROW_DATA[3].length - 6)) {
+                    requestMoreDouyinStreams();
+                }
 
                 // 修复 4 (Round 3)：如果快速移动焦点并立即按回车进入全屏，此时预览尚未就绪 (isVideoReady === false)，重新拉起流并取消静音
                 if (currentBgUrl !== url || !isVideoReady || macVideo.readyState < 2) {
@@ -1411,13 +1765,13 @@
                         loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), false, mySeq);
                     }).catch(() => {});
                 } else {
-                    macVideo.muted = false;
+                    applyPreviewOrFullscreenAudio();
                     macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
                 }
             }
         }
 
-        // 修复 2：流媒体-抖音精选视频与电视直播在正式播放页面支持上下/左右键无缝切换
+        // 修复 2：流媒体-抖音精选视频与电视直播在正式播放页面支持上下/左右键无缝切换与自动预加载
         function switchFullScreenVideo(step) {
             var row = (currentFocusEl && parseInt(currentFocusEl.getAttribute('data-row')) > 0)
                 ? parseInt(currentFocusEl.getAttribute('data-row'))
@@ -1429,6 +1783,10 @@
             var nextCol = col + step;
             if (nextCol < 1) return;
 
+            if (row === 3 && ROW_DATA[3] && nextCol >= Math.max(1, ROW_DATA[3].length - 6)) {
+                requestMoreDouyinStreams();
+            }
+
             var nextCard = document.querySelector('.focusable[data-row="' + row + '"][data-col="' + nextCol + '"]');
             if (!nextCard && row === 3 && ROW_DATA[3] && nextCol <= ROW_DATA[3].length) {
                 currentTrackRow = -1;
@@ -1436,17 +1794,17 @@
                 nextCard = document.querySelector('.focusable[data-row="3"][data-col="' + nextCol + '"]');
             }
             if (!nextCard) {
-                if (row === 3) loadDouyinNativeFeed(false, true);
+                if (row === 3) {
+                    pendingAutoAdvanceDouyin = (step > 0);
+                    requestMoreDouyinStreams();
+                }
                 return;
-            }
-
-            if (row === 3 && ROW_DATA[3] && nextCol >= ROW_DATA[3].length - 4) {
-                loadDouyinNativeFeed(false, true);
             }
 
             var nextAction = nextCard.getAttribute('data-action');
             if (nextAction === 'douyin:refresh') {
-                loadDouyinNativeFeed(false, true);
+                pendingAutoAdvanceDouyin = (step > 0);
+                requestMoreDouyinStreams();
                 return;
             }
             if (nextAction && (nextAction.startsWith('iptv:') || nextAction.startsWith('local:') || nextAction.startsWith('douyin:'))) {
@@ -1463,7 +1821,9 @@
                 currentBgUrl = '';
                 var nextTitle = nextCard.getAttribute('data-title') || '';
                 var nextSub = nextCard.getAttribute('data-sub') || nextCard.getAttribute('data-org') || '';
-                showIptvFullscreenHud(nextTitle, nextSub);
+                if (row === 2) {
+                    showIptvFullscreenHud(nextTitle, nextSub);
+                }
                 executeItemAction(nextAction, nextTitle);
             }
         }
@@ -1529,6 +1889,35 @@
             if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
         }
 
+        // 任务 12 (Round 5)：电源管理弹窗打开、关闭与执行逻辑
+        function openPowerModal() {
+            isModalOpen = true;
+            var modal = document.getElementById('powerModal');
+            modal.classList.add('active');
+            modalFocusList = [
+                document.getElementById('btnPowerQuit'),
+                document.getElementById('btnPowerRestart'),
+                document.getElementById('btnPowerCancel')
+            ];
+            setTimeout(() => setModalFocus(0), 50);
+        }
+
+        function closePowerModal() {
+            isModalOpen = false;
+            modalFocusList.forEach(el => el.classList.remove('modal-focused'));
+            var modal = document.getElementById('powerModal');
+            if (modal) modal.classList.remove('active');
+            if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
+        }
+
+        document.getElementById('btnPowerQuit').onclick = function() {
+            invoke('quit_app').catch(() => { window.close(); });
+        };
+        document.getElementById('btnPowerRestart').onclick = function() {
+            invoke('restart_app').catch(() => { window.location.reload(); });
+        };
+        document.getElementById('btnPowerCancel').onclick = closePowerModal;
+
         function verifyAndUnlockPorn() {
             var val = document.getElementById('inputUnlockPwd').value;
             if (val === appSettings.pornPwd) {
@@ -1536,9 +1925,11 @@
                 var navPorn = document.getElementById('navPornItem');
                 navPorn.style.display = 'flex';
                 closePasswordModal();
-                scrapeLocalMediaFolder(appSettings.pornPath, 4, true).then(() => {
-                    setFocus(navPorn);
-                });
+                // 任务 5 (Round 5)：先平滑切换焦点，再异步扫描限制级目录，避免解锁瞬间主线程阻塞卡顿
+                setFocus(navPorn);
+                setTimeout(function() {
+                    scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
+                }, 60);
             } else {
                 var input = document.getElementById('inputUnlockPwd');
                 input.style.borderColor = '#FF453A';
@@ -1563,6 +1954,15 @@
             var soundBtn = document.getElementById('btnTogglePreviewSound');
             if (soundBtn) {
                 soundBtn.innerText = '预览声音：' + (appSettings.previewSound ? '开启' : '关闭');
+            }
+            var normBtn = document.getElementById('btnToggleVolumeNorm');
+            if (normBtn) {
+                normBtn.innerText = '音量均衡：' + (appSettings.volumeNorm ? '开启' : '关闭');
+            }
+            var scaleBtn = document.getElementById('btnToggleUiScale');
+            if (scaleBtn) {
+                var p = getCurrentUiScalePreset();
+                scaleBtn.innerText = '界面缩放：' + p.label;
             }
         }
 
@@ -1590,6 +1990,23 @@
             localStorage.setItem('fc_preview_sound', appSettings.previewSound ? 'true' : 'false');
             updateSettingsToggleButtons();
             applyPreviewOrFullscreenAudio();
+        };
+
+        document.getElementById('btnToggleVolumeNorm').onclick = function() {
+            appSettings.volumeNorm = !appSettings.volumeNorm;
+            localStorage.setItem('fc_volume_norm', appSettings.volumeNorm ? 'true' : 'false');
+            updateSettingsToggleButtons();
+            applyPreviewOrFullscreenAudio();
+        };
+
+        document.getElementById('btnToggleUiScale').onclick = function() {
+            var cur = getCurrentUiScalePreset();
+            var idx = UI_SCALE_PRESETS.findIndex(p => p.id === cur.id);
+            var next = UI_SCALE_PRESETS[(idx + 1) % UI_SCALE_PRESETS.length];
+            appSettings.uiScale = next.id;
+            localStorage.setItem('fc_ui_scale', next.id);
+            updateSettingsToggleButtons();
+            autoScaleUI();
         };
 
         // 修复 3 (Round 4)：点击或回车触发同步状态栏按钮，重新载入所有数据
@@ -1636,6 +2053,8 @@
                 document.getElementById('btnToggleRatingSource'),
                 document.getElementById('btnToggleBgTheme'),
                 document.getElementById('btnTogglePreviewSound'),
+                document.getElementById('btnToggleVolumeNorm'),
+                document.getElementById('btnToggleUiScale'),
                 document.getElementById('btnDouyinLogin'),
                 document.getElementById('btnCloseSettings'),
                 document.getElementById('btnSaveSettings')
@@ -1663,7 +2082,10 @@
             localStorage.setItem('fc_rating_source', appSettings.ratingSource);
             localStorage.setItem('fc_bg_theme', appSettings.bgTheme);
             localStorage.setItem('fc_preview_sound', appSettings.previewSound ? 'true' : 'false');
+            localStorage.setItem('fc_volume_norm', appSettings.volumeNorm ? 'true' : 'false');
+            localStorage.setItem('fc_ui_scale', appSettings.uiScale || '1.15');
 
+            autoScaleUI();
             applyPreviewOrFullscreenAudio();
             closeSettingsModal();
             activeSeriesView = null;
@@ -1680,13 +2102,13 @@
             invoke('open_douyin_login').catch(() => {});
         };
 
-        // 修复 8 (Round 4)：流媒体丸形菜单默认折叠只显示一个“抖音精选 >”，点击或回车展开二级分类，按上键收起
+        // 任务 2 (Round 5)：流媒体丸形菜单使用精致右向 SVG 箭头替代纯文本 >
         function renderDouyinSeasonBar() {
             var seasonBar = document.getElementById('seasonBar');
             if (!seasonBar) return;
             if (!douyinPillsExpanded) {
                 var curCat = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinCategory) || DOUYIN_CATEGORIES[0];
-                seasonBar.innerHTML = '<div class="season-pill focusable current" tabindex="0" data-row="0" data-col="1" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true">' + curCat.name + ' <span style="margin-left: 4px; opacity: 0.85; font-weight: 700;">&gt;</span></div>';
+                seasonBar.innerHTML = '<div class="season-pill focusable current" tabindex="0" data-row="0" data-col="1" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true"><span>' + curCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.classList.add('active');
                 var singlePill = seasonBar.querySelector('.season-pill');
                 if (singlePill) {
@@ -1704,7 +2126,7 @@
                 for (var d = 0; d < DOUYIN_CATEGORIES.length; d++) {
                     var dc = DOUYIN_CATEGORIES[d];
                     var curCls = (dc.id === activeDouyinCategory) ? ' current' : '';
-                    dHtml += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (d + 1) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true">' + dc.name + '</div>';
+                    dHtml += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (d + 1) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span>' + dc.name + '</span></div>';
                 }
                 seasonBar.innerHTML = dHtml;
                 seasonBar.classList.add('active');
@@ -1726,6 +2148,105 @@
             }
         }
 
+        // 任务 6 (Round 5)：限制级引入流媒体同款丸形按钮二级菜单与自动折叠功能
+        // 一级菜单：厂牌 (brands) 与 其他 (others)；其他菜单下二级菜单为原默认菜单的子文件夹
+        function renderPornSeasonBar() {
+            var seasonBar = document.getElementById('seasonBar');
+            if (!seasonBar) return;
+
+            if (!pornPillsExpanded) {
+                var collapsedLabel = (activePornPrimaryTab === 'brands')
+                    ? '厂牌'
+                    : ('其他' + (activePornFolder ? (' · ' + activePornFolder) : ''));
+                seasonBar.innerHTML = '<div class="season-pill focusable current" tabindex="0" data-row="0" data-col="1" data-porn-collapsed="1" data-no-bg-change="true"><span>' + collapsedLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                seasonBar.classList.add('active');
+                var singlePill = seasonBar.querySelector('.season-pill');
+                if (singlePill) {
+                    singlePill.onclick = function(ev) {
+                        ev.stopPropagation();
+                        pornPillsExpanded = true;
+                        renderPornSeasonBar();
+                        var targetCol = (pornMenuLevel === 1)
+                            ? (activePornPrimaryTab === 'brands' ? 1 : 2)
+                            : Math.max(2, PORN_FOLDER_LIST.indexOf(activePornFolder) + 2);
+                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + targetCol + '"]') || seasonBar.querySelector('.season-pill');
+                        if (targetPill) setFocus(targetPill);
+                    };
+                }
+                return;
+            }
+
+            if (pornMenuLevel === 1) {
+                var bCls = (activePornPrimaryTab === 'brands') ? ' current' : '';
+                var oCls = (activePornPrimaryTab === 'others') ? ' current' : '';
+                var otherSubLabel = activePornFolder ? ('其他 · ' + activePornFolder) : '其他';
+                var html1 = '' +
+                    '<div class="season-pill focusable' + bCls + '" tabindex="0" data-row="0" data-col="1" data-porn-primary="brands" data-no-bg-change="true"><span>厂牌</span></div>' +
+                    '<div class="season-pill focusable' + oCls + '" tabindex="0" data-row="0" data-col="2" data-porn-primary="others" data-no-bg-change="true"><span>' + otherSubLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                seasonBar.innerHTML = html1;
+                seasonBar.classList.add('active');
+                Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
+                    pillEl.onclick = function(ev) {
+                        ev.stopPropagation();
+                        var pTab = pillEl.getAttribute('data-porn-primary');
+                        if (pTab === 'brands') {
+                            if (activePornPrimaryTab !== 'brands') {
+                                activePornPrimaryTab = 'brands';
+                                activePornBrandKey = '';
+                                lastRowColMap[4] = 1;
+                                syncPornRowData();
+                                currentTrackRow = -1;
+                                renderTrack(4);
+                            }
+                            var bPill = seasonBar.querySelector('.season-pill[data-porn-primary="brands"]');
+                            if (bPill) setFocus(bPill);
+                        } else if (pTab === 'others') {
+                            activePornPrimaryTab = 'others';
+                            pornMenuLevel = 2;
+                            syncPornRowData();
+                            currentTrackRow = -1;
+                            renderTrack(4);
+                            var fIdx = Math.max(0, PORN_FOLDER_LIST.indexOf(activePornFolder));
+                            var subPill = seasonBar.querySelector('.season-pill[data-col="' + (fIdx + 2) + '"]') || seasonBar.querySelector('.season-pill[data-col="1"]');
+                            if (subPill) setFocus(subPill);
+                        }
+                    };
+                });
+            } else {
+                var html2 = '<div class="season-pill focusable" tabindex="0" data-row="0" data-col="1" data-porn-back="1" data-no-bg-change="true">' + PILL_CHEVRON_LEFT_SVG + '<span>一级菜单</span></div>';
+                for (var p = 0; p < PORN_FOLDER_LIST.length; p++) {
+                    var fName = PORN_FOLDER_LIST[p];
+                    var curCls = (activePornPrimaryTab === 'others' && fName === activePornFolder) ? ' current' : '';
+                    html2 += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (p + 2) + '" data-porn-folder="' + fName.replace(/"/g, '&quot;') + '" data-no-bg-change="true"><span>' + fName + '</span></div>';
+                }
+                seasonBar.innerHTML = html2;
+                seasonBar.classList.add('active');
+                Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
+                    pillEl.onclick = function(ev) {
+                        ev.stopPropagation();
+                        if (pillEl.getAttribute('data-porn-back') === '1') {
+                            pornMenuLevel = 1;
+                            renderPornSeasonBar();
+                            var p2 = seasonBar.querySelector('.season-pill[data-col="2"]') || seasonBar.querySelector('.season-pill');
+                            if (p2) setFocus(p2);
+                            return;
+                        }
+                        var folder = pillEl.getAttribute('data-porn-folder');
+                        if (folder) {
+                            activePornPrimaryTab = 'others';
+                            activePornFolder = folder;
+                            lastRowColMap[4] = 1;
+                            syncPornRowData();
+                            currentTrackRow = -1;
+                            renderTrack(4);
+                            var nfPill = seasonBar.querySelector('.season-pill[data-porn-folder="' + folder.replace(/"/g, '\\"') + '"]');
+                            if (nfPill) setFocus(nfPill);
+                        }
+                    };
+                });
+            }
+        }
+
         function renderTrack(rowId) {
             if (currentTrackRow === rowId && !activeSeriesView) return; 
             currentTrackRow = rowId;
@@ -1734,16 +2255,9 @@
 
             if (rowId === 3) {
                 renderDouyinSeasonBar();
-            } else if (rowId === 4 && PORN_FOLDER_LIST.length > 0) {
-                var pHtml = '';
-                for (var p = 0; p < PORN_FOLDER_LIST.length; p++) {
-                    var fName = PORN_FOLDER_LIST[p];
-                    var curCls = (fName === activePornFolder) ? ' current' : '';
-                    pHtml += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (p + 1) + '" data-porn-folder="' + fName + '" data-no-bg-change="true">' + fName + '</div>';
-                }
-                seasonBar.innerHTML = pHtml;
-                seasonBar.classList.add('active');
-                ROW_DATA[4] = PORN_GROUPS[activePornFolder] || [];
+            } else if (rowId === 4) {
+                syncPornRowData();
+                renderPornSeasonBar();
             } else {
                 seasonBar.classList.remove('active');
                 seasonBar.innerHTML = '';
@@ -1772,7 +2286,7 @@
                             pornThumbTasks.push({ path: item.previewUrl, imgId: 'card_img_4_' + idx });
                         }
                     });
-                    scheduleThumbTasks(pornThumbTasks);
+                    scheduleThumbTasks(pornThumbTasks, rememberedCol - 1);
                 }
             } else { track.innerHTML = ''; heroText.classList.add('lowered'); }
         }
@@ -1803,7 +2317,37 @@
                 }).catch(e => { tmdbLogoCache[cleanTitle] = null; callback(null); });
         }
 
-        function updateHeroUI(title, sub, desc, brandName, svgIconHTML, isVerified, skipLogo, isSingleLineMarquee) {
+        function renderHeroLogoElement(heroTitleEl, title, logoUrl) {
+            if (!logoUrl || !heroTitleEl) return;
+            heroTitleEl.className = 'main-title';
+            var animStyle = '<style>@keyframes logoFadeIn { from { opacity: 0; transform: translateZ(0) translateY(8px); } to { opacity: 1; transform: translateZ(0) translateY(0); } }</style>';
+            heroTitleEl.innerHTML = animStyle + '<div class="tmdb-logo-stage"><img id="activeHeroLogoImg" src="' + optimizeImageUrl(logoUrl) + '" style="height: auto; max-height: 84px; max-width: 320px; vertical-align: middle; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.5)); animation: logoFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;" alt="' + (title || '').replace(/"/g, '&quot;') + '"></div>';
+            var lImg = document.getElementById('activeHeroLogoImg');
+            if (lImg) {
+                var fitLogoBox = function() {
+                    if (!lImg.naturalWidth || !lImg.naturalHeight) return;
+                    var ratio = lImg.naturalWidth / lImg.naturalHeight;
+                    var stage = lImg.parentElement;
+                    if (ratio < 1.35) {
+                        if (stage) stage.classList.add('square-stage');
+                        lImg.style.maxWidth = '148px';
+                        lImg.style.maxHeight = '148px';
+                        lImg.style.height = '140px';
+                        lImg.style.width = 'auto';
+                    } else if (ratio < 1.80) {
+                        lImg.style.maxWidth = '240px';
+                        lImg.style.maxHeight = '108px';
+                    } else {
+                        lImg.style.maxWidth = '320px';
+                        lImg.style.maxHeight = '84px';
+                    }
+                };
+                if (lImg.complete) fitLogoBox();
+                else lImg.onload = fitLogoBox;
+            }
+        }
+
+        function updateHeroUI(title, sub, desc, brandName, svgIconHTML, isVerified, skipLogo, isSingleLineMarquee, explicitLogoUrl) {
             var heroTitleEl = document.getElementById('heroTitle');
             var subBadgeEl = document.getElementById('heroSubBadge');
             var subTextEl = document.getElementById('heroSubText');
@@ -1848,36 +2392,13 @@
             if (svgIconHTML) { brandEl.innerHTML = svgIconHTML + '<span id="heroBrandText">' + brandName + '</span>'; } 
             else { brandEl.innerHTML = '<span id="heroBrandText">' + brandName + '</span>'; }
 
-            if (!skipLogo) {
+            // 任务 6 (Round 5)：若厂牌卡片在 GitHub 配置了专属透明 Logo，则直接在标题区渲染厂牌 Logo
+            if (explicitLogoUrl) {
+                renderHeroLogoElement(heroTitleEl, title, explicitLogoUrl);
+            } else if (!skipLogo) {
                 fetchTMDBLogo(title, function(logoUrl) {
                     if (logoUrl && heroTitleEl.textContent.indexOf(title) !== -1) {
-                        heroTitleEl.className = 'main-title';
-                        var animStyle = '<style>@keyframes logoFadeIn { from { opacity: 0; transform: translateZ(0) translateY(8px); } to { opacity: 1; transform: translateZ(0) translateY(0); } }</style>';
-                        heroTitleEl.innerHTML = animStyle + '<div class="tmdb-logo-stage"><img id="activeHeroLogoImg" src="' + logoUrl + '" style="height: auto; max-height: 84px; max-width: 320px; vertical-align: middle; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.5)); animation: logoFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;" alt="' + title.replace(/"/g, '&quot;') + '"></div>';
-                        var lImg = document.getElementById('activeHeroLogoImg');
-                        if (lImg) {
-                            var fitLogoBox = function() {
-                                if (!lImg.naturalWidth || !lImg.naturalHeight) return;
-                                var ratio = lImg.naturalWidth / lImg.naturalHeight;
-                                var stage = lImg.parentElement;
-                                if (ratio < 1.35) {
-                                    // 竖状或正方形 Logo：放置于正方形区域内放大展示
-                                    if (stage) stage.classList.add('square-stage');
-                                    lImg.style.maxWidth = '148px';
-                                    lImg.style.maxHeight = '148px';
-                                    lImg.style.height = '140px';
-                                    lImg.style.width = 'auto';
-                                } else if (ratio < 1.80) {
-                                    lImg.style.maxWidth = '240px';
-                                    lImg.style.maxHeight = '108px';
-                                } else {
-                                    lImg.style.maxWidth = '320px';
-                                    lImg.style.maxHeight = '84px';
-                                }
-                            };
-                            if (lImg.complete) fitLogoBox();
-                            else lImg.onload = fitLogoBox;
-                        }
+                        renderHeroLogoElement(heroTitleEl, title, logoUrl);
                     }
                 });
             }
@@ -1906,7 +2427,7 @@
                     }
                     return;
                 }
-                if (targetEl.getAttribute('data-douyin-collapsed') === '1') {
+                if (targetEl.getAttribute('data-douyin-collapsed') === '1' || targetEl.getAttribute('data-porn-collapsed') === '1' || targetEl.getAttribute('data-porn-back') === '1') {
                     return;
                 }
                 var dyCat = targetEl.getAttribute('data-douyin-cat');
@@ -1919,13 +2440,33 @@
                     loadDouyinNativeFeed(true, false);
                     return;
                 }
+                var pornPrimary = targetEl.getAttribute('data-porn-primary');
+                if (pornPrimary) {
+                    if (pornPrimary !== activePornPrimaryTab) {
+                        activePornPrimaryTab = pornPrimary;
+                        activePornBrandKey = '';
+                        lastRowColMap[4] = 1;
+                        syncPornRowData();
+                        currentTrackRow = -1;
+                        renderTrack(4);
+                        var newPriPill = document.querySelector('.season-pill[data-porn-primary="' + pornPrimary + '"]');
+                        if (newPriPill) {
+                            currentFocusEl = newPriPill;
+                            newPriPill.focus({ preventScroll: true });
+                            newPriPill.classList.add('focused');
+                        }
+                    }
+                    return;
+                }
                 var pornFolder = targetEl.getAttribute('data-porn-folder');
-                if (pornFolder && pornFolder !== activePornFolder) {
+                if (pornFolder && (pornFolder !== activePornFolder || activePornPrimaryTab !== 'others')) {
+                    activePornPrimaryTab = 'others';
                     activePornFolder = pornFolder;
                     lastRowColMap[4] = 1;
+                    syncPornRowData();
                     currentTrackRow = -1;
                     renderTrack(4);
-                    var newFolderPill = document.querySelector('.season-pill[data-porn-folder="' + pornFolder + '"]');
+                    var newFolderPill = document.querySelector('.season-pill[data-porn-folder="' + pornFolder.replace(/"/g, '\\"') + '"]');
                     if (newFolderPill) {
                         currentFocusEl = newFolderPill;
                         newFolderPill.focus({ preventScroll: true });
@@ -1939,22 +2480,40 @@
             if (col >= 1 && row >= 1 && row <= 4) {
                 if (activeSeriesView) lastRowColMap.series = col;
                 else lastRowColMap[row] = col;
+                // 任务 6 (Round 5)：当焦点下移到流媒体或限制级的视频卡片时，丸形菜单自动折叠为单个按钮
+                if (row === 3 && douyinPillsExpanded) {
+                    douyinPillsExpanded = false;
+                    renderDouyinSeasonBar();
+                } else if (row === 4 && pornPillsExpanded) {
+                    pornPillsExpanded = false;
+                    renderPornSeasonBar();
+                }
             }
 
+            // 任务 13 (Round 5)：流媒体中焦点移动到本次加载的视频流结尾附近时自动预加载更多视频流
             if (row === 3) {
                 if (col === 0) {
                     loadDouyinNativeFeed(false, false);
-                } else if (ROW_DATA[3] && col >= ROW_DATA[3].length - 4) {
-                    var nowTs = Date.now();
-                    if (nowTs - lastLoadMoreTime > 1200) {
-                        lastLoadMoreTime = nowTs;
-                        loadDouyinNativeFeed(false, true);
+                } else if (ROW_DATA[3] && col >= Math.max(1, ROW_DATA[3].length - 6)) {
+                    requestMoreDouyinStreams();
+                }
+            }
+
+            // 任务 5 (Round 5)：限制级横向移动焦点时按滑动窗口懒加载附近卡片缩略图，零卡顿
+            if (row === 4 && col >= 1 && ROW_DATA[4] && ROW_DATA[4].length > 0) {
+                var nearbyTasks = [];
+                ROW_DATA[4].forEach((item, idx) => {
+                    if (item.previewUrl && !iptvFrameCache[item.previewUrl]) {
+                        nearbyTasks.push({ path: item.previewUrl, imgId: 'card_img_4_' + idx });
                     }
+                });
+                if (nearbyTasks.length > 0) {
+                    scheduleThumbTasks(nearbyTasks, col - 1);
                 }
             }
 
             if (col === 0 && row >= 1 && row <= 4) renderTrack(row);
-            else if (col === 0 && (row === 5 || row === -1)) renderTrack(-1);
+            else if (col === 0 && (row === 5 || row === 6 || row === -1)) renderTrack(-1);
 
             var sidebar = document.getElementById('sidebar'), mainContent = document.getElementById('mainContent');
             if (col >= 1) { sidebar.classList.add('collapsed'); mainContent.classList.add('expanded'); } 
@@ -2004,6 +2563,7 @@
                 var orgText = (displayEl.getAttribute('data-org') || '').trim();
                 var sub = displayEl.getAttribute('data-sub') || '';
                 var desc = displayEl.getAttribute('data-desc') || '';
+                var explicitLogoUrl = displayEl.getAttribute('data-brand-logo') || '';
 
                 // 修复 1 (Round 2)：只有当有线电视频道卡片存在且机构信息 (orgText) 有实际内容时才展示认证徽标，占位文字旁不显示认证徽标
                 var isChannelCard = displayEl.classList.contains('media-item');
@@ -2014,7 +2574,7 @@
 
                 var skipLogo = (row === 3 || row === 4);
                 var isSingleLineMarquee = (row === 3);
-                updateHeroUI(title, sub, desc, sectionName, svgIconHTML, isVerified, skipLogo, isSingleLineMarquee);
+                updateHeroUI(title, sub, desc, sectionName, svgIconHTML, isVerified, skipLogo, isSingleLineMarquee, explicitLogoUrl);
             }
 
             if (col > 0 && row > 0 && row < 5) {
@@ -2043,9 +2603,10 @@
                 e.stopPropagation();
                 if (e.key === 'Escape' || e.key === 'Backspace') {
                     isFullScreen = false;
+                    pendingAutoAdvanceDouyin = false;
                     hideIptvFullscreenHud();
                     updateClock();
-                    macVideo.muted = !appSettings.previewSound;
+                    applyPreviewOrFullscreenAudio();
                     macVideo.style.objectFit = 'cover';
                     document.getElementById('sidebar').style.opacity = '1';
                     document.getElementById('mainContent').style.opacity = '1';
@@ -2067,6 +2628,7 @@
                     e.preventDefault();
                     closeSettingsModal();
                     closePasswordModal();
+                    closePowerModal();
                     return;
                 }
                 if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -2132,6 +2694,8 @@
                     } else if (col === 0) {
                         if (row === -1) nextEl = findTargetFocusable(1, 0);
                         else if (row === 3) nextEl = pornUnlocked ? findTargetFocusable(4, 0) : findTargetFocusable(5, 0);
+                        else if (row === 5) nextEl = findTargetFocusable(6, 0);
+                        else if (row === 6) nextEl = findTargetFocusable(6, 0);
                         else nextEl = findTargetFocusable(row + 1, 0);
                     } else {
                         nextEl = findTargetFocusable(row, 0);
@@ -2152,7 +2716,6 @@
                             nextEl = findTargetFocusable(1, 0);
                             break;
                         }
-                        // 修复 8 (Round 4)：当流媒体丸形菜单处于展开状态时，按上键收起变为折叠状态
                         if (currentTrackRow === 3 && douyinPillsExpanded) {
                             douyinPillsExpanded = false;
                             renderDouyinSeasonBar();
@@ -2160,11 +2723,28 @@
                             if (collapsedPill) setFocus(collapsedPill);
                             return;
                         }
+                        // 任务 6 (Round 5)：限制级丸形菜单按上键逐级收起（二级子文件夹 -> 一级菜单 -> 折叠态）
+                        if (currentTrackRow === 4 && pornPillsExpanded) {
+                            if (pornMenuLevel === 2) {
+                                pornMenuLevel = 1;
+                                renderPornSeasonBar();
+                                var priOtherPill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
+                                if (priOtherPill) setFocus(priOtherPill);
+                                return;
+                            } else {
+                                pornPillsExpanded = false;
+                                renderPornSeasonBar();
+                                var collapsedPornPill = findTargetFocusable(0, 1);
+                                if (collapsedPornPill) setFocus(collapsedPornPill);
+                                return;
+                            }
+                        }
                         nextEl = findTargetFocusable(currentTrackRow, 0);
                         break;
                     } else if (col === 0) {
                         if (row === 1) nextEl = findTargetFocusable(-1, 0);
                         else if (row === 5) nextEl = pornUnlocked ? findTargetFocusable(4, 0) : findTargetFocusable(3, 0);
+                        else if (row === 6) nextEl = findTargetFocusable(5, 0);
                         else nextEl = findTargetFocusable(row - 1, 0);
                     } else {
                         if (document.getElementById('seasonBar').classList.contains('active')) {
@@ -2182,6 +2762,11 @@
                         renderDouyinSeasonBar();
                         var expCol = Math.min(DOUYIN_CATEGORIES.length, Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2));
                         nextEl = findTargetFocusable(0, expCol) || findTargetFocusable(0, 1);
+                    } else if (row === 0 && currentTrackRow === 4 && !pornPillsExpanded) {
+                        pornPillsExpanded = true;
+                        renderPornSeasonBar();
+                        var pCol = (pornMenuLevel === 1) ? (activePornPrimaryTab === 'brands' ? 2 : 1) : Math.max(2, PORN_FOLDER_LIST.indexOf(activePornFolder) + 2);
+                        nextEl = findTargetFocusable(0, pCol) || findTargetFocusable(0, 1);
                     } else nextEl = findTargetFocusable(row, col + 1);
                     break;
                 case 'ArrowLeft':
@@ -2190,6 +2775,13 @@
                     else if (col === 1) {
                         if (row === 0) {
                             if (activeSeriesView) { exitSeriesEpisodes(); return; }
+                            if (currentTrackRow === 4 && pornPillsExpanded && pornMenuLevel === 2) {
+                                pornMenuLevel = 1;
+                                renderPornSeasonBar();
+                                var backToOther = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
+                                if (backToOther) setFocus(backToOther);
+                                return;
+                            }
                             nextEl = findTargetFocusable(currentTrackRow, 0);
                             break;
                         }
@@ -2200,7 +2792,6 @@
                 case 'Enter':
                     e.preventDefault();
                     if (row === 0) {
-                        // 修复 8 (Round 4)：点击或按回车展开折叠的流媒体丸形菜单
                         if (currentTrackRow === 3 && !douyinPillsExpanded) {
                             douyinPillsExpanded = true;
                             renderDouyinSeasonBar();
@@ -2208,6 +2799,36 @@
                             var targetExpPill = findTargetFocusable(0, actCol) || findTargetFocusable(0, 1);
                             if (targetExpPill) setFocus(targetExpPill);
                             return;
+                        }
+                        if (currentTrackRow === 4) {
+                            if (!pornPillsExpanded) {
+                                pornPillsExpanded = true;
+                                renderPornSeasonBar();
+                                var targetPornCol = (pornMenuLevel === 1)
+                                    ? (activePornPrimaryTab === 'brands' ? 1 : 2)
+                                    : Math.max(2, PORN_FOLDER_LIST.indexOf(activePornFolder) + 2);
+                                var expPornPill = findTargetFocusable(0, targetPornCol) || findTargetFocusable(0, 1);
+                                if (expPornPill) setFocus(expPornPill);
+                                return;
+                            }
+                            if (currentFocusEl.getAttribute('data-porn-primary') === 'others') {
+                                activePornPrimaryTab = 'others';
+                                pornMenuLevel = 2;
+                                syncPornRowData();
+                                currentTrackRow = -1;
+                                renderTrack(4);
+                                var fIndex = Math.max(0, PORN_FOLDER_LIST.indexOf(activePornFolder));
+                                var subFolderPill = findTargetFocusable(0, fIndex + 2) || findTargetFocusable(0, 1);
+                                if (subFolderPill) setFocus(subFolderPill);
+                                return;
+                            }
+                            if (currentFocusEl.getAttribute('data-porn-back') === '1') {
+                                pornMenuLevel = 1;
+                                renderPornSeasonBar();
+                                var l1Pill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
+                                if (l1Pill) setFocus(l1Pill);
+                                return;
+                            }
                         }
                         var tRow = activeSeriesView ? 1 : currentTrackRow;
                         nextEl = getRememberedCard(tRow);
@@ -2287,7 +2908,7 @@
             });
         }
 
-        // ================= 修复 1 & 4 (Round 4)：日本电视台风格两行顶部居中天气速报（每30分钟一次）与实时特殊天气预警推送 =================
+        // ================= 修复 1 & 4 (Round 4) & 任务 11 (Round 5)：日本电视台风格两行顶部居中天气速报与实时预警推送 =================
         var weatherHideTimer = null;
         var weatherFollowupTimer = null;
         var lastWeatherAlertKey = '';
@@ -2305,7 +2926,7 @@
             if (weatherHideTimer) clearTimeout(weatherHideTimer);
             weatherHideTimer = setTimeout(function() {
                 el.classList.remove('visible');
-            }, durationMs || 11000);
+            }, durationMs || 15000);
         }
 
         function getMacNativeGeolocation() {
@@ -2319,8 +2940,8 @@
             });
         }
 
-        // isRoutineSchedule = true：每30分钟一次（或启动时）展示常规“气象速报 阴 22°C”；
-        // isRoutineSchedule = false：后台高频轮询特殊天气（分钟级降水开始/即将停止/结束、AQI超标、湿度超标、灾害预警），检测到即实时推送
+        // isRoutineSchedule = true：每30分钟一次定时展示常规气象速报（每次展示 15 秒，间隔 1 分钟播报下一条）；
+        // isRoutineSchedule = false：后台高频轮询特殊天气与灾害预警，检测到即实时推送（刚进入 App 时不触发常规气象速报）
         async function pollWeatherBroadcast(isRoutineSchedule) {
             try {
                 var coords = await getMacNativeGeolocation();
@@ -2337,18 +2958,18 @@
 
                 if (isRoutineSchedule) {
                     if (routineText) {
-                        displayWeatherTelop(routineText, areasText, agencyText, 11000);
+                        displayWeatherTelop(routineText, areasText, agencyText, 15000);
                     }
                     if (warnText && warnKey && warnKey !== lastWeatherAlertKey) {
                         lastWeatherAlertKey = warnKey;
                         if (weatherFollowupTimer) clearTimeout(weatherFollowupTimer);
                         weatherFollowupTimer = setTimeout(function() {
-                            displayWeatherTelop(warnText, areasText, agencyText, 12000);
-                        }, 11500);
+                            displayWeatherTelop(warnText, areasText, agencyText, 15000);
+                        }, 75000);
                     }
                 } else if (warnText && warnKey && warnKey !== lastWeatherAlertKey) {
                     lastWeatherAlertKey = warnKey;
-                    displayWeatherTelop(warnText, areasText, agencyText, 12000);
+                    displayWeatherTelop(warnText, areasText, agencyText, 15000);
                 }
             } catch (e) {}
         }
@@ -2371,6 +2992,17 @@
                 globalConfig.api = data.api;
                 if (data.api.epg_url && !localStorage.getItem('fc_epg_url')) {
                     appSettings.epgUrl = data.api.epg_url;
+                }
+            }
+            // 任务 6 (Round 5)：支持从 GitHub config.json 读取 porn_brands 或 rows["4_brands"] 厂牌配置（含 logo_url、desc、img、folder）
+            var remoteBrands = data.porn_brands || data.brands || (data.rows && data.rows["4_brands"]);
+            if (Array.isArray(remoteBrands) && remoteBrands.length > 0) {
+                PORN_BRANDS_CONFIG = remoteBrands;
+                if (currentTrackRow === 4 && activePornPrimaryTab === 'brands') {
+                    syncPornRowData();
+                    currentTrackRow = -1;
+                    renderTrack(4);
+                    if (currentFocusEl) setFocus(currentFocusEl);
                 }
             }
             if (data.rows && data.rows["2"]) {
@@ -2441,8 +3073,8 @@
             refreshEpgFromBackend();
             setInterval(refreshEpgFromBackend, 5 * 60 * 1000);
 
-            // 4. 修复 4 (Round 4)：气象速报每 30 分钟显示一次；特殊天气提醒和预警每 2 分钟实时检测并即刻推送
-            setTimeout(() => pollWeatherBroadcast(true), 1200);
+            // 4. 任务 11 (Round 5)：取消刚进入 App 时的常规气象速报，仅保留每 30 分钟定时气象速报与实时特殊天气预警推送
+            setTimeout(() => pollWeatherBroadcast(false), 3500);
             setInterval(() => pollWeatherBroadcast(true), 30 * 60 * 1000);
             setInterval(() => pollWeatherBroadcast(false), 2 * 60 * 1000);
 

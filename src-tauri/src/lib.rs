@@ -68,6 +68,9 @@ fn build_ffmpeg_args(
 ) -> Vec<String> {
     let mut args = vec!["-v".to_string(), "error".to_string()];
     let v_codec = if use_sw_fallback { "libx264" } else { "h264_videotoolbox" };
+    // 任务 1 (Round 5)：全链路音量均衡与峰值硬限幅滤镜，严控所有视频（尤其高响度抖音视频）不超过上限
+    let audio_norm_std = "acompressor=threshold=-18dB:ratio=3.5:attack=5:release=85:makeup=1,alimiter=limit=0.75:attack=5:release=50";
+    let audio_norm_douyin = "acompressor=threshold=-20dB:ratio=5:attack=4:release=75:makeup=1,alimiter=limit=0.55:attack=4:release=45";
 
     if is_local_file {
         args.extend(vec![
@@ -85,10 +88,14 @@ fn build_ffmpeg_args(
         if use_sw_fallback {
             args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
         } else {
-            args.extend(vec!["-allow_sw".to_string(), "1".to_string()]);
+            args.extend(vec![
+                "-realtime".to_string(), "1".to_string(),
+                "-allow_sw".to_string(), "1".to_string(),
+            ]);
         }
         args.extend(vec![
             "-b:v".to_string(), "8M".to_string(),
+            "-af".to_string(), audio_norm_std.to_string(),
             "-c:a".to_string(), "aac".to_string(),
             "-b:a".to_string(), "192k".to_string(),
             "-ar".to_string(), "44100".to_string(),
@@ -117,8 +124,9 @@ fn build_ffmpeg_args(
         if can_stream_copy_h264 {
             args.extend(vec![
                 "-c:v".to_string(), "copy".to_string(),
+                "-af".to_string(), audio_norm_douyin.to_string(),
                 "-c:a".to_string(), "aac".to_string(),
-                "-b:a".to_string(), "128k".to_string(),
+                "-b:a".to_string(), "160k".to_string(),
                 "-ar".to_string(), "44100".to_string(),
                 "-ac".to_string(), "2".to_string(),
                 "-f".to_string(), "hls".to_string(),
@@ -128,19 +136,27 @@ fn build_ffmpeg_args(
                 m3u8_path.to_string()
             ]);
         } else {
+            // 任务 10 (Round 5)：大屏连接下抖音高帧率流畅度优化（保持原始高帧率 passthrough + 10M 高码率硬件加速）
             args.extend(vec![
+                "-fps_mode".to_string(), "passthrough".to_string(),
                 "-vf".to_string(), "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
                 "-c:v".to_string(), v_codec.to_string(),
             ]);
             if use_sw_fallback {
                 args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
             } else {
-                args.extend(vec!["-allow_sw".to_string(), "1".to_string()]);
+                args.extend(vec![
+                    "-realtime".to_string(), "1".to_string(),
+                    "-allow_sw".to_string(), "1".to_string(),
+                ]);
             }
             args.extend(vec![
-                "-b:v".to_string(), "6M".to_string(),
+                "-b:v".to_string(), "10M".to_string(),
+                "-maxrate".to_string(), "14M".to_string(),
+                "-bufsize".to_string(), "20M".to_string(),
+                "-af".to_string(), audio_norm_douyin.to_string(),
                 "-c:a".to_string(), "aac".to_string(),
-                "-b:a".to_string(), "128k".to_string(),
+                "-b:a".to_string(), "160k".to_string(),
                 "-ar".to_string(), "44100".to_string(),
                 "-ac".to_string(), "2".to_string(),
                 "-f".to_string(), "hls".to_string(),
@@ -172,6 +188,7 @@ fn build_ffmpeg_args(
         args.extend(vec![
             "-b:v".to_string(), "6M".to_string(),
             "-g".to_string(), "50".to_string(),
+            "-af".to_string(), audio_norm_std.to_string(),
             "-c:a".to_string(), "aac".to_string(),
             "-b:a".to_string(), "128k".to_string(),
             "-ar".to_string(), "44100".to_string(),
@@ -443,7 +460,11 @@ async fn extract_video_thumb(path: String, state: State<'_, AppState>) -> Result
     let filename = format!("thumb_{}.jpg", hash_id);
     let full_out = format!("{}/{}", thumb_dir, filename);
 
-    if Path::new(&full_out).exists() {
+    let is_valid_jpg = |p: &str| -> bool {
+        fs::metadata(p).map(|m| m.len() > 256).unwrap_or(false)
+    };
+
+    if is_valid_jpg(&full_out) {
         return Ok(format!("http://127.0.0.1:8765/thumbs/{}", filename));
     }
 
@@ -452,19 +473,31 @@ async fn extract_video_thumb(path: String, state: State<'_, AppState>) -> Result
 
     tauri::async_runtime::spawn_blocking(move || {
         let _guard = lock_arc.lock().unwrap();
-        if !Path::new(&full_out_clone).exists() {
+        if !is_valid_jpg(&full_out_clone) {
+            let _ = fs::remove_file(&full_out_clone);
             let ffmpeg_bin = get_ffmpeg_bin();
-            let status = Command::new(ffmpeg_bin)
-                .args(&["-y", "-v", "error", "-threads", "2", "-ss", "5", "-i", &path, "-frames:v", "1", "-vf", "scale=480:-1", "-q:v", "4", &full_out_clone])
-                .status();
-
-            if status.is_err() || !Path::new(&full_out_clone).exists() {
+            for seek_sec in &["5", "1", "0"] {
                 let _ = Command::new(ffmpeg_bin)
-                    .args(&["-y", "-v", "error", "-threads", "2", "-ss", "0", "-i", &path, "-frames:v", "1", "-vf", "scale=480:-1", "-q:v", "4", &full_out_clone])
+                    .args(&[
+                        "-y",
+                        "-v", "error",
+                        "-fflags", "+genpts+igndts+discardcorrupt",
+                        "-threads", "2",
+                        "-ss", seek_sec,
+                        "-i", &path,
+                        "-frames:v", "1",
+                        "-vf", "scale=480:-2",
+                        "-q:v", "4",
+                        &full_out_clone,
+                    ])
                     .status();
+                if is_valid_jpg(&full_out_clone) {
+                    break;
+                }
+                let _ = fs::remove_file(&full_out_clone);
             }
         }
-        if Path::new(&full_out_clone).exists() {
+        if is_valid_jpg(&full_out_clone) {
             Ok(format!("http://127.0.0.1:8765/thumbs/{}", filename))
         } else {
             Err("截帧失败".into())
@@ -1487,8 +1520,18 @@ fn ensure_douyin_scraper(
                 const hasBitRateList = Array.isArray(v.bit_rate) && v.bit_rate.length > 0;
                 let allBitRatesAreByteVC2 = hasBitRateList;
 
+                // 任务 10 (Round 5)：按帧率 (FPS, 优先 60fps) 与码率 (bit_rate) 降序排列，确保大屏下优先拉取最高帧率与最高画质源
+                const sortedBitRates = hasBitRateList ? v.bit_rate.slice().sort((a, b) => {
+                    const fpsA = Number((a && (a.FPS || a.fps)) || 30);
+                    const fpsB = Number((b && (b.FPS || b.fps)) || 30);
+                    if (fpsB !== fpsA) return fpsB - fpsA;
+                    const brA = Number((a && a.bit_rate) || 0);
+                    const brB = Number((b && b.bit_rate) || 0);
+                    return brB - brA;
+                }) : [];
+
                 if (hasBitRateList) {
-                    for (const br of v.bit_rate) {
+                    for (const br of sortedBitRates) {
                         if (!br) continue;
                         if (!isByteVC2Entry(br)) allBitRatesAreByteVC2 = false;
                         if (isByteVC2Entry(br) || br.format === 'dash') continue;
@@ -1503,7 +1546,7 @@ fn ensure_douyin_scraper(
                 if (v.play_addr_lowbr && !isByteVC2Entry(v.play_addr_lowbr)) appendUrlsFromAddr(v.play_addr_lowbr, candidates);
 
                 if (hasBitRateList) {
-                    for (const br of v.bit_rate) {
+                    for (const br of sortedBitRates) {
                         if (!br || isByteVC2Entry(br) || br.format === 'dash') continue;
                         if ((br.is_bytevc1 === 1 || br.is_h265 === 1) && br.play_addr) {
                             appendUrlsFromAddr(br.play_addr, candidates);
@@ -1587,32 +1630,39 @@ fn ensure_douyin_scraper(
             };
 
             window.__FC_EMPTY_LOAD_COUNT__ = 0;
+            // 任务 13 & 14 (Round 5)：全容器智能无限滚动触发 + 枯竭自动续流，确保焦点靠近末尾与全屏连播时始终能预加载新视频流
             window.__FC_LOAD_MORE__ = function() {
                 const beforeSeen = window.__FC_SEEN__.size;
-                for (let step = 0; step < 3; step++) {
+                for (let step = 0; step < 4; step++) {
                     setTimeout(() => {
                         try {
-                            const nextBtn = document.querySelector('[data-e2e="video-switch-next-arrow"], .xgplayer-playswitch-next');
+                            const nextBtn = document.querySelector('[data-e2e="video-switch-next-arrow"], .xgplayer-playswitch-next, [class*="playswitch-next"]');
                             if (nextBtn) nextBtn.click();
                             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40, bubbles: true }));
-                            window.scrollBy({ top: 1000, behavior: 'smooth' });
-                            document.querySelectorAll('.route-scroll-container, [class*="scroll-container"], main').forEach(el => {
-                                try { el.scrollTop += 1000; } catch(e) {}
-                            });
+                            window.dispatchEvent(new WheelEvent('wheel', { deltaY: 1200, bubbles: true }));
+                            window.scrollBy({ top: 1400, behavior: 'smooth' });
+                            const allDivs = document.querySelectorAll('div, main, section, ul');
+                            for (let i = 0; i < allDivs.length; i++) {
+                                const el = allDivs[i];
+                                if (el.scrollHeight > el.clientHeight + 40) {
+                                    el.scrollTop = el.scrollTop + 1400;
+                                    el.dispatchEvent(new Event('scroll', { bubbles: true }));
+                                }
+                            }
                         } catch(e) {}
-                    }, step * 220);
+                    }, step * 200);
                 }
                 setTimeout(() => {
                     if (window.__FC_SEEN__.size === beforeSeen && window.__FC_QUEUE__.length === 0 && !document.getElementById('fc-login-bar')) {
                         window.__FC_EMPTY_LOAD_COUNT__ = (window.__FC_EMPTY_LOAD_COUNT__ || 0) + 1;
-                        if (window.__FC_EMPTY_LOAD_COUNT__ >= 3) {
+                        if (window.__FC_EMPTY_LOAD_COUNT__ >= 2) {
                             window.__FC_EMPTY_LOAD_COUNT__ = 0;
                             window.location.reload();
                         }
                     } else {
                         window.__FC_EMPTY_LOAD_COUNT__ = 0;
                     }
-                }, 1500);
+                }, 1400);
             };
 
             window.__FC_SHOW_LOGIN_BAR__ = function() {
@@ -1786,6 +1836,32 @@ async fn hide_douyin_login(app: AppHandle, state: State<'_, AppState>) -> Result
     Ok(())
 }
 
+// 任务 12 (Round 5)：电源管理——彻底清理子进程并安全关闭退出或重启应用
+#[tauri::command]
+async fn quit_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if let Ok(mut guard) = state.ffmpeg_process.lock() {
+        if let Some((_, mut child)) = guard.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+    cleanup_orphan_hls_ffmpeg();
+    app.exit(0);
+    Ok(())
+}
+
+#[tauri::command]
+async fn restart_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if let Ok(mut guard) = state.ffmpeg_process.lock() {
+        if let Some((_, mut child)) = guard.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+    cleanup_orphan_hls_ffmpeg();
+    app.restart();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     cleanup_orphan_hls_ffmpeg();
@@ -1871,7 +1947,9 @@ pub fn run() {
             fetch_weather_broadcast,
             get_douyin_feed,
             open_douyin_login,
-            hide_douyin_login
+            hide_douyin_login,
+            quit_app,
+            restart_app
         ])
         .run(tauri::generate_context!())
         .expect("运行 Tauri 应用失败");
