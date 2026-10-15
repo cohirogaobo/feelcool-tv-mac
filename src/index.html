@@ -17,23 +17,23 @@
         .top-right-clock { position: fixed; top: 28px; right: 38px; z-index: 80; background: rgba(28, 28, 30, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 16px; border-radius: 999px; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.9); letter-spacing: 0.5px; opacity: 0; transform: translateY(-8px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .top-right-clock.visible { opacity: 1; transform: translateY(0); }
 
-        /* 修复 1 (Round 4) & 任务 11 (Round 5)：日本电视台风格顶部中央两行天气速报/预警，位置再微调下移 */
+        /* 修复 1 (Round 4) & 任务 11 (Round 5) & 任务 3 (Round 6)：日本电视台风格顶部中央两行天气速报/预警，字号进一步放大 */
         .jp-weather-telop {
             position: fixed;
             top: 58px;
             left: 50%;
             transform: translateX(-50%) translateY(-8px);
-            width: min(680px, 60vw);
-            min-width: 460px;
+            width: min(820px, 68vw);
+            min-width: 540px;
             z-index: 95;
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
-            font-size: 24px;
-            font-weight: 600;
-            letter-spacing: 1.4px;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1.6px;
             line-height: 1.35;
             color: #ffffff;
             white-space: nowrap;
@@ -41,15 +41,15 @@
             transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
             -webkit-font-smoothing: antialiased;
             text-shadow:
-                -1.5px -1.5px 0 #000,
-                 1.5px -1.5px 0 #000,
-                -1.5px  1.5px 0 #000,
-                 1.5px  1.5px 0 #000,
-                 0px   -1.5px 0 #000,
-                 0px    1.5px 0 #000,
-                -1.5px  0px   0 #000,
-                 1.5px  0px   0 #000,
-                 0px    3px   8px rgba(0, 0, 0, 0.85);
+                -2px -2px 0 #000,
+                 2px -2px 0 #000,
+                -2px  2px 0 #000,
+                 2px  2px 0 #000,
+                 0px -2px 0 #000,
+                 0px  2px 0 #000,
+                -2px  0px 0 #000,
+                 2px  0px 0 #000,
+                 0px  4px 10px rgba(0, 0, 0, 0.88);
         }
         .jp-weather-telop.visible {
             opacity: 1;
@@ -60,18 +60,18 @@
             align-items: baseline;
             justify-content: space-between;
             width: 100%;
-            gap: 24px;
+            gap: 28px;
         }
         .jp-telop-row2 {
             display: flex;
             align-items: baseline;
             justify-content: flex-end;
             width: 100%;
-            font-size: 20px;
-            letter-spacing: 1.8px;
+            font-size: 25px;
+            letter-spacing: 2px;
         }
 
-        /* 修复 2 (Round 4)：IPTV 全屏换台左下角大屏信息块 */
+        /* 修复 2 (Round 4) & 任务 8 (Round 6)：IPTV 与抖音全屏播放左下角大屏信息块 */
         .iptv-fullscreen-hud {
             position: fixed;
             left: 58px;
@@ -132,7 +132,7 @@
         .sidebar-clock { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7); pointer-events: none; }
         .sidebar.collapsed .user-name, .sidebar.collapsed .sidebar-clock, .sidebar.collapsed .nav-section-title { opacity: 0; max-width: 0; max-height: 0; margin: 0; display: none; }
         
-        .nav-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; overflow-x: hidden; flex-grow: 1; padding: 4px; margin: -4px; }
+        .nav-list { display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex-grow: 1; padding: 4px; margin: -4px; }
         .settings-section { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
         .nav-item { display: flex; align-items: center; width: 170px; height: 44px; padding: 0 12px; margin: 0 auto; box-sizing: border-box; border-radius: 12px; flex-shrink: 0; font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.65); white-space: nowrap; cursor: pointer; outline: none; transition: width var(--animation-speed) cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
         .sidebar.collapsed .nav-item { width: 44px; padding: 0; justify-content: center; }
@@ -187,13 +187,24 @@
         /* 修复 6：剧集文字介绍强制顶格显示 */
         .hero-desc { font-size: 14px; color: rgba(255, 255, 255, 0.85); max-width: 620px; line-height: 1.38; margin-bottom: 10px; font-weight: 400; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-indent: 0 !important; }
 
-        .season-bar { display: none; gap: 10px; margin-bottom: 10px; align-items: center; z-index: 6; flex-wrap: wrap; }
+        /* 任务 4 (Round 6)：丸形菜单展开与折叠丝滑过渡动画 */
+        .season-bar { display: none; gap: 10px; margin-bottom: 10px; align-items: center; z-index: 6; flex-wrap: wrap; transition: opacity 0.26s cubic-bezier(0.22, 1, 0.36, 1), transform 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
         .season-bar.active { display: flex; }
         /* 任务 2 (Round 5)：丸形菜单内嵌精致右向/左向 SVG 箭头对齐样式 */
-        .season-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s ease; }
+        .season-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
+        .season-pill.pill-anim-expand { animation: pillExpandSpring 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .season-pill.pill-anim-collapse { animation: pillCollapseSpring 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        @keyframes pillExpandSpring {
+            0% { opacity: 0; transform: translate3d(-12px, 0, 0) scale(0.92); }
+            100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+        }
+        @keyframes pillCollapseSpring {
+            0% { opacity: 0.35; transform: translate3d(10px, 0, 0) scale(0.95); }
+            100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+        }
         .season-pill.current { background: rgba(255,255,255,0.22); color: #fff; }
         .season-pill.focused, .season-pill:focus { background: #fff !important; color: #000 !important; border-color: #fff; transform: scale(1.06); box-shadow: 0 6px 16px rgba(0,0,0,0.35); }
-        .pill-chevron-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-right: -2px; }
+        .pill-chevron-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-right: -2px; transition: transform 0.25s ease; }
         .pill-chevron-left-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-left: -2px; }
 
         .carousel-container { width: calc(100% + 90px); height: 240px; margin: -20px -45px; padding: 20px 45px; position: relative; box-sizing: border-box; overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent 0px, black 45px, black calc(100% - 45px), transparent 100%); }
@@ -236,6 +247,53 @@
         .form-label { display: block; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
         .form-input { width: 100%; height: 42px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.4); color: #fff; padding: 0 14px; font-size: 14px; box-sizing: border-box; outline: none; transition: all 0.2s ease; }
         .form-input:focus, .form-input.modal-focused { border-color: #fff !important; background: rgba(0,0,0,0.65); box-shadow: 0 0 0 4px rgba(255,255,255,0.15); transform: scale(1.01); }
+        /* 任务 6 (Round 6)：密码输入框内专属从左向右铺满半透明红/绿动画容器 */
+        .pwd-input-wrap {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .pwd-input-wrap .form-input {
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.42);
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .pwd-input-wrap .form-input:focus,
+        .pwd-input-wrap .form-input.modal-focused {
+            background: rgba(0, 0, 0, 0.48);
+            transform: none;
+        }
+        .pwd-fill-bar {
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            z-index: 3;
+            pointer-events: none;
+            transform: scaleX(0);
+            transform-origin: left center;
+            opacity: 0;
+        }
+        .pwd-fill-bar.fill-error {
+            background: linear-gradient(90deg, rgba(255, 69, 58, 0.48) 0%, rgba(255, 59, 48, 0.62) 100%);
+            animation: pwdSweepFillError 0.56s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .pwd-fill-bar.fill-success {
+            background: linear-gradient(90deg, rgba(48, 209, 88, 0.46) 0%, rgba(52, 199, 89, 0.62) 100%);
+            animation: pwdSweepFillSuccess 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes pwdSweepFillError {
+            0% { transform: scaleX(0); opacity: 1; }
+            62% { transform: scaleX(1); opacity: 1; }
+            100% { transform: scaleX(1); opacity: 0; }
+        }
+        @keyframes pwdSweepFillSuccess {
+            0% { transform: scaleX(0); opacity: 1; }
+            100% { transform: scaleX(1); opacity: 1; }
+        }
         .modal-actions { display: flex; justify-content: flex-end; gap: 14px; margin-top: 22px; }
         .btn { height: 44px; padding: 0 24px; border-radius: 12px; border: 2px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s ease; }
         .btn-cancel { background: rgba(255,255,255,0.12); color: #fff; }
@@ -390,7 +448,10 @@
             <h2 class="modal-title" style="font-size: 28px; margin-bottom: 10px;">解锁限制级空间</h2>
             <div class="modal-desc" style="font-size: 15px; margin-bottom: 28px;">请输入访问密码以显示隐藏导航项（方向键切换按钮，再次长按头像可锁定）。</div>
             <div class="form-group">
-                <input type="password" class="form-input" id="inputUnlockPwd" placeholder="输入密码..." style="height: 60px; text-align: center; font-size: 28px; letter-spacing: 8px; border-radius: 16px;">
+                <div class="pwd-input-wrap" id="pwdInputWrap">
+                    <div class="pwd-fill-bar" id="pwdFillBar"></div>
+                    <input type="password" class="form-input" id="inputUnlockPwd" placeholder="输入密码..." style="height: 60px; text-align: center; font-size: 28px; letter-spacing: 8px; border-radius: 16px;">
+                </div>
             </div>
             <div class="modal-actions" style="margin-top: 32px; justify-content: space-between;">
                 <button type="button" class="btn btn-cancel" id="btnCancelPwd" style="width: 47%; height: 52px; font-size: 17px; border-radius: 14px;">取消</button>
@@ -644,7 +705,7 @@
         const PILL_CHEVRON_RIGHT_SVG = '<svg class="pill-chevron-svg" viewBox="0 0 24 24"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41.01z"/></svg>';
         const PILL_CHEVRON_LEFT_SVG = '<svg class="pill-chevron-left-svg" viewBox="0 0 24 24"><path d="M14.71 6.71a1 1 0 0 1 0 1.41L10.83 12l3.88 3.88a1 1 0 1 1-1.41 1.41L8.71 13.7a1 1 0 0 1 0-1.41L13.3 6.7a1 1 0 0 1 1.41.01z"/></svg>';
 
-        // 任务 8 (Round 5)：有线电视部分偏小的台标再适当放大一点点，兼顾窄台标与超宽台标的饱满度
+        // 任务 5 (Round 6)：恢复原本已经够大的近方形/常规宽幅台标内边距（29px 34px / 24px），仅针对因超宽扁平比 (ratio > 2.60) 或小尺寸导致视觉偏小的台标适度放大
         function fitSingleImage(img) {
             if (!img) return;
             var itemEl = img.closest('.media-item');
@@ -663,16 +724,19 @@
                     img.style.objectFit = 'cover';
                     img.style.padding = '0px';
                 } else if (ratio < 1.95) {
+                    // 原本已经很大的近方形/竖向台标：严格保持 29px 34px 不放大
                     img.style.objectFit = 'contain';
-                    img.style.padding = '21px 25px';
+                    img.style.padding = '29px 34px';
                     img.style.boxSizing = 'border-box';
-                } else if (ratio <= 2.65) {
+                } else if (ratio > 2.62 || img.naturalWidth <= 165 || img.naturalHeight <= 68) {
+                    // 仅针对视觉上偏小的超宽扁平台标或小分辨率台标：适度减小内边距使其放大一点
                     img.style.objectFit = 'contain';
-                    img.style.padding = '17px 19px';
+                    img.style.padding = '16px 15px';
                     img.style.boxSizing = 'border-box';
                 } else {
+                    // 常规宽幅台标（如标准 CCTV 台标）：严格保持 24px 不放大
                     img.style.objectFit = 'contain';
-                    img.style.padding = '12px 14px';
+                    img.style.padding = '24px';
                     img.style.boxSizing = 'border-box';
                 }
             }
@@ -776,11 +840,11 @@
         var pornUnlocked = false, isModalOpen = false;
         var activeSeriesView = null, activeSeasonNum = 1, SERIES_GROUPS = {};
         var PORN_GROUPS = {}, PORN_FOLDER_LIST = [], activePornFolder = '';
-        // 任务 6 (Round 5)：限制级引入流媒体同款丸形按钮二级菜单与自动折叠
-        // 一级菜单：'brands' (厂牌，预留从 GitHub config.json 读取 logo、文字介绍、卡片图) 与 'others' (其他，下辖原默认子文件夹二级菜单)
-        var activePornPrimaryTab = 'others'; // 'brands' | 'others'
-        var pornMenuLevel = 1;               // 1: 一级菜单(厂牌 / 其他), 2: 其他下的子文件夹二级菜单
-        var pornPillsExpanded = false;       // 焦点下移到卡片时自动折叠为单个丸形按钮
+        // 任务 4 (Round 6)：限制级默认直接展示“厂牌”和“其他”两个一级选项，且默认选中“厂牌” ('brands')
+        // 点击/回车“其他”直接展开所有二级子文件夹菜单（不显示返回按钮，按上键返回一级菜单）
+        var activePornPrimaryTab = 'brands'; // 'brands' | 'others' (默认选中厂牌)
+        var pornMenuLevel = 1;               // 1: 默认展示“厂牌”与“其他”, 2: 展开“其他”下的全部子文件夹
+        var pornBarAnimType = '';            // 'expand' | 'collapse' | ''
         var activePornBrandKey = '';         // 当在厂牌下点进某个关联子文件夹时记录
         var PORN_BRANDS_CONFIG = [
             {
@@ -809,6 +873,7 @@
         ];
         var activeDouyinCategory = 'discover';
         var douyinPillsExpanded = false;
+        var douyinBarAnimType = '';
         var pendingAutoAdvanceDouyin = false;
 
         var globalConfig = { user: { name: "高博", avatar_url: "" }, api: { tmdb_api_key: "f7762624a95e4c3823500736d40162cd", epg_url: DEFAULT_EPG_URL } };
@@ -1152,8 +1217,15 @@
             try {
                 const files = await invoke('scan_local_folder', { path: folderPath });
                 if (!files || files.length === 0) {
-                    ROW_DATA[targetRowId] = [{ title: "文件夹为空", sub: "未在 " + folderPath + " 下找到视频文件", desc: "", img: DEFAULT_LOCAL_CARD_SVG, action: "modal:settings" }];
-                    if (currentTrackRow === targetRowId) { currentTrackRow = -1; renderTrack(targetRowId); }
+                    if (isPorn) {
+                        PORN_GROUPS = {};
+                        PORN_FOLDER_LIST = [];
+                        syncPornRowData();
+                        if (currentTrackRow === 4) { currentTrackRow = -1; renderTrack(4); }
+                    } else {
+                        ROW_DATA[targetRowId] = [{ title: "文件夹为空", sub: "未在 " + folderPath + " 下找到视频文件", desc: "", img: DEFAULT_LOCAL_CARD_SVG, action: "modal:settings" }];
+                        if (currentTrackRow === targetRowId) { currentTrackRow = -1; renderTrack(targetRowId); }
+                    }
                     return;
                 }
 
@@ -1285,30 +1357,47 @@
             } catch (err) {}
         }
 
-        // 任务 5 & 7 (Round 5)：可视窗口优先 + 延迟节流串行缩略图提取队列，彻底消除开启限制级或切换目录时的卡顿
+        // 任务 7 (Round 6)：严格的动画空闲期缩略图提取机制——焦点移动或侧边栏动画期间绝不启动 FFmpeg 截帧，彻底杜绝开启限制级后任何动画卡顿
         var thumbQueue = [];
         var thumbWorkerBusy = false;
         var thumbBatchToken = 0;
         var thumbDelayTimer = null;
+        var lastUiMotionTime = 0;
+
+        function markUiMotion() {
+            lastUiMotionTime = Date.now();
+        }
 
         function scheduleThumbTasks(tasks, centerIndex) {
             var myToken = ++thumbBatchToken;
             if (thumbDelayTimer) { clearTimeout(thumbDelayTimer); thumbDelayTimer = null; }
-            var startIdx = Math.max(0, (centerIndex || 0) - 2);
-            var endIdx = Math.min(tasks.length, startIdx + 14);
-            var windowed = tasks.slice(startIdx, endIdx);
+            var startIdx = Math.max(0, (centerIndex || 0) - 1);
+            var endIdx = Math.min(tasks.length, startIdx + 7);
+            var windowed = [];
+            for (var i = startIdx; i < endIdx; i++) {
+                if (tasks[i] && tasks[i].path && !iptvFrameCache[tasks[i].path]) {
+                    windowed.push(tasks[i]);
+                }
+            }
             thumbQueue = windowed;
+            if (thumbQueue.length === 0) return;
             thumbDelayTimer = setTimeout(function() {
                 processNextThumbTask(myToken);
-            }, 420);
+            }, 1150);
         }
 
         function enqueueSingleThumbTask(path, imgId) {
             if (!path || !imgId) return;
             var exists = thumbQueue.some(t => t.path === path && t.imgId === imgId);
-            if (!exists) {
-                thumbQueue.unshift({ path: path, imgId: imgId });
-                if (!thumbWorkerBusy) processNextThumbTask(thumbBatchToken);
+            if (!exists && thumbQueue.length < 8) {
+                thumbQueue.push({ path: path, imgId: imgId });
+                if (!thumbWorkerBusy && !thumbDelayTimer) {
+                    var myToken = thumbBatchToken;
+                    thumbDelayTimer = setTimeout(function() {
+                        thumbDelayTimer = null;
+                        processNextThumbTask(myToken);
+                    }, 1150);
+                }
             }
         }
 
@@ -1317,6 +1406,11 @@
             thumbWorkerBusy = true;
             while (thumbQueue.length > 0) {
                 if (token !== thumbBatchToken) break;
+                var sinceMotion = Date.now() - lastUiMotionTime;
+                if (sinceMotion < 950) {
+                    await new Promise(r => setTimeout(r, 980 - sinceMotion));
+                    if (token !== thumbBatchToken) break;
+                }
                 var task = thumbQueue.shift();
                 if (!task || !task.path) continue;
                 var imgEl = document.getElementById(task.imgId);
@@ -1344,7 +1438,7 @@
                         fallbackEl.style.opacity = '1';
                     }
                 }
-                await new Promise(r => setTimeout(r, 110));
+                await new Promise(r => setTimeout(r, 260));
             }
             thumbWorkerBusy = false;
         }
@@ -1432,9 +1526,15 @@
         }
 
         function setVideoLayerVisible(visible) {
-            macVideo.style.opacity = visible ? '1' : '0';
+            if (visible) {
+                macVideo.style.visibility = 'visible';
+                macVideo.style.opacity = '1';
+            } else {
+                macVideo.style.opacity = '0';
+            }
             var bl = document.getElementById('baseLayer');
-            if (bl) bl.style.opacity = visible ? '0' : '1';
+            // 任务 1 (Round 6)：全屏播放模式下始终保持动态波浪背景层透明 (opacity: 0)，彻底消除全屏上下切换视频时闪过动态背景的问题
+            if (bl) bl.style.opacity = (visible || isFullScreen) ? '0' : '1';
         }
 
         // 任务 1 (Round 5)：前端 Web Audio API 实时动态压缩限幅器 + 响度上限控制，确保不改变系统音量下所有视频（尤其抖音）音量不超过安全阈值
@@ -1550,50 +1650,57 @@
             if (iptvHudTimer) { clearTimeout(iptvHudTimer); iptvHudTimer = null; }
         }
 
-        // 任务 9 (Round 5)：确保首帧解码且 videoWidth/videoHeight 布局稳定后再淡入视频图层，防止先闪现小画面再放大
+        // 任务 2 (Round 6)：严格等待视频解码出真实画面且播放进度推进 (currentTime >= 0.06, videoWidth > 0, readyState >= 3)，并在隐藏态下强制完成全视口几何重排后再渐显，100% 根除预览与全屏初段闪现小画面的 bug
+        var activeRevealCleanup = null;
         function revealVideoWhenFrameReady(reqSeq) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+            if (activeRevealCleanup) {
+                activeRevealCleanup();
+                activeRevealCleanup = null;
+            }
             var revealed = false;
+            var cleanup = function() {
+                macVideo.removeEventListener('timeupdate', onCheckFrame);
+                macVideo.removeEventListener('playing', onCheckFrame);
+                macVideo.removeEventListener('loadeddata', onCheckFrame);
+                macVideo.removeEventListener('resize', onCheckFrame);
+            };
+            activeRevealCleanup = cleanup;
+
             var doReveal = function() {
                 if (revealed) return;
-                if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-                if (macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
+                if (reqSeq !== undefined && reqSeq !== streamReqSeq) {
+                    cleanup();
+                    return;
+                }
+                if (macVideo.videoWidth > 0 && macVideo.videoHeight > 0 && macVideo.readyState >= 2 && macVideo.currentTime >= 0.05) {
                     revealed = true;
-                    isVideoReady = true;
-                    setTimeout(function() {
-                        if (reqSeq === undefined || reqSeq === streamReqSeq) {
+                    cleanup();
+                    activeRevealCleanup = null;
+                    // 在完全透明状态下先确立目标 object-fit 与全屏视口尺寸并强制同步重排，消除 AVPlayerLayer 初始小尺寸闪现
+                    macVideo.style.objectFit = (isFullScreen && fullScreenRow === 3) ? 'contain' : 'cover';
+                    macVideo.style.visibility = 'visible';
+                    void macVideo.offsetWidth;
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(function() {
+                            if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                            isVideoReady = true;
                             setVideoLayerVisible(true);
-                        }
-                    }, 95);
-                    onBackgroundVideoStarted();
+                            onBackgroundVideoStarted();
+                        });
+                    });
                 }
             };
-            if (macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
+
+            var onCheckFrame = function() {
                 doReveal();
-                return;
-            }
-            var onFrameEvt = function() {
-                if (macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
-                    macVideo.removeEventListener('loadeddata', onFrameEvt);
-                    macVideo.removeEventListener('playing', onFrameEvt);
-                    macVideo.removeEventListener('resize', onFrameEvt);
-                    doReveal();
-                }
             };
-            macVideo.addEventListener('loadeddata', onFrameEvt);
-            macVideo.addEventListener('playing', onFrameEvt);
-            macVideo.addEventListener('resize', onFrameEvt);
-            setTimeout(function() {
-                macVideo.removeEventListener('loadeddata', onFrameEvt);
-                macVideo.removeEventListener('playing', onFrameEvt);
-                macVideo.removeEventListener('resize', onFrameEvt);
-                if (!revealed && (reqSeq === undefined || reqSeq === streamReqSeq) && !macVideo.paused) {
-                    revealed = true;
-                    isVideoReady = true;
-                    setVideoLayerVisible(true);
-                    onBackgroundVideoStarted();
-                }
-            }, 750);
+
+            macVideo.addEventListener('timeupdate', onCheckFrame);
+            macVideo.addEventListener('playing', onCheckFrame);
+            macVideo.addEventListener('loadeddata', onCheckFrame);
+            macVideo.addEventListener('resize', onCheckFrame);
+            doReveal();
         }
 
         function startVideoPlaybackWithFallback(reqSeq) {
@@ -1614,8 +1721,16 @@
 
         function loadAndPlayVideo(url, isMuted, reqSeq) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
-            setVideoLayerVisible(false);
+            if (activeRevealCleanup) {
+                activeRevealCleanup();
+                activeRevealCleanup = null;
+            }
+            macVideo.style.opacity = '0';
+            macVideo.style.visibility = 'hidden';
+            var bl = document.getElementById('baseLayer');
+            if (bl) bl.style.opacity = isFullScreen ? '0' : '1';
             isVideoReady = false;
+            macVideo.style.objectFit = (isFullScreen && fullScreenRow === 3) ? 'contain' : 'cover';
             applyPreviewOrFullscreenAudio();
             if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                 if (hlsInstance) hlsInstance.destroy();
@@ -1657,13 +1772,12 @@
 
         function onBackgroundVideoStarted() {
             setTimeout(function() {
-                if (currentPlayingStream) {
+                if (currentPlayingStream && currentPlayingStream.indexOf('http') === 0) {
                     try {
                         var canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 360;
                         canvas.getContext('2d').drawImage(macVideo, 0, 0, canvas.width, canvas.height);
                         var dataUrl = canvas.toDataURL('image/jpeg', 0.65);
                         iptvFrameCache[currentPlayingStream] = dataUrl;
-                        localStorage.setItem('iptv_frames', JSON.stringify(iptvFrameCache));
                     } catch(e) {}
                 }
             }, 2000);
@@ -1691,6 +1805,10 @@
         function stopPreviewStream() {
             if (isFullScreen) return;
             ++streamReqSeq;
+            if (activeRevealCleanup) {
+                activeRevealCleanup();
+                activeRevealCleanup = null;
+            }
             currentBgUrl = '';
             isVideoReady = false;
             if (hlsInstance) {
@@ -1702,6 +1820,7 @@
             macVideo.pause();
             macVideo.removeAttribute('src');
             macVideo.load();
+            macVideo.style.visibility = 'hidden';
             setVideoLayerVisible(false);
         }
 
@@ -1715,8 +1834,8 @@
                 if (targetFolder && PORN_GROUPS[targetFolder]) {
                     activePornPrimaryTab = 'others';
                     activePornFolder = targetFolder;
-                    pornMenuLevel = 2;
-                    pornPillsExpanded = false;
+                    pornMenuLevel = 1;
+                    pornBarAnimType = 'collapse';
                     lastRowColMap[4] = 1;
                     currentTrackRow = -1;
                     renderTrack(4);
@@ -1735,28 +1854,34 @@
                 document.getElementById('sidebar').style.opacity = '0';
                 document.getElementById('mainContent').style.opacity = '0';
                 document.getElementById('heroOverlay').style.opacity = '0';
+                var bl = document.getElementById('baseLayer');
+                if (bl) bl.style.opacity = '0';
                 
                 var focusRow = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-row')) : currentTrackRow;
                 var focusCol = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-col')) : (lastRowColMap[focusRow] || 1);
                 if (focusRow >= 1 && focusRow <= 4) fullScreenRow = focusRow;
                 if (focusCol >= 1) fullScreenCol = focusCol;
 
-                macVideo.style.objectFit = (fullScreenRow === 3) ? 'contain' : 'cover';
+                var targetFit = (fullScreenRow === 3) ? 'contain' : 'cover';
 
                 var cardEl = currentFocusEl && currentFocusEl.classList.contains('media-item')
                     ? currentFocusEl
                     : document.querySelector('.focusable[data-row="' + fullScreenRow + '"][data-col="' + fullScreenCol + '"]');
                 var hudTitle = title || (cardEl ? cardEl.getAttribute('data-title') : '') || '';
                 var hudSub = cardEl ? (cardEl.getAttribute('data-sub') || cardEl.getAttribute('data-org') || '') : '';
-                if (fullScreenRow === 2 && hudTitle) {
+                // 任务 8 (Round 6)：有线电视 (Row 2) 与抖音视频 (Row 3) 正式全屏播放页面均展示左下角文字块（标题 + 节目单/作者）
+                if ((fullScreenRow === 2 || fullScreenRow === 3) && hudTitle) {
                     showIptvFullscreenHud(hudTitle, hudSub);
                 }
                 if (fullScreenRow === 3 && ROW_DATA[3] && fullScreenCol >= Math.max(1, ROW_DATA[3].length - 6)) {
                     requestMoreDouyinStreams();
                 }
 
-                // 修复 4 (Round 3)：如果快速移动焦点并立即按回车进入全屏，此时预览尚未就绪 (isVideoReady === false)，重新拉起流并取消静音
-                if (currentBgUrl !== url || !isVideoReady || macVideo.readyState < 2) {
+                // 如果快速移动焦点并立即按回车进入全屏，此时预览尚未就绪，重新拉起流并取消静音
+                if (currentBgUrl !== url || !isVideoReady || macVideo.readyState < 2 || macVideo.videoWidth === 0) {
+                    macVideo.style.opacity = '0';
+                    macVideo.style.visibility = 'hidden';
+                    macVideo.style.objectFit = targetFit;
                     currentBgUrl = url;
                     currentPlayingStream = url;
                     var mySeq = ++streamReqSeq;
@@ -1765,13 +1890,23 @@
                         loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), false, mySeq);
                     }).catch(() => {});
                 } else {
-                    applyPreviewOrFullscreenAudio();
-                    macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
+                    if (macVideo.style.objectFit !== targetFit) {
+                        macVideo.style.opacity = '0';
+                        macVideo.style.objectFit = targetFit;
+                        void macVideo.offsetWidth;
+                        requestAnimationFrame(function() {
+                            applyPreviewOrFullscreenAudio();
+                            macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
+                        });
+                    } else {
+                        applyPreviewOrFullscreenAudio();
+                        macVideo.play().then(() => { setVideoLayerVisible(true); }).catch(() => {});
+                    }
                 }
             }
         }
 
-        // 修复 2：流媒体-抖音精选视频与电视直播在正式播放页面支持上下/左右键无缝切换与自动预加载
+        // 修复 2 & 任务 1 & 任务 8 (Round 6)：全屏播放页面上下/左右切换视频丝滑过渡（不闪动态背景、同步展示左下角标题与作者）
         function switchFullScreenVideo(step) {
             var row = (currentFocusEl && parseInt(currentFocusEl.getAttribute('data-row')) > 0)
                 ? parseInt(currentFocusEl.getAttribute('data-row'))
@@ -1821,7 +1956,7 @@
                 currentBgUrl = '';
                 var nextTitle = nextCard.getAttribute('data-title') || '';
                 var nextSub = nextCard.getAttribute('data-sub') || nextCard.getAttribute('data-org') || '';
-                if (row === 2) {
+                if (row === 2 || row === 3) {
                     showIptvFullscreenHud(nextTitle, nextSub);
                 }
                 executeItemAction(nextAction, nextTitle);
@@ -1868,9 +2003,13 @@
             if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
         }));
 
+        var pwdAnimUnlocking = false;
         function openPasswordModal() {
             isModalOpen = true;
+            pwdAnimUnlocking = false;
             var modal = document.getElementById('passwordModal'), input = document.getElementById('inputUnlockPwd');
+            var fillBar = document.getElementById('pwdFillBar');
+            if (fillBar) fillBar.className = 'pwd-fill-bar';
             input.value = '';
             input.style.borderColor = 'rgba(255,255,255,0.15)';
             modal.classList.add('active');
@@ -1884,6 +2023,9 @@
 
         function closePasswordModal() {
             isModalOpen = false;
+            pwdAnimUnlocking = false;
+            var fillBar = document.getElementById('pwdFillBar');
+            if (fillBar) fillBar.className = 'pwd-fill-bar';
             modalFocusList.forEach(el => el.classList.remove('modal-focused'));
             document.getElementById('passwordModal').classList.remove('active');
             if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
@@ -1918,23 +2060,43 @@
         };
         document.getElementById('btnPowerCancel').onclick = closePowerModal;
 
+        // 任务 6 (Round 6)：密码输入正确/错误时仅在密码输入框内播放从左向右铺满半透明绿/红色动画
         function verifyAndUnlockPorn() {
-            var val = document.getElementById('inputUnlockPwd').value;
+            if (pwdAnimUnlocking) return;
+            var input = document.getElementById('inputUnlockPwd');
+            var fillBar = document.getElementById('pwdFillBar');
+            var val = input.value;
+            if (fillBar) {
+                fillBar.className = 'pwd-fill-bar';
+                void fillBar.offsetWidth;
+            }
             if (val === appSettings.pornPwd) {
-                pornUnlocked = true;
-                var navPorn = document.getElementById('navPornItem');
-                navPorn.style.display = 'flex';
-                closePasswordModal();
-                // 任务 5 (Round 5)：先平滑切换焦点，再异步扫描限制级目录，避免解锁瞬间主线程阻塞卡顿
-                setFocus(navPorn);
+                pwdAnimUnlocking = true;
+                input.style.borderColor = '#30D158';
+                if (fillBar) fillBar.className = 'pwd-fill-bar fill-success';
                 setTimeout(function() {
-                    scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
-                }, 60);
+                    pornUnlocked = true;
+                    activePornPrimaryTab = 'brands';
+                    pornMenuLevel = 1;
+                    activePornBrandKey = '';
+                    var navPorn = document.getElementById('navPornItem');
+                    navPorn.style.display = 'flex';
+                    closePasswordModal();
+                    markUiMotion();
+                    setFocus(navPorn);
+                    setTimeout(function() {
+                        scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
+                    }, 320);
+                }, 430);
             } else {
-                var input = document.getElementById('inputUnlockPwd');
                 input.style.borderColor = '#FF453A';
-                input.value = '';
-                setModalFocus(0);
+                if (fillBar) fillBar.className = 'pwd-fill-bar fill-error';
+                setTimeout(function() {
+                    if (!isModalOpen) return;
+                    input.value = '';
+                    if (fillBar) fillBar.className = 'pwd-fill-bar';
+                    setModalFocus(0);
+                }, 540);
             }
         }
 
@@ -2102,19 +2264,22 @@
             invoke('open_douyin_login').catch(() => {});
         };
 
-        // 任务 2 (Round 5)：流媒体丸形菜单使用精致右向 SVG 箭头替代纯文本 >
+        // 任务 2 (Round 5) & 任务 4 (Round 6)：流媒体丸形菜单使用精致右向 SVG 箭头并加入展开/折叠丝滑过渡动画
         function renderDouyinSeasonBar() {
             var seasonBar = document.getElementById('seasonBar');
             if (!seasonBar) return;
+            var animCls = douyinBarAnimType === 'expand' ? ' pill-anim-expand' : (douyinBarAnimType === 'collapse' ? ' pill-anim-collapse' : '');
+            douyinBarAnimType = '';
             if (!douyinPillsExpanded) {
                 var curCat = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinCategory) || DOUYIN_CATEGORIES[0];
-                seasonBar.innerHTML = '<div class="season-pill focusable current" tabindex="0" data-row="0" data-col="1" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true"><span>' + curCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                seasonBar.innerHTML = '<div class="season-pill focusable current' + animCls + '" tabindex="0" data-row="0" data-col="1" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true"><span>' + curCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.classList.add('active');
                 var singlePill = seasonBar.querySelector('.season-pill');
                 if (singlePill) {
                     singlePill.onclick = function(ev) {
                         ev.stopPropagation();
                         douyinPillsExpanded = true;
+                        douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
                         var activeCol = Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
                         var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill');
@@ -2126,7 +2291,8 @@
                 for (var d = 0; d < DOUYIN_CATEGORIES.length; d++) {
                     var dc = DOUYIN_CATEGORIES[d];
                     var curCls = (dc.id === activeDouyinCategory) ? ' current' : '';
-                    dHtml += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (d + 1) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span>' + dc.name + '</span></div>';
+                    var delayStyle = animCls ? (' style="animation-delay:' + (d * 18) + 'ms;"') : '';
+                    dHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 1) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span>' + dc.name + '</span></div>';
                 }
                 seasonBar.innerHTML = dHtml;
                 seasonBar.classList.add('active');
@@ -2148,41 +2314,21 @@
             }
         }
 
-        // 任务 6 (Round 5)：限制级引入流媒体同款丸形按钮二级菜单与自动折叠功能
-        // 一级菜单：厂牌 (brands) 与 其他 (others)；其他菜单下二级菜单为原默认菜单的子文件夹
+        // 任务 4 (Round 6)：限制级丸形菜单重构——默认直接展示“厂牌”和“其他”两个一级选项且默认选中“厂牌”
+        // 点击/回车“其他”直接展开所有二级子文件夹菜单项（无返回按钮，按上键即可返回一级菜单，下移到卡片自动折叠回一级菜单，全程附带丝滑展开/折叠动画）
         function renderPornSeasonBar() {
             var seasonBar = document.getElementById('seasonBar');
             if (!seasonBar) return;
+            var animCls = pornBarAnimType === 'expand' ? ' pill-anim-expand' : (pornBarAnimType === 'collapse' ? ' pill-anim-collapse' : '');
+            pornBarAnimType = '';
 
-            if (!pornPillsExpanded) {
-                var collapsedLabel = (activePornPrimaryTab === 'brands')
-                    ? '厂牌'
-                    : ('其他' + (activePornFolder ? (' · ' + activePornFolder) : ''));
-                seasonBar.innerHTML = '<div class="season-pill focusable current" tabindex="0" data-row="0" data-col="1" data-porn-collapsed="1" data-no-bg-change="true"><span>' + collapsedLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
-                seasonBar.classList.add('active');
-                var singlePill = seasonBar.querySelector('.season-pill');
-                if (singlePill) {
-                    singlePill.onclick = function(ev) {
-                        ev.stopPropagation();
-                        pornPillsExpanded = true;
-                        renderPornSeasonBar();
-                        var targetCol = (pornMenuLevel === 1)
-                            ? (activePornPrimaryTab === 'brands' ? 1 : 2)
-                            : Math.max(2, PORN_FOLDER_LIST.indexOf(activePornFolder) + 2);
-                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + targetCol + '"]') || seasonBar.querySelector('.season-pill');
-                        if (targetPill) setFocus(targetPill);
-                    };
-                }
-                return;
-            }
-
-            if (pornMenuLevel === 1) {
+            if (pornMenuLevel === 1 || PORN_FOLDER_LIST.length === 0) {
+                pornMenuLevel = 1;
                 var bCls = (activePornPrimaryTab === 'brands') ? ' current' : '';
                 var oCls = (activePornPrimaryTab === 'others') ? ' current' : '';
-                var otherSubLabel = activePornFolder ? ('其他 · ' + activePornFolder) : '其他';
                 var html1 = '' +
-                    '<div class="season-pill focusable' + bCls + '" tabindex="0" data-row="0" data-col="1" data-porn-primary="brands" data-no-bg-change="true"><span>厂牌</span></div>' +
-                    '<div class="season-pill focusable' + oCls + '" tabindex="0" data-row="0" data-col="2" data-porn-primary="others" data-no-bg-change="true"><span>' + otherSubLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                    '<div class="season-pill focusable' + bCls + animCls + '" tabindex="0" data-row="0" data-col="1" data-porn-primary="brands" data-no-bg-change="true"><span>厂牌</span></div>' +
+                    '<div class="season-pill focusable' + oCls + animCls + '"' + (animCls ? ' style="animation-delay:22ms;"' : '') + ' tabindex="0" data-row="0" data-col="2" data-porn-primary="others" data-no-bg-change="true"><span>其他</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.innerHTML = html1;
                 seasonBar.classList.add('active');
                 Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
@@ -2202,35 +2348,35 @@
                             if (bPill) setFocus(bPill);
                         } else if (pTab === 'others') {
                             activePornPrimaryTab = 'others';
-                            pornMenuLevel = 2;
+                            if (!activePornFolder && PORN_FOLDER_LIST.length > 0) {
+                                activePornFolder = PORN_FOLDER_LIST[0];
+                            }
+                            if (PORN_FOLDER_LIST.length > 0) {
+                                pornMenuLevel = 2;
+                                pornBarAnimType = 'expand';
+                            }
                             syncPornRowData();
                             currentTrackRow = -1;
                             renderTrack(4);
                             var fIdx = Math.max(0, PORN_FOLDER_LIST.indexOf(activePornFolder));
-                            var subPill = seasonBar.querySelector('.season-pill[data-col="' + (fIdx + 2) + '"]') || seasonBar.querySelector('.season-pill[data-col="1"]');
+                            var subPill = seasonBar.querySelector('.season-pill[data-col="' + (fIdx + 1) + '"]') || seasonBar.querySelector('.season-pill[data-col="1"]');
                             if (subPill) setFocus(subPill);
                         }
                     };
                 });
             } else {
-                var html2 = '<div class="season-pill focusable" tabindex="0" data-row="0" data-col="1" data-porn-back="1" data-no-bg-change="true">' + PILL_CHEVRON_LEFT_SVG + '<span>一级菜单</span></div>';
+                var html2 = '';
                 for (var p = 0; p < PORN_FOLDER_LIST.length; p++) {
                     var fName = PORN_FOLDER_LIST[p];
                     var curCls = (activePornPrimaryTab === 'others' && fName === activePornFolder) ? ' current' : '';
-                    html2 += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (p + 2) + '" data-porn-folder="' + fName.replace(/"/g, '&quot;') + '" data-no-bg-change="true"><span>' + fName + '</span></div>';
+                    var delayStyle = animCls ? (' style="animation-delay:' + (p * 18) + 'ms;"') : '';
+                    html2 += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (p + 1) + '" data-porn-folder="' + fName.replace(/"/g, '&quot;') + '" data-no-bg-change="true"><span>' + fName + '</span></div>';
                 }
                 seasonBar.innerHTML = html2;
                 seasonBar.classList.add('active');
                 Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
                     pillEl.onclick = function(ev) {
                         ev.stopPropagation();
-                        if (pillEl.getAttribute('data-porn-back') === '1') {
-                            pornMenuLevel = 1;
-                            renderPornSeasonBar();
-                            var p2 = seasonBar.querySelector('.season-pill[data-col="2"]') || seasonBar.querySelector('.season-pill');
-                            if (p2) setFocus(p2);
-                            return;
-                        }
                         var folder = pillEl.getAttribute('data-porn-folder');
                         if (folder) {
                             activePornPrimaryTab = 'others';
@@ -2244,6 +2390,25 @@
                         }
                     };
                 });
+            }
+        }
+
+        function appendMorePornCardsIfNeeded(col) {
+            if (currentTrackRow !== 4 || !ROW_DATA[4]) return;
+            var track = document.getElementById('mainTrack');
+            if (!track) return;
+            var renderedCount = track.children.length;
+            var totalCount = ROW_DATA[4].length;
+            if (renderedCount < totalCount && col >= renderedCount - 8) {
+                var nextLimit = Math.min(totalCount, renderedCount + 36);
+                var frag = document.createDocumentFragment();
+                var tempDiv = document.createElement('div');
+                for (var idx = renderedCount; idx < nextLimit; idx++) {
+                    tempDiv.innerHTML = buildMediaCardHTML(4, ROW_DATA[4][idx], idx + 1, idx);
+                    frag.appendChild(tempDiv.firstChild);
+                }
+                track.appendChild(frag);
+                bindTrackImages(track);
             }
         }
 
@@ -2267,25 +2432,28 @@
             
             if (ROW_DATA[rowId] && ROW_DATA[rowId].length > 0) {
                 var rowItems = ROW_DATA[rowId];
-                for (var index = 0; index < rowItems.length; index++) {
-                    html += buildMediaCardHTML(rowId, rowItems[index], index + 1, index);
-                }
-                track.innerHTML = html;
                 var rememberedCol = lastRowColMap[rowId] || 1;
                 if (rememberedCol > rowItems.length || rememberedCol < 1) rememberedCol = 1;
                 lastRowColMap[rowId] = rememberedCol;
+
+                // 任务 7 (Round 6)：限制级大目录按需分批构建 DOM（初始最多渲染可见范围附近 42 张卡片，向右移动时无感追加），彻底杜绝超长轨道合成导致的动画掉帧
+                var renderLimit = (rowId === 4) ? Math.min(rowItems.length, Math.max(42, rememberedCol + 16)) : rowItems.length;
+                for (var index = 0; index < renderLimit; index++) {
+                    html += buildMediaCardHTML(rowId, rowItems[index], index + 1, index);
+                }
+                track.innerHTML = html;
                 var offset = rememberedCol > 1 ? (rememberedCol - 1) * 240 : 0;
                 track.style.transform = 'translate3d(-' + offset + 'px, 0, 0)';
                 heroText.classList.remove('lowered');
                 bindTrackImages(track);
 
-                if (rowId === 4) {
+                if (rowId === 4 && activePornPrimaryTab === 'others') {
                     var pornThumbTasks = [];
-                    rowItems.forEach((item, idx) => {
-                        if (item.previewUrl) {
-                            pornThumbTasks.push({ path: item.previewUrl, imgId: 'card_img_4_' + idx });
+                    for (var ti = 0; ti < renderLimit; ti++) {
+                        if (rowItems[ti] && rowItems[ti].previewUrl) {
+                            pornThumbTasks.push({ path: rowItems[ti].previewUrl, imgId: 'card_img_4_' + ti });
                         }
-                    });
+                    }
                     scheduleThumbTasks(pornThumbTasks, rememberedCol - 1);
                 }
             } else { track.innerHTML = ''; heroText.classList.add('lowered'); }
@@ -2406,6 +2574,7 @@
 
         function setFocus(targetEl) {
             if (!targetEl) return;
+            markUiMotion();
             if (currentFocusEl) currentFocusEl.classList.remove('focused');
             currentFocusEl = targetEl;
             targetEl.focus({ preventScroll: true });
@@ -2427,7 +2596,7 @@
                     }
                     return;
                 }
-                if (targetEl.getAttribute('data-douyin-collapsed') === '1' || targetEl.getAttribute('data-porn-collapsed') === '1' || targetEl.getAttribute('data-porn-back') === '1') {
+                if (targetEl.getAttribute('data-douyin-collapsed') === '1') {
                     return;
                 }
                 var dyCat = targetEl.getAttribute('data-douyin-cat');
@@ -2445,6 +2614,9 @@
                     if (pornPrimary !== activePornPrimaryTab) {
                         activePornPrimaryTab = pornPrimary;
                         activePornBrandKey = '';
+                        if (pornPrimary === 'others' && !activePornFolder && PORN_FOLDER_LIST.length > 0) {
+                            activePornFolder = PORN_FOLDER_LIST[0];
+                        }
                         lastRowColMap[4] = 1;
                         syncPornRowData();
                         currentTrackRow = -1;
@@ -2480,12 +2652,14 @@
             if (col >= 1 && row >= 1 && row <= 4) {
                 if (activeSeriesView) lastRowColMap.series = col;
                 else lastRowColMap[row] = col;
-                // 任务 6 (Round 5)：当焦点下移到流媒体或限制级的视频卡片时，丸形菜单自动折叠为单个按钮
+                // 任务 4 (Round 6)：当焦点下移到流媒体或限制级的视频卡片时，展开的二级丸形菜单自动丝滑收起
                 if (row === 3 && douyinPillsExpanded) {
                     douyinPillsExpanded = false;
+                    douyinBarAnimType = 'collapse';
                     renderDouyinSeasonBar();
-                } else if (row === 4 && pornPillsExpanded) {
-                    pornPillsExpanded = false;
+                } else if (row === 4 && pornMenuLevel === 2) {
+                    pornMenuLevel = 1;
+                    pornBarAnimType = 'collapse';
                     renderPornSeasonBar();
                 }
             }
@@ -2499,16 +2673,18 @@
                 }
             }
 
-            // 任务 5 (Round 5)：限制级横向移动焦点时按滑动窗口懒加载附近卡片缩略图，零卡顿
+            // 任务 7 (Round 6)：限制级横向移动焦点时按需追加 DOM 卡片并在空闲期懒加载附近缩略图，零卡顿
             if (row === 4 && col >= 1 && ROW_DATA[4] && ROW_DATA[4].length > 0) {
-                var nearbyTasks = [];
-                ROW_DATA[4].forEach((item, idx) => {
-                    if (item.previewUrl && !iptvFrameCache[item.previewUrl]) {
-                        nearbyTasks.push({ path: item.previewUrl, imgId: 'card_img_4_' + idx });
+                appendMorePornCardsIfNeeded(col);
+                if (activePornPrimaryTab === 'others') {
+                    var allTasks = [];
+                    for (var ti = 0; ti < ROW_DATA[4].length; ti++) {
+                        allTasks.push({
+                            path: ROW_DATA[4][ti] ? ROW_DATA[4][ti].previewUrl : '',
+                            imgId: 'card_img_4_' + ti
+                        });
                     }
-                });
-                if (nearbyTasks.length > 0) {
-                    scheduleThumbTasks(nearbyTasks, col - 1);
+                    scheduleThumbTasks(allTasks, col - 1);
                 }
             }
 
@@ -2596,6 +2772,7 @@
         var enterHoldTimer = null, lastKeyTime = 0;
 
         document.addEventListener('keydown', function(e) {
+            markUiMotion();
             applyPreviewOrFullscreenAudio();
 
             if (isFullScreen) {
@@ -2718,26 +2895,20 @@
                         }
                         if (currentTrackRow === 3 && douyinPillsExpanded) {
                             douyinPillsExpanded = false;
+                            douyinBarAnimType = 'collapse';
                             renderDouyinSeasonBar();
                             var collapsedPill = findTargetFocusable(0, 1);
                             if (collapsedPill) setFocus(collapsedPill);
                             return;
                         }
-                        // 任务 6 (Round 5)：限制级丸形菜单按上键逐级收起（二级子文件夹 -> 一级菜单 -> 折叠态）
-                        if (currentTrackRow === 4 && pornPillsExpanded) {
-                            if (pornMenuLevel === 2) {
-                                pornMenuLevel = 1;
-                                renderPornSeasonBar();
-                                var priOtherPill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
-                                if (priOtherPill) setFocus(priOtherPill);
-                                return;
-                            } else {
-                                pornPillsExpanded = false;
-                                renderPornSeasonBar();
-                                var collapsedPornPill = findTargetFocusable(0, 1);
-                                if (collapsedPornPill) setFocus(collapsedPornPill);
-                                return;
-                            }
+                        // 任务 4 (Round 6)：限制级处于二级子文件夹菜单时，按上键直接丝滑折叠回一级菜单（“厂牌”与“其他”）
+                        if (currentTrackRow === 4 && pornMenuLevel === 2) {
+                            pornMenuLevel = 1;
+                            pornBarAnimType = 'collapse';
+                            renderPornSeasonBar();
+                            var priOtherPill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
+                            if (priOtherPill) setFocus(priOtherPill);
+                            return;
                         }
                         nextEl = findTargetFocusable(currentTrackRow, 0);
                         break;
@@ -2759,14 +2930,20 @@
                     if (col === 0) nextEl = (row === -1) ? getRememberedCard(1) : getRememberedCard(row);
                     else if (row === 0 && currentTrackRow === 3 && !douyinPillsExpanded) {
                         douyinPillsExpanded = true;
+                        douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
                         var expCol = Math.min(DOUYIN_CATEGORIES.length, Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2));
                         nextEl = findTargetFocusable(0, expCol) || findTargetFocusable(0, 1);
-                    } else if (row === 0 && currentTrackRow === 4 && !pornPillsExpanded) {
-                        pornPillsExpanded = true;
-                        renderPornSeasonBar();
-                        var pCol = (pornMenuLevel === 1) ? (activePornPrimaryTab === 'brands' ? 2 : 1) : Math.max(2, PORN_FOLDER_LIST.indexOf(activePornFolder) + 2);
-                        nextEl = findTargetFocusable(0, pCol) || findTargetFocusable(0, 1);
+                    } else if (row === 0 && currentTrackRow === 4 && pornMenuLevel === 1 && currentFocusEl.getAttribute('data-porn-primary') === 'others' && PORN_FOLDER_LIST.length > 0) {
+                        activePornPrimaryTab = 'others';
+                        if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
+                        pornMenuLevel = 2;
+                        pornBarAnimType = 'expand';
+                        syncPornRowData();
+                        currentTrackRow = -1;
+                        renderTrack(4);
+                        var fCol = Math.max(1, PORN_FOLDER_LIST.indexOf(activePornFolder) + 1);
+                        nextEl = findTargetFocusable(0, fCol) || findTargetFocusable(0, 1);
                     } else nextEl = findTargetFocusable(row, col + 1);
                     break;
                 case 'ArrowLeft':
@@ -2775,8 +2952,9 @@
                     else if (col === 1) {
                         if (row === 0) {
                             if (activeSeriesView) { exitSeriesEpisodes(); return; }
-                            if (currentTrackRow === 4 && pornPillsExpanded && pornMenuLevel === 2) {
+                            if (currentTrackRow === 4 && pornMenuLevel === 2) {
                                 pornMenuLevel = 1;
+                                pornBarAnimType = 'collapse';
                                 renderPornSeasonBar();
                                 var backToOther = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
                                 if (backToOther) setFocus(backToOther);
@@ -2794,39 +2972,25 @@
                     if (row === 0) {
                         if (currentTrackRow === 3 && !douyinPillsExpanded) {
                             douyinPillsExpanded = true;
+                            douyinBarAnimType = 'expand';
                             renderDouyinSeasonBar();
                             var actCol = Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
                             var targetExpPill = findTargetFocusable(0, actCol) || findTargetFocusable(0, 1);
                             if (targetExpPill) setFocus(targetExpPill);
                             return;
                         }
-                        if (currentTrackRow === 4) {
-                            if (!pornPillsExpanded) {
-                                pornPillsExpanded = true;
-                                renderPornSeasonBar();
-                                var targetPornCol = (pornMenuLevel === 1)
-                                    ? (activePornPrimaryTab === 'brands' ? 1 : 2)
-                                    : Math.max(2, PORN_FOLDER_LIST.indexOf(activePornFolder) + 2);
-                                var expPornPill = findTargetFocusable(0, targetPornCol) || findTargetFocusable(0, 1);
-                                if (expPornPill) setFocus(expPornPill);
-                                return;
-                            }
-                            if (currentFocusEl.getAttribute('data-porn-primary') === 'others') {
-                                activePornPrimaryTab = 'others';
+                        if (currentTrackRow === 4 && pornMenuLevel === 1 && currentFocusEl.getAttribute('data-porn-primary') === 'others') {
+                            activePornPrimaryTab = 'others';
+                            if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
+                            if (PORN_FOLDER_LIST.length > 0) {
                                 pornMenuLevel = 2;
+                                pornBarAnimType = 'expand';
                                 syncPornRowData();
                                 currentTrackRow = -1;
                                 renderTrack(4);
                                 var fIndex = Math.max(0, PORN_FOLDER_LIST.indexOf(activePornFolder));
-                                var subFolderPill = findTargetFocusable(0, fIndex + 2) || findTargetFocusable(0, 1);
+                                var subFolderPill = findTargetFocusable(0, fIndex + 1) || findTargetFocusable(0, 1);
                                 if (subFolderPill) setFocus(subFolderPill);
-                                return;
-                            }
-                            if (currentFocusEl.getAttribute('data-porn-back') === '1') {
-                                pornMenuLevel = 1;
-                                renderPornSeasonBar();
-                                var l1Pill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
-                                if (l1Pill) setFocus(l1Pill);
                                 return;
                             }
                         }
