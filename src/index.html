@@ -17,23 +17,24 @@
         .top-right-clock { position: fixed; top: 28px; right: 38px; z-index: 80; background: rgba(28, 28, 30, 0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 16px; border-radius: 999px; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.9); letter-spacing: 0.5px; opacity: 0; transform: translateY(-8px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .top-right-clock.visible { opacity: 1; transform: translateY(0); }
 
-        /* 修复 1 (Round 4) & 任务 11 (Round 5) & 任务 3 (Round 6) & 任务 2 (Round 7)：日本电视台风格顶部中央两行天气速报/预警，字号再度放大 */
+        /* 修复 1 (Round 4) & 任务 11 (Round 5) & 任务 3 (Round 6) & 任务 4 (Round 8)：恢复上一次增大后的气象文字大小 (30px / 25px)，并配合 autoScaleUI 在任意缩放等级下自适应匹配画面 */
         .jp-weather-telop {
             position: fixed;
             top: 58px;
             left: 50%;
-            transform: translateX(-50%) translateY(-8px);
-            width: min(940px, 74vw);
-            min-width: 620px;
+            transform-origin: top center;
+            transform: translateX(-50%) translateY(-8px) scale(var(--telop-scale, 1));
+            width: min(820px, 68vw);
+            min-width: 540px;
             z-index: 95;
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
-            font-size: 35px;
-            font-weight: 800;
-            letter-spacing: 1.8px;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1.6px;
             line-height: 1.35;
             color: #ffffff;
             white-space: nowrap;
@@ -41,34 +42,34 @@
             transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
             -webkit-font-smoothing: antialiased;
             text-shadow:
-                -2.5px -2.5px 0 #000,
-                 2.5px -2.5px 0 #000,
-                -2.5px  2.5px 0 #000,
-                 2.5px  2.5px 0 #000,
-                 0px -2.5px 0 #000,
-                 0px  2.5px 0 #000,
-                -2.5px  0px 0 #000,
-                 2.5px  0px 0 #000,
-                 0px  5px 12px rgba(0, 0, 0, 0.90);
+                -2px -2px 0 #000,
+                 2px -2px 0 #000,
+                -2px  2px 0 #000,
+                 2px  2px 0 #000,
+                 0px -2px 0 #000,
+                 0px  2px 0 #000,
+                -2px  0px 0 #000,
+                 2px  0px 0 #000,
+                 0px  4px 10px rgba(0, 0, 0, 0.88);
         }
         .jp-weather-telop.visible {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(0) scale(var(--telop-scale, 1));
         }
         .jp-telop-row1 {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
             width: 100%;
-            gap: 32px;
+            gap: 28px;
         }
         .jp-telop-row2 {
             display: flex;
             align-items: baseline;
             justify-content: flex-end;
             width: 100%;
-            font-size: 29px;
-            letter-spacing: 2.2px;
+            font-size: 25px;
+            letter-spacing: 2px;
         }
 
         /* 修复 2 (Round 4) & 任务 8 (Round 6)：IPTV 与抖音全屏播放左下角大屏信息块 */
@@ -187,11 +188,15 @@
         /* 修复 6：剧集文字介绍强制顶格显示 */
         .hero-desc { font-size: 14px; color: rgba(255, 255, 255, 0.85); max-width: 620px; line-height: 1.38; margin-bottom: 10px; font-weight: 400; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-indent: 0 !important; }
 
-        /* 任务 4 (Round 6)：丸形菜单展开与折叠丝滑过渡动画 */
+        /* 任务 4 (Round 6) & 任务 3 (Round 8)：丸形菜单展开/折叠丝滑过渡动画 + 左侧圆形刷新按钮样式 */
         .season-bar { display: none; gap: 10px; margin-bottom: 10px; align-items: center; z-index: 6; flex-wrap: wrap; transition: opacity 0.26s cubic-bezier(0.22, 1, 0.36, 1), transform 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
         .season-bar.active { display: flex; }
         /* 任务 2 (Round 5)：丸形菜单内嵌精致右向/左向 SVG 箭头对齐样式 */
         .season-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
+        .season-pill.season-refresh-btn { width: 32px; height: 32px; padding: 0; border-radius: 50%; justify-content: center; align-items: center; flex-shrink: 0; box-sizing: border-box; }
+        .season-pill.season-refresh-btn svg { width: 16px; height: 16px; fill: currentColor; display: block; flex-shrink: 0; transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
+        .season-pill.season-refresh-btn.focused svg, .season-pill.season-refresh-btn:focus svg { transform: rotate(180deg); }
+        .season-pill.season-refresh-btn.spinning svg { animation: spinRefreshIcon 0.72s linear infinite; }
         .season-pill.pill-anim-expand { animation: pillExpandSpring 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
         .season-pill.pill-anim-collapse { animation: pillCollapseSpring 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @keyframes pillExpandSpring {
@@ -496,18 +501,29 @@
         }
         window.addEventListener('scroll', lockViewportScroll, true);
 
-        // 任务 4 (Round 5)：增大默认大屏缩放比例 (默认 1.15x 大屏增强)，并支持在设置中自由切换 UI 缩放等级，保持原 UI 结构不变
+        // 任务 4 (Round 5) & 任务 1 & 4 (Round 8)：扩大每档 UI 缩放步进（100% ~ 200%，巨幕对应 200%），并使顶部气象文字随缩放等级与视口自适应匹配
         const UI_SCALE_PRESETS = [
             { id: '1.00', label: '标准 (100%)', factor: 1.00 },
-            { id: '1.08', label: '适中 (108%)', factor: 1.08 },
-            { id: '1.15', label: '大屏 (115%)', factor: 1.15 },
-            { id: '1.22', label: '放大 (122%)', factor: 1.22 },
-            { id: '1.30', label: '影院 (130%)', factor: 1.30 },
-            { id: '1.38', label: '巨幕 (138%)', factor: 1.38 }
+            { id: '1.20', label: '适中 (120%)', factor: 1.20 },
+            { id: '1.40', label: '大屏 (140%)', factor: 1.40 },
+            { id: '1.60', label: '放大 (160%)', factor: 1.60 },
+            { id: '1.80', label: '影院 (180%)', factor: 1.80 },
+            { id: '2.00', label: '巨幕 (200%)', factor: 2.00 }
         ];
+        const LEGACY_SCALE_MAP = {
+            '1.08': '1.20',
+            '1.15': '1.40',
+            '1.22': '1.60',
+            '1.30': '1.80',
+            '1.38': '2.00'
+        };
 
         function getCurrentUiScalePreset() {
-            var saved = localStorage.getItem('fc_ui_scale') || '1.15';
+            var saved = localStorage.getItem('fc_ui_scale') || '1.40';
+            if (LEGACY_SCALE_MAP[saved]) {
+                saved = LEGACY_SCALE_MAP[saved];
+                localStorage.setItem('fc_ui_scale', saved);
+            }
             return UI_SCALE_PRESETS.find(p => p.id === saved) || UI_SCALE_PRESETS[2];
         }
 
@@ -516,6 +532,12 @@
             var scale = (window.innerWidth / 1440) * preset.factor;
             var sidebar = document.getElementById('sidebar'), mainContent = document.getElementById('mainContent');
             if (sidebar && mainContent) { sidebar.style.zoom = scale; mainContent.style.zoom = scale; }
+            var telopEl = document.getElementById('jpWeatherTelop');
+            if (telopEl) {
+                var telopScale = (window.innerWidth / 1680) * (0.76 + (preset.factor - 1.0) * 0.24);
+                telopScale = Math.max(0.72, Math.min(1.04, telopScale));
+                telopEl.style.setProperty('--telop-scale', telopScale.toFixed(3));
+            }
         }
         window.addEventListener('resize', autoScaleUI); autoScaleUI(); 
 
@@ -1127,19 +1149,31 @@
             setTimeout(() => loadDouyinNativeFeed(false, false), 3800);
         }
 
+        var isDouyinRefreshing = false;
+
         async function loadDouyinNativeFeed(forceRefresh, requestMore) {
             var catObj = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinCategory) || DOUYIN_CATEGORIES[0];
             if (forceRefresh) {
                 if (douyinPollTimer) { clearInterval(douyinPollTimer); douyinPollTimer = null; }
+                isDouyinRefreshing = true;
                 lastDouyinCount = 0;
                 lastRowColMap[3] = 1;
                 pendingAutoAdvanceDouyin = false;
+                stopPreviewStream();
+                currentPlayingStream = null;
                 ROW_DATA[3] = [{ title: "正在刷新" + catObj.name + "视频流...", sub: "请稍候", desc: "", isRefreshCard: true, action: "douyin:refresh" }];
                 if (currentTrackRow === 3) {
+                    var prevRow = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-row')) : 3;
+                    var prevCol = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-col')) : 1;
                     currentTrackRow = -1;
                     renderTrack(3);
-                    var first = document.querySelector('.focusable[data-row="3"][data-col="1"]') || document.querySelector('.focusable[data-row="3"][data-col="0"]');
-                    if (first && currentFocusEl && parseInt(currentFocusEl.getAttribute('data-row')) !== 0) setFocus(first);
+                    if (prevRow === 0) {
+                        var restorePill = document.querySelector('.focusable[data-row="0"][data-col="' + prevCol + '"]') || document.querySelector('.focusable[data-row="0"][data-col="1"]');
+                        if (restorePill) setFocus(restorePill);
+                    } else {
+                        var first = document.querySelector('.focusable[data-row="3"][data-col="1"]') || document.querySelector('.focusable[data-row="3"][data-col="0"]');
+                        if (first) setFocus(first);
+                    }
                 }
                 await invoke('get_douyin_feed', { refresh: true, loadMore: false, category: activeDouyinCategory }).catch(() => {});
                 douyinPollTimer = setInterval(() => loadDouyinNativeFeed(false, false), 600);
@@ -1149,6 +1183,7 @@
             try {
                 const list = await invoke('get_douyin_feed', { refresh: false, loadMore: !!requestMore, category: activeDouyinCategory });
                 if (list && list.length > 0) {
+                    isDouyinRefreshing = false;
                     var cappedList = list.slice(0, 200);
                     var track = document.getElementById('mainTrack');
                     var domVideoCards = (currentTrackRow === 3 && track)
@@ -1182,9 +1217,29 @@
                                 var focusedCol = currentFocusEl ? parseInt(currentFocusEl.getAttribute('data-col')) : 0;
                                 currentTrackRow = -1;
                                 renderTrack(3);
-                                if (focusedRow === 3 && !isFullScreen) {
-                                    var targetFocus = document.querySelector('.focusable[data-row="3"][data-col="' + (focusedCol > 0 ? 1 : 0) + '"]');
-                                    if (targetFocus) setFocus(targetFocus);
+                                if (!isFullScreen) {
+                                    if (focusedRow === 3) {
+                                        var targetFocus = document.querySelector('.focusable[data-row="3"][data-col="' + (focusedCol > 0 ? 1 : 0) + '"]');
+                                        if (targetFocus) setFocus(targetFocus);
+                                    } else if (focusedRow === 0) {
+                                        var targetPillFocus = document.querySelector('.focusable[data-row="0"][data-col="' + focusedCol + '"]') || document.querySelector('.focusable[data-row="0"][data-col="1"]');
+                                        if (targetPillFocus) setFocus(targetPillFocus);
+                                        var firstVideoCard = document.querySelector('.focusable[data-row="3"][data-col="1"]');
+                                        if (firstVideoCard) {
+                                            var vTitle = firstVideoCard.getAttribute('data-title') || '';
+                                            var vSub = firstVideoCard.getAttribute('data-sub') || '';
+                                            var vPreview = firstVideoCard.getAttribute('data-preview') || '';
+                                            var activeSidebar = document.querySelector('.nav-item.active-row');
+                                            var svgHtml = (activeSidebar && activeSidebar.querySelector('svg')) ? activeSidebar.querySelector('svg').outerHTML : '';
+                                            updateHeroUI(vTitle, vSub, '', '流媒体', svgHtml, false, true, true, '');
+                                            if (vPreview && vPreview !== currentPlayingStream) {
+                                                clearTimeout(bgPreviewTimeout);
+                                                currentPlayingStream = vPreview;
+                                                stopPreviewStream();
+                                                bgPreviewTimeout = setTimeout(function() { startPreviewStream(vPreview); }, 380);
+                                            }
+                                        }
+                                    }
                                 }
                             } else {
                                 var refreshCardEl = track.querySelector('.media-item[data-action="douyin:refresh"]');
@@ -2188,6 +2243,17 @@
         }));
 
         var pwdAnimUnlocking = false;
+        function updateConfirmPwdBtnState() {
+            var input = document.getElementById('inputUnlockPwd');
+            var confirmBtn = document.getElementById('btnConfirmPwd');
+            if (!input || !confirmBtn) return;
+            var hasVal = (input.value || '').trim().length > 0;
+            confirmBtn.disabled = !hasVal;
+            confirmBtn.style.opacity = hasVal ? '1' : '0.38';
+            confirmBtn.style.pointerEvents = hasVal ? 'auto' : 'none';
+        }
+        document.getElementById('inputUnlockPwd').addEventListener('input', updateConfirmPwdBtnState);
+
         function openPasswordModal() {
             isModalOpen = true;
             pwdAnimUnlocking = false;
@@ -2196,6 +2262,7 @@
             if (fillBar) fillBar.className = 'pwd-fill-bar';
             input.value = '';
             input.style.borderColor = 'rgba(255,255,255,0.15)';
+            updateConfirmPwdBtnState();
             modal.classList.add('active');
             modalFocusList = [
                 document.getElementById('inputUnlockPwd'),
@@ -2244,12 +2311,15 @@
         };
         document.getElementById('btnPowerCancel').onclick = closePowerModal;
 
-        // 任务 6 (Round 6)：密码输入正确/错误时仅在密码输入框内播放从左向右铺满半透明绿/红色动画
+        // 任务 6 (Round 6) & 任务 2 (Round 8)：密码为空时解锁按钮不可触发；仅在输入非空时执行校验与红/绿铺满动画
         function verifyAndUnlockPorn() {
             if (pwdAnimUnlocking) return;
             var input = document.getElementById('inputUnlockPwd');
             var fillBar = document.getElementById('pwdFillBar');
-            var val = input.value;
+            var val = input ? input.value : '';
+            if (!val || val.trim().length === 0) {
+                return;
+            }
             if (fillBar) {
                 fillBar.className = 'pwd-fill-bar';
                 void fillBar.offsetWidth;
@@ -2278,6 +2348,7 @@
                 setTimeout(function() {
                     if (!isModalOpen) return;
                     input.value = '';
+                    updateConfirmPwdBtnState();
                     if (fillBar) fillBar.className = 'pwd-fill-bar';
                     setModalFocus(0);
                 }, 540);
@@ -2448,46 +2519,70 @@
             invoke('open_douyin_login').catch(() => {});
         };
 
-        // 任务 2 (Round 5) & 任务 4 (Round 6)：流媒体丸形菜单使用精致右向 SVG 箭头并加入展开/折叠丝滑过渡动画
+        // 任务 2 (Round 5) & 任务 4 (Round 6) & 任务 3 (Round 8)：流媒体丸形菜单左侧新增圆形刷新按钮，用于强制刷新并替换当前菜单下的推荐流
+        function triggerDouyinCategoryForceRefresh(btnEl) {
+            if (btnEl) btnEl.classList.add('spinning');
+            loadDouyinNativeFeed(true, false);
+        }
+
         function renderDouyinSeasonBar() {
             var seasonBar = document.getElementById('seasonBar');
             if (!seasonBar) return;
             var animCls = douyinBarAnimType === 'expand' ? ' pill-anim-expand' : (douyinBarAnimType === 'collapse' ? ' pill-anim-collapse' : '');
             douyinBarAnimType = '';
+            var spinCls = isDouyinRefreshing ? ' spinning' : '';
+            var refreshBtnHtml = '<div class="season-pill season-refresh-btn focusable' + spinCls + '" tabindex="0" data-row="0" data-col="1" data-douyin-refresh="1" data-no-bg-change="true" title="强制刷新当前分类推荐流">' + REFRESH_SVG_HTML + '</div>';
+
             if (!douyinPillsExpanded) {
                 var curCat = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinCategory) || DOUYIN_CATEGORIES[0];
-                seasonBar.innerHTML = '<div class="season-pill focusable current' + animCls + '" tabindex="0" data-row="0" data-col="1" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true"><span>' + curCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                seasonBar.innerHTML = refreshBtnHtml + '<div class="season-pill focusable current' + animCls + '" tabindex="0" data-row="0" data-col="2" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true"><span>' + curCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.classList.add('active');
-                var singlePill = seasonBar.querySelector('.season-pill');
+                var refBtn = seasonBar.querySelector('.season-refresh-btn');
+                if (refBtn) {
+                    refBtn.onclick = function(ev) {
+                        ev.stopPropagation();
+                        setFocus(refBtn);
+                        triggerDouyinCategoryForceRefresh(refBtn);
+                    };
+                }
+                var singlePill = seasonBar.querySelector('.season-pill[data-douyin-collapsed="1"]');
                 if (singlePill) {
                     singlePill.onclick = function(ev) {
                         ev.stopPropagation();
                         douyinPillsExpanded = true;
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
-                        var activeCol = Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
-                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill');
+                        var activeCol = Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
+                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill[data-col="2"]');
                         if (targetPill) setFocus(targetPill);
                     };
                 }
             } else {
-                var dHtml = '';
+                var dHtml = refreshBtnHtml;
                 for (var d = 0; d < DOUYIN_CATEGORIES.length; d++) {
                     var dc = DOUYIN_CATEGORIES[d];
                     var curCls = (dc.id === activeDouyinCategory) ? ' current' : '';
                     var delayStyle = animCls ? (' style="animation-delay:' + (d * 18) + 'ms;"') : '';
-                    dHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 1) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span>' + dc.name + '</span></div>';
+                    dHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 2) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span>' + dc.name + '</span></div>';
                 }
                 seasonBar.innerHTML = dHtml;
                 seasonBar.classList.add('active');
-                Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
+                var refBtnExp = seasonBar.querySelector('.season-refresh-btn');
+                if (refBtnExp) {
+                    refBtnExp.onclick = function(ev) {
+                        ev.stopPropagation();
+                        setFocus(refBtnExp);
+                        triggerDouyinCategoryForceRefresh(refBtnExp);
+                    };
+                }
+                Array.from(seasonBar.querySelectorAll('.season-pill[data-douyin-cat]')).forEach(function(pillEl) {
                     pillEl.onclick = function(ev) {
                         ev.stopPropagation();
                         var catId = pillEl.getAttribute('data-douyin-cat');
                         if (catId && catId !== activeDouyinCategory) {
                             activeDouyinCategory = catId;
                             lastRowColMap[3] = 1;
-                            Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(el => {
+                            Array.from(seasonBar.querySelectorAll('.season-pill[data-douyin-cat]')).forEach(el => {
                                 el.classList.toggle('current', el.getAttribute('data-douyin-cat') === catId);
                             });
                             loadDouyinNativeFeed(true, false);
@@ -2780,7 +2875,7 @@
                     }
                     return;
                 }
-                if (targetEl.getAttribute('data-douyin-collapsed') === '1') {
+                if (targetEl.getAttribute('data-douyin-refresh') === '1' || targetEl.getAttribute('data-douyin-collapsed') === '1') {
                     return;
                 }
                 var dyCat = targetEl.getAttribute('data-douyin-cat');
@@ -3009,11 +3104,19 @@
                 }
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    if (e.repeat) return;
                     var activeModalEl = modalFocusList[modalFocusIdx];
+                    if (document.getElementById('passwordModal').classList.contains('active')) {
+                        if (activeModalEl && activeModalEl.id === 'btnCancelPwd') {
+                            closePasswordModal();
+                        } else {
+                            var pwdVal = (document.getElementById('inputUnlockPwd').value || '').trim();
+                            if (pwdVal.length > 0) verifyAndUnlockPorn();
+                        }
+                        return;
+                    }
                     if (activeModalEl && activeModalEl.tagName === 'BUTTON') {
                         activeModalEl.click();
-                    } else if (document.getElementById('passwordModal').classList.contains('active')) {
-                        verifyAndUnlockPorn();
                     } else if (document.getElementById('settingsModal').classList.contains('active')) {
                         saveSettingsAndScan();
                     }
@@ -3084,7 +3187,7 @@
                             douyinPillsExpanded = false;
                             douyinBarAnimType = 'collapse';
                             renderDouyinSeasonBar();
-                            var collapsedPill = findTargetFocusable(0, 1);
+                            var collapsedPill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
                             if (collapsedPill) setFocus(collapsedPill);
                             return;
                         }
@@ -3115,12 +3218,12 @@
                 case 'ArrowRight':
                     e.preventDefault();
                     if (col === 0) nextEl = (row === -1) ? getRememberedCard(1) : getRememberedCard(row);
-                    else if (row === 0 && currentTrackRow === 3 && !douyinPillsExpanded) {
+                    else if (row === 0 && currentTrackRow === 3 && !douyinPillsExpanded && currentFocusEl.getAttribute('data-douyin-collapsed') === '1') {
                         douyinPillsExpanded = true;
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
-                        var expCol = Math.min(DOUYIN_CATEGORIES.length, Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2));
-                        nextEl = findTargetFocusable(0, expCol) || findTargetFocusable(0, 1);
+                        var expCol = Math.min(DOUYIN_CATEGORIES.length + 1, Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 3));
+                        nextEl = findTargetFocusable(0, expCol) || findTargetFocusable(0, 2);
                     } else if (row === 0 && currentTrackRow === 4 && pornMenuLevel === 1 && currentFocusEl.getAttribute('data-porn-primary') === 'others' && PORN_FOLDER_LIST.length > 0) {
                         activePornPrimaryTab = 'others';
                         if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
@@ -3157,12 +3260,16 @@
                 case 'Enter':
                     e.preventDefault();
                     if (row === 0) {
+                        if (currentTrackRow === 3 && currentFocusEl.getAttribute('data-douyin-refresh') === '1') {
+                            triggerDouyinCategoryForceRefresh(currentFocusEl);
+                            return;
+                        }
                         if (currentTrackRow === 3 && !douyinPillsExpanded) {
                             douyinPillsExpanded = true;
                             douyinBarAnimType = 'expand';
                             renderDouyinSeasonBar();
-                            var actCol = Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
-                            var targetExpPill = findTargetFocusable(0, actCol) || findTargetFocusable(0, 1);
+                            var actCol = Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
+                            var targetExpPill = findTargetFocusable(0, actCol) || findTargetFocusable(0, 2);
                             if (targetExpPill) setFocus(targetExpPill);
                             return;
                         }
