@@ -237,7 +237,7 @@
 
         .hero-overlay { position: fixed; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), linear-gradient(to top, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.04) 45%, transparent 100%); z-index: -1; transition: opacity 0.4s ease; transform: translate3d(0,0,0); -webkit-transform: translate3d(0,0,0); pointer-events: none; }
 
-        /* 任务 3 (Round 10) & 任务 8 (Round 11)：左侧边栏三边距均为 20px；重构展开/折叠动画，保持头像与导航图标左边缘锚点恒定（折叠前与折叠后完全处于同一水平坐标，无任何横向瞬移或回拉） */
+        /* 任务 3 (Round 10) & 任务 8 (Round 11) & 任务 4 (Round 12)：左侧边栏三边距均为 20px；保持头像与导航图标左边缘锚点恒定；修复导航项选中放大时左右边缘被裁切的问题 */
         .sidebar { position: fixed; left: 20px; top: 20px; bottom: 20px; width: 205px; background: var(--glass-bg); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px); border-radius: 20px; border: 1px solid var(--glass-border); z-index: 10; display: flex; flex-direction: column; padding: 18px 12px; box-sizing: border-box; transition: width 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease; overflow: hidden; background-clip: padding-box; -webkit-mask-image: -webkit-radial-gradient(white, black); transform: translateZ(0); will-change: width; }
         .sidebar.collapsed { width: 68px; padding: 18px 12px; }
         .sidebar-header { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 6px; margin-bottom: 20px; border-radius: 12px; box-sizing: border-box; overflow: hidden; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer; outline: none; white-space: nowrap; flex-shrink: 0; }
@@ -253,8 +253,8 @@
         .sidebar-clock { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7); pointer-events: none; opacity: 1; max-width: 54px; overflow: hidden; flex-shrink: 0; transition: opacity 0.18s ease, max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1), transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); transform: translateX(0); }
         .sidebar.collapsed .user-name, .sidebar.collapsed .sidebar-clock { opacity: 0; max-width: 0; transform: translateX(-6px); pointer-events: none; }
         
-        .nav-list { display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex-grow: 1; padding: 4px 0; margin: -4px 0; }
-        .settings-section { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
+        .nav-list { display: flex; flex-direction: column; gap: 4px; overflow: visible; flex-grow: 1; padding: 6px 6px; margin: -6px -6px; }
+        .settings-section { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; overflow: visible; padding: 4px 6px; margin: -4px -6px; }
         .nav-item { display: flex; align-items: center; justify-content: flex-start; width: 100%; height: 44px; padding: 0 12px; margin: 0; box-sizing: border-box; border-radius: 12px; flex-shrink: 0; font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; cursor: pointer; outline: none; transition: background-color 0.22s ease, color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease; }
         .nav-item svg { width: 20px; height: 20px; margin-right: 12px; fill: currentColor; opacity: 0.85; display: block; flex-shrink: 0; transition: margin-right 0.34s cubic-bezier(0.22, 1, 0.36, 1), transform 0.24s ease; }
         .nav-icon-slot { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-right: 12px; flex-shrink: 0; transition: margin-right 0.34s cubic-bezier(0.22, 1, 0.36, 1); }
@@ -469,15 +469,31 @@
         }
         .fs-settings-page {
             width: min(860px, 86vw);
-            margin: auto;
-            padding: 54px 24px 64px 24px;
+            margin: auto auto auto 0;
+            padding: 54px 64px 64px 72px;
             box-sizing: border-box;
             color: #fff;
             display: flex;
             flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        .fs-settings-page .modal-actions {
+            justify-content: flex-start;
         }
         .fs-password-page {
             width: min(640px, 84vw);
+            margin: auto;
+            padding: 48px 24px;
+            box-sizing: border-box;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .fs-power-page {
+            width: min(560px, 84vw);
             margin: auto;
             padding: 48px 24px;
             box-sizing: border-box;
@@ -524,7 +540,7 @@
         .form-input { width: 100%; height: 50px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #fff; padding: 0 18px; font-size: 16px; font-weight: 500; box-sizing: border-box; outline: none; transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
         .form-input::placeholder { color: rgba(255,255,255,0.38); }
         .form-input:focus, .form-input.modal-focused { border-color: #fff !important; background: rgba(0,0,0,0.58); box-shadow: 0 0 0 4px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.45); transform: scale(1.01); }
-        /* 任务 6 (Round 6) & 任务 10 (Round 11)：全屏密码输入框内专属从左向右铺满半透明红/绿动画容器 */
+        /* 任务 6 (Round 6) & 任务 10 (Round 11) & 任务 7 (Round 12)：全屏密码输入框颜色条先从左向右填满，填满后再从左向右消失 */
         .pwd-input-wrap {
             position: relative;
             width: 100%;
@@ -558,20 +574,33 @@
         }
         .pwd-fill-bar.fill-error {
             background: linear-gradient(90deg, rgba(255, 69, 58, 0.52) 0%, rgba(255, 59, 48, 0.68) 100%);
-            animation: pwdSweepFillError 0.56s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: pwdSweepInAndOut 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .pwd-fill-bar.fill-success {
             background: linear-gradient(90deg, rgba(48, 209, 88, 0.50) 0%, rgba(52, 199, 89, 0.68) 100%);
-            animation: pwdSweepFillSuccess 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: pwdSweepInAndOut 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        @keyframes pwdSweepFillError {
-            0% { transform: scaleX(0); opacity: 1; }
-            62% { transform: scaleX(1); opacity: 1; }
-            100% { transform: scaleX(1); opacity: 0; }
-        }
-        @keyframes pwdSweepFillSuccess {
-            0% { transform: scaleX(0); opacity: 1; }
-            100% { transform: scaleX(1); opacity: 1; }
+        @keyframes pwdSweepInAndOut {
+            0% {
+                transform-origin: left center;
+                transform: scaleX(0);
+                opacity: 1;
+            }
+            45% {
+                transform-origin: left center;
+                transform: scaleX(1);
+                opacity: 1;
+            }
+            54% {
+                transform-origin: right center;
+                transform: scaleX(1);
+                opacity: 1;
+            }
+            100% {
+                transform-origin: right center;
+                transform: scaleX(0);
+                opacity: 1;
+            }
         }
         .modal-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 28px; width: 100%; }
         .btn { height: 50px; padding: 0 28px; border-radius: 14px; border: 2px solid transparent; font-size: 16px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
@@ -625,16 +654,16 @@
             <div class="nav-item focusable" id="navNowPlayingItem" tabindex="0" data-row="7" data-col="0" data-section-name="现在观看" data-title="现在观看" data-sub="正在播放与历史记录" title="长按停止后台播放并恢复动态背景">
                 <span class="nav-icon-slot" id="navNowPlayingIconSlot"><svg viewBox="0 0 24 24"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></span><span class="item-text" id="navNowPlayingText">现在观看</span>
             </div>
-            <div class="nav-item focusable" id="navCoolTvPlusItem" tabindex="0" data-row="1" data-col="0" data-section-name="很酷TV+" data-title="很酷TV+" data-sub="本地媒体库">
-                <svg viewBox="0 0 24 24"><path d="M19.5 4h-2.1l1.8 3.6h-2.6L14.8 4h-2.2l1.8 3.6h-2.6L10 4H7.8l1.8 3.6H7L5.2 4H4.5C3.12 4 2 5.12 2 6.5v11C2 18.88 3.12 20 4.5 20h15c1.38 0 2.5-1.12 2.5-2.5v-11C22 5.12 20.88 4 19.5 4zm-9.25 11.75v-5.5L15 13l-4.75 2.75z"/></svg><span class="item-text">很酷TV+</span>
+            <div class="nav-item focusable" id="navCoolTvPlusItem" tabindex="0" data-row="1" data-col="0" data-section-name="很酷 TV+" data-title="很酷 TV+" data-sub="最新剧集与热门电影">
+                <svg viewBox="0 0 24 24"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span class="item-text">很酷 TV+</span>
             </div>
-            <div class="nav-item focusable" tabindex="0" data-row="2" data-col="0" data-section-name="有线电视" data-title="有线电视" data-sub="频道直播">
+            <div class="nav-item focusable" tabindex="0" data-row="2" data-col="0" data-section-name="有线电视" data-title="有线电视" data-sub="有线频道直播">
                 <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg><span class="item-text">有线电视</span>
             </div>
-            <div class="nav-item focusable" id="navDouyinItem" tabindex="0" data-row="3" data-col="0" data-section-name="流媒体" data-title="抖音" data-sub="推荐视频" title="长按强制刷新当前推荐流">
+            <div class="nav-item focusable" id="navDouyinItem" tabindex="0" data-row="3" data-col="0" data-section-name="流媒体" data-title="抖音" data-sub="流媒体推荐视频" title="长按强制刷新当前推荐流">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg><span class="item-text">流媒体</span>
             </div>
-            <div class="nav-item focusable" id="navPornItem" tabindex="0" data-row="4" data-col="0" data-section-name="限制级" data-title="限制级" data-sub="加密媒体库" style="display: none;">
+            <div class="nav-item focusable" id="navPornItem" tabindex="0" data-row="4" data-col="0" data-section-name="限制级" data-title="限制级" data-sub="限制级媒体内容" style="display: none;">
                 <svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.2L1.8 20.2h20.4L12 2.2zm0 3.7l7.1 12.5H4.9L12 5.9zM12 8.8L7.4 16.9h9.2L12 8.8zm0 3.1l2 3.5h-4l2-3.5z"/></svg><span class="item-text">限制级</span>
             </div>
         </div>
@@ -642,10 +671,10 @@
         <div class="settings-section">
             <div class="nav-divider"></div>
             <div class="nav-section-title">设置和电源</div>
-            <div class="nav-item focusable" tabindex="0" data-row="5" data-col="0" data-section-name="设置和电源" data-title="偏好设置" data-sub="管理媒体库路径与账户连接" data-action="modal:settings">
-                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49-.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg><span class="item-text">系统设置</span>
+            <div class="nav-item focusable" tabindex="0" data-row="5" data-col="0" data-section-name="设置和电源" data-title="偏好设置" data-sub="媒体内容与管理设置" data-action="modal:settings">
+                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49-.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg><span class="item-text">设置</span>
             </div>
-            <div class="nav-item focusable" id="navPowerItem" tabindex="0" data-row="6" data-col="0" data-section-name="设置和电源" data-title="电源管理" data-sub="重新启动或退出关闭 Feel Cool TV" data-action="modal:power">
+            <div class="nav-item focusable" id="navPowerItem" tabindex="0" data-row="6" data-col="0" data-section-name="设置和电源" data-title="电源" data-sub="屏幕与电源相关选项" data-action="modal:power">
                 <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg><span class="item-text">电源</span>
             </div>
         </div>
@@ -659,15 +688,15 @@
             </div>
             <div class="hero-desc" id="heroDesc" style="display: none;"></div>
             <div class="brand-title" id="heroBrand">
-                <svg viewBox="0 0 24 24"><path d="M19.5 4h-2.1l1.8 3.6h-2.6L14.8 4h-2.2l1.8 3.6h-2.6L10 4H7.8l1.8 3.6H7L5.2 4H4.5C3.12 4 2 5.12 2 6.5v11C2 18.88 3.12 20 4.5 20h15c1.38 0 2.5-1.12 2.5-2.5v-11C22 5.12 20.88 4 19.5 4zm-9.25 11.75v-5.5L15 13l-4.75 2.75z"/></svg>
-                <span id="heroBrandText">很酷TV+</span>
+                <svg viewBox="0 0 24 24"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                <span id="heroBrandText">很酷 TV+</span>
             </div>
         </div>
         <div class="season-bar" id="seasonBar"></div>
         <div class="carousel-container" id="carouselContainer"><div class="carousel-track" id="mainTrack"></div></div>
     </div>
 
-    <!-- 任务 9 (Round 11)：全屏沉浸式偏好设置页面（取消浮窗，直接在背景视频上叠加模糊变暗遮罩，自适应缩放并支持焦点上下滚动） -->
+    <!-- 任务 9 (Round 11) & 任务 1 (Round 12)：全屏沉浸式偏好设置页面（内容居左显示，自适应缩放并支持焦点上下滚动） -->
     <div class="fs-overlay-mask" id="settingsModal">
         <div class="fs-settings-page" id="settingsPageContent">
             <div class="fs-page-header">
@@ -686,7 +715,7 @@
                 </svg>
             </button>
             <div class="form-group">
-                <label class="form-label">影视剧集文件夹路径（很酷TV+）</label>
+                <label class="form-label">影视剧集文件夹路径（很酷 TV+）</label>
                 <input type="text" class="form-input" id="inputMediaPath" placeholder="例如: /Users/gaobo/Movies">
             </div>
             <div class="form-group">
@@ -740,34 +769,37 @@
         </div>
     </div>
 
-    <!-- 任务 10 (Round 11)：全屏沉浸式密码解锁页面（取消浮窗，直接在背景视频上叠加模糊变暗遮罩，自适应缩放并保留红绿解锁颜色条动画） -->
+    <!-- 任务 10 (Round 11) & 任务 7 (Round 12)：全屏沉浸式密码解锁页面（居中显示，颜色条从左到右出现并在填满后从左到右消失） -->
     <div class="fs-overlay-mask" id="passwordModal">
         <div class="fs-password-page" id="passwordPageContent">
             <div class="fs-page-header" style="margin-bottom: 34px;">
-                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">解锁限制级空间</h2>
-                <p class="fs-page-desc" style="font-size: 16px;">请输入访问密码以显示隐藏导航项（方向键切换按钮，再次长按头像可锁定）。</p>
+                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">限制级内容</h2>
+                <p class="fs-page-desc" style="font-size: 16px;">我们实施年龄验证，以遵守适用的联邦和州法律，<br>请输入密码以验证身份。</p>
             </div>
             <div class="form-group" style="max-width: 520px; margin: 0 auto;">
                 <div class="pwd-input-wrap" id="pwdInputWrap">
                     <div class="pwd-fill-bar" id="pwdFillBar"></div>
-                    <input type="password" class="form-input" id="inputUnlockPwd" placeholder="输入密码..." style="height: 74px; text-align: center; font-size: 32px; letter-spacing: 10px; border-radius: 20px;">
+                    <input type="password" class="form-input" id="inputUnlockPwd" placeholder="" style="height: 74px; text-align: center; font-size: 32px; letter-spacing: 10px; border-radius: 20px;">
                 </div>
             </div>
             <div class="modal-actions" style="max-width: 520px; margin: 36px auto 0 auto; justify-content: space-between; gap: 20px;">
                 <button type="button" class="btn btn-cancel" id="btnCancelPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">取消</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">解锁</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">验证</button>
             </div>
         </div>
     </div>
 
-    <div class="glass-modal-mask" id="powerModal">
-        <div class="glass-modal" style="width: 480px; padding: 34px 38px;">
-            <h2 class="modal-title" style="font-size: 26px; margin-bottom: 8px;">电源管理</h2>
-            <div class="modal-desc" style="font-size: 14px; margin-bottom: 24px;">使用方向键选择操作并按回车确认，关闭或重新启动 Feel Cool TV。</div>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 50px; font-size: 16px; border-radius: 14px;">关闭并退出 Feel Cool TV</button>
-                <button type="button" class="btn btn-primary btn-full" id="btnPowerRestart" style="height: 50px; font-size: 16px; border-radius: 14px;">重新启动应用</button>
-                <button type="button" class="btn btn-cancel btn-full" id="btnPowerCancel" style="height: 48px; font-size: 15px; border-radius: 14px;">取消 (Esc)</button>
+    <!-- 任务 6 (Round 12)：全屏沉浸式电源页面（与设置、密码页同款全屏遮罩与自适应缩放设计） -->
+    <div class="fs-overlay-mask" id="powerModal">
+        <div class="fs-power-page" id="powerPageContent">
+            <div class="fs-page-header" style="margin-bottom: 32px;">
+                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">电源管理</h2>
+                <p class="fs-page-desc" style="font-size: 16px;">使用方向键选择操作并按回车确认，关闭或重新启动 Feel Cool TV。</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 480px; margin: 0 auto;">
+                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 58px; font-size: 18px; border-radius: 16px;">关闭并退出 Feel Cool TV</button>
+                <button type="button" class="btn btn-primary btn-full" id="btnPowerRestart" style="height: 58px; font-size: 18px; border-radius: 16px;">重新启动应用</button>
+                <button type="button" class="btn btn-cancel btn-full" id="btnPowerCancel" style="height: 56px; font-size: 17px; border-radius: 16px;">取消 (Esc)</button>
             </div>
         </div>
     </div>
@@ -796,7 +828,7 @@
         }
         window.addEventListener('scroll', lockViewportScroll, true);
 
-        // 任务 4 (Round 5) & 任务 1 & 4 (Round 8) & 任务 9 & 10 (Round 11)：扩大每档 UI 缩放步进（100% ~ 200%），并使全屏设置页、全屏密码页与顶部气象文字完美适配各个缩放等级
+        // 任务 4 (Round 5) & 任务 1 & 4 (Round 8) & 任务 9 & 10 (Round 11) & 任务 6 (Round 12)：扩大每档 UI 缩放步进（100% ~ 200%），并使全屏设置页、全屏密码页、全屏电源页与顶部气象文字完美适配各个缩放等级
         const UI_SCALE_PRESETS = [
             { id: '1.00', label: '标准 (100%)', factor: 1.00 },
             { id: '1.20', label: '适中 (120%)', factor: 1.20 },
@@ -829,10 +861,12 @@
             if (sidebar && mainContent) { sidebar.style.zoom = scale; mainContent.style.zoom = scale; }
             var settingsPage = document.getElementById('settingsPageContent');
             var passwordPage = document.getElementById('passwordPageContent');
+            var powerPage = document.getElementById('powerPageContent');
             var overlayZoom = (window.innerWidth / 1440) * (0.92 + (preset.factor - 1.0) * 0.65);
             overlayZoom = Math.max(0.85, Math.min(2.15, overlayZoom));
             if (settingsPage) settingsPage.style.zoom = overlayZoom;
             if (passwordPage) passwordPage.style.zoom = overlayZoom;
+            if (powerPage) powerPage.style.zoom = overlayZoom;
             var telopEl = document.getElementById('jpWeatherTelop');
             if (telopEl) {
                 var telopScale = (window.innerWidth / 1680) * (0.76 + (preset.factor - 1.0) * 0.24);
@@ -1328,9 +1362,9 @@
         var activePornBrandKey = '';         // 当在厂牌下点进某个关联子文件夹时记录
         var PORN_BRANDS_CONFIG = [
             {
-                title: "厂牌精选专区 (GitHub 预留)",
-                sub: "可在 GitHub config.json 的 porn_brands 字段配置专属厂牌",
-                desc: "支持在 GitHub 配置文件中自定义每个厂牌的名称、透明 Logo (logo_url)、厂牌文字介绍 (desc)、高清卡片封面图 (img) 以及关联的本地子文件夹名称 (folder)。",
+                title: "暂无内容",
+                sub: "暂无内容",
+                desc: "暂无介绍。",
                 img: DEFAULT_LOCAL_CARD_SVG,
                 logo_url: "",
                 folder: "",
@@ -1459,7 +1493,7 @@
                 } else if (effectiveRow === 2 || actStr.indexOf('iptv:') === 0) {
                     sourceLabel = '有线电视';
                 } else if (effectiveRow === 1 || actStr.indexOf('local:') === 0) {
-                    sourceLabel = '很酷TV+';
+                    sourceLabel = '很酷 TV+';
                 }
                 if (sourceLabel) {
                     var suffix = '·' + sourceLabel;
@@ -1480,16 +1514,19 @@
                    '</div>';
         }
 
-        // 任务 6 & 7 (Round 11)：按流媒体分类独立缓存已加载的推荐流，切换分类绝不清空已获取内容；刷新按钮在加载/刷新中变形为丸形“正在加载..”按钮，完成后恢复圆形
+        // 任务 6 & 7 (Round 11) & 任务 2 & 3 (Round 12)：按流媒体分类独立缓存已加载推荐流；若推荐流仍在陆续增加卡片，刷新按钮持续保持丸形“正在加载..”状态，直至本次所有卡片加载完毕后恢复圆形
         var DOUYIN_CATEGORY_CACHE = {};
         var isDouyinRefreshing = false;
+        const DOUYIN_BATCH_SETTLE_MS = 2400;
 
         function isDouyinCategoryLoading(catId) {
             var targetCat = catId || activeDouyinCategory;
             var entry = DOUYIN_CATEGORY_CACHE[targetCat];
             if (!entry) return true;
             if (entry.loading) return true;
-            return !(entry.rawCount && entry.rawCount > 0);
+            if (!(entry.rawCount && entry.rawCount > 0)) return true;
+            if (entry.lastGrowthTs && (Date.now() - entry.lastGrowthTs < DOUYIN_BATCH_SETTLE_MS)) return true;
+            return false;
         }
 
         function updateDouyinRefreshBtnState() {
@@ -1540,7 +1577,7 @@
 
             var cached = DOUYIN_CATEGORY_CACHE[newCatId];
             if (cached && cached.rawCount > 0 && cached.cards && cached.cards.length > 0) {
-                isDouyinRefreshing = Boolean(cached.loading);
+                isDouyinRefreshing = isDouyinCategoryLoading(newCatId);
                 lastDouyinCount = cached.rawCount;
                 lastRowColMap[3] = cached.lastCol || 1;
                 ROW_DATA[3] = cached.cards;
@@ -1556,6 +1593,7 @@
                     cards: placeholderCards,
                     rawCount: 0,
                     lastCol: 1,
+                    lastGrowthTs: Date.now(),
                     loading: true
                 };
                 ROW_DATA[3] = placeholderCards;
@@ -1565,11 +1603,17 @@
             }
         }
 
-        // 任务 13 & 14 (Round 5)：确保流媒体靠近结尾自动加载更多视频流可靠追加到 DOM，并支持全屏自动连播续流
+        // 任务 13 & 14 (Round 5) & 任务 3 (Round 12)：确保流媒体靠近结尾自动加载更多视频流时刷新按钮也显示正在加载，直到本次新增卡片全部加载完毕
         function requestMoreDouyinStreams() {
             var nowTs = Date.now();
             if (nowTs - lastLoadMoreTime < 900) return;
             lastLoadMoreTime = nowTs;
+            if (DOUYIN_CATEGORY_CACHE[activeDouyinCategory]) {
+                DOUYIN_CATEGORY_CACHE[activeDouyinCategory].loading = true;
+                DOUYIN_CATEGORY_CACHE[activeDouyinCategory].lastGrowthTs = nowTs;
+            }
+            isDouyinRefreshing = true;
+            updateDouyinRefreshBtnState();
             loadDouyinNativeFeed(false, true);
             setTimeout(() => loadDouyinNativeFeed(false, false), 1100);
             setTimeout(() => loadDouyinNativeFeed(false, false), 2400);
@@ -1593,6 +1637,7 @@
                     cards: refreshPlaceholder,
                     rawCount: 0,
                     lastCol: 1,
+                    lastGrowthTs: Date.now(),
                     loading: true
                 };
                 ROW_DATA[3] = refreshPlaceholder;
@@ -1604,6 +1649,10 @@
                     if (prevRow === 0) {
                         var restorePill = document.querySelector('.focusable[data-row="0"][data-col="' + prevCol + '"]') || document.querySelector('.focusable[data-row="0"][data-col="1"]');
                         if (restorePill) setFocus(restorePill);
+                    } else if (prevCol === 0) {
+                        // 任务 2 (Round 12)：长按左侧边栏“流媒体”刷新推荐流时，保持焦点留在“流媒体”导航项上，绝不跳入卡片或触发全屏播放
+                        var navDyItem = document.querySelector('.focusable[data-row="3"][data-col="0"]');
+                        if (navDyItem) setFocus(navDyItem);
                     } else {
                         var first = document.querySelector('.focusable[data-row="3"][data-col="1"]') || document.querySelector('.focusable[data-row="3"][data-col="0"]');
                         if (first) setFocus(first);
@@ -1620,6 +1669,11 @@
                     var cappedList = list.slice(0, 200);
                     var prevCache = DOUYIN_CATEGORY_CACHE[reqCat];
                     var prevRawCount = prevCache ? (prevCache.rawCount || 0) : 0;
+                    var nowMs = Date.now();
+                    var growthTs = (cappedList.length > prevRawCount || !prevCache || !prevCache.lastGrowthTs)
+                        ? nowMs
+                        : prevCache.lastGrowthTs;
+                    var stillAddingCards = (nowMs - growthTs) < DOUYIN_BATCH_SETTLE_MS;
 
                     var cards = cappedList.map((item, idx) => ({
                         title: item[0] || (catObj.name + '视频 #' + (idx + 1)),
@@ -1641,11 +1695,12 @@
                         cards: cards,
                         rawCount: cappedList.length,
                         lastCol: (prevCache && prevCache.lastCol) ? prevCache.lastCol : 1,
-                        loading: false
+                        lastGrowthTs: growthTs,
+                        loading: stillAddingCards
                     };
 
                     if (reqCat === activeDouyinCategory) {
-                        isDouyinRefreshing = false;
+                        isDouyinRefreshing = stillAddingCards;
                         updateDouyinRefreshBtnState();
                         var track = document.getElementById('mainTrack');
                         var domVideoCards = (currentTrackRow === 3 && track)
@@ -1697,7 +1752,7 @@
                     updateDouyinRefreshBtnState();
                 }
                 if (!douyinPollTimer) {
-                    douyinPollTimer = setInterval(() => loadDouyinNativeFeed(false, false), 800);
+                    douyinPollTimer = setInterval(() => loadDouyinNativeFeed(false, false), 650);
                 }
             } catch (e) {}
         }
@@ -2361,7 +2416,7 @@
             return false;
         }
 
-        // 任务 11 (Round 10)：记录播放历史（整合很酷TV+本地视频、流媒体、有线电视，严格排除限制级内容）
+        // 任务 11 (Round 10)：记录播放历史（整合很酷 TV+本地视频、流媒体、有线电视，严格排除限制级内容）
         function recordWatchHistoryItem(meta) {
             if (!meta || !meta.url || isRestrictedMeta(meta)) return;
             var sRow = meta.sourceRow || ((meta.row >= 1 && meta.row <= 3) ? meta.row : 1);
@@ -2448,7 +2503,7 @@
                 list.push({
                     title: "暂无观看记录",
                     sub: "播放任意视频后将自动收录于此",
-                    desc: "您播放过的很酷TV+本地视频、有线电视与流媒体内容都将自动汇总在此处。",
+                    desc: "您播放过的很酷 TV+本地视频、有线电视与流媒体内容都将自动汇总在此处。",
                     img: DEFAULT_LOCAL_CARD_SVG,
                     previewUrl: "",
                     action: "",
@@ -3508,7 +3563,7 @@
         };
         document.getElementById('btnPowerCancel').onclick = closePowerModal;
 
-        // 任务 6 (Round 6) & 任务 2 (Round 8)：密码为空时解锁按钮不可触发；仅在输入非空时执行校验与红/绿铺满动画
+        // 任务 6 (Round 6) & 任务 2 (Round 8) & 任务 7 (Round 12)：密码为空时解锁按钮不可触发；验证通过或失败时颜色条从左到右出现，填满后再从左到右消失
         function verifyAndUnlockPorn() {
             if (pwdAnimUnlocking) return;
             var input = document.getElementById('inputUnlockPwd');
@@ -3538,17 +3593,19 @@
                     setTimeout(function() {
                         scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
                     }, 320);
-                }, 430);
+                }, 740);
             } else {
+                pwdAnimUnlocking = true;
                 input.style.borderColor = '#FF453A';
                 if (fillBar) fillBar.className = 'pwd-fill-bar fill-error';
                 setTimeout(function() {
+                    pwdAnimUnlocking = false;
                     if (!isModalOpen) return;
                     input.value = '';
                     updateConfirmPwdBtnState();
                     if (fillBar) fillBar.className = 'pwd-fill-bar';
                     setModalFocus(0);
-                }, 540);
+                }, 740);
             }
         }
 
@@ -3951,7 +4008,7 @@
         function fetchTMDBLogo(title, callback) {
             var cleanTitle = title.replace(/(HD|FHD|4K|1080p|720p)/ig, '').trim();
             if (!cleanTitle) return callback(null);
-            var ignoreList = ["有线电视", "流媒体", "抖音", "刷新推荐流", "正在加载推荐内容...", "正在加载抖音精选...", "正在刷新推荐流...", "系统设置", "偏好设置", "有线频道", "现在观看", "正在观看", "很酷TV+", "暂无观看记录", "本地媒体库", "私密空间", "限制级", "点击配置本地影视库", "文件夹为空"];
+            var ignoreList = ["有线电视", "流媒体", "抖音", "刷新推荐流", "正在加载推荐内容...", "正在加载抖音精选...", "正在刷新推荐流...", "系统设置", "偏好设置", "有线频道", "现在观看", "正在观看", "很酷 TV+", "暂无观看记录", "最新剧集与热门电影", "私密空间", "限制级", "点击配置本地影视库", "文件夹为空"];
             if (ignoreList.indexOf(cleanTitle) !== -1 || cleanTitle.indexOf('正在刷新') === 0 || cleanTitle.indexOf('正在加载') === 0) return callback(null);
             if (tmdbLogoCache[cleanTitle] !== undefined) return callback(tmdbLogoCache[cleanTitle]);
 
@@ -4184,7 +4241,7 @@
             }
 
             var noBgChange = targetEl.getAttribute('data-no-bg-change') === 'true';
-            var sectionName = targetEl.getAttribute('data-section-name') || (col > 0 ? (document.querySelector('.focusable[data-row="' + (activeSeriesView ? 1 : row) + '"][data-col="0"]') || {}).getAttribute('data-section-name') : '') || '很酷TV+';
+            var sectionName = targetEl.getAttribute('data-section-name') || (col > 0 ? (document.querySelector('.focusable[data-row="' + (activeSeriesView ? 1 : row) + '"][data-col="0"]') || {}).getAttribute('data-section-name') : '') || '很酷 TV+';
 
             var bgPlayingNow = hasActiveBgPlayback() || Boolean(bgPreviewTimeout);
             var displayEl = targetEl;
@@ -4565,6 +4622,7 @@
                     break;
                 case 'Enter':
                     e.preventDefault();
+                    if (e.repeat) break;
                     if (row === 0) {
                         if (currentTrackRow === 3 && currentFocusEl.getAttribute('data-douyin-refresh') === '1') {
                             triggerDouyinCategoryForceRefresh(currentFocusEl);
