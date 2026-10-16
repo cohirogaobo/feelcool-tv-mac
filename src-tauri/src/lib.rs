@@ -79,7 +79,6 @@ fn build_ffmpeg_args(
 
     if is_local_file {
         args.extend(vec![
-            "-re".to_string(),
             "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
             "-analyzeduration".to_string(), "10M".to_string(),
             "-probesize".to_string(), "10M".to_string(),
@@ -99,6 +98,7 @@ fn build_ffmpeg_args(
             ]);
         }
         args.extend(vec![
+            "-g".to_string(), "30".to_string(),
             "-b:v".to_string(), "8M".to_string(),
             "-af".to_string(), audio_norm_std.to_string(),
             "-c:a".to_string(), "aac".to_string(),
@@ -106,8 +106,9 @@ fn build_ffmpeg_args(
             "-ar".to_string(), "44100".to_string(),
             "-ac".to_string(), "2".to_string(),
             "-f".to_string(), "hls".to_string(),
-            "-hls_time".to_string(), "2".to_string(),
+            "-hls_time".to_string(), "1".to_string(),
             "-hls_list_size".to_string(), "0".to_string(),
+            "-hls_playlist_type".to_string(), "event".to_string(),
             "-hls_segment_filename".to_string(), ts_pattern.to_string(),
             m3u8_path.to_string()
         ]);
@@ -122,11 +123,18 @@ fn build_ffmpeg_args(
             "-reconnect_delay_max".to_string(), "2".to_string(),
             "-rw_timeout".to_string(), "8000000".to_string(),
             "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
+        ]);
+        if let Some(s) = seek_sec {
+            if s > 0.05 {
+                args.extend(vec!["-ss".to_string(), format!("{:.2}", s)]);
+            }
+        }
+        args.extend(vec![
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
         ]);
-        if can_stream_copy_h264 {
+        if can_stream_copy_h264 && seek_sec.unwrap_or(0.0) <= 0.05 {
             args.extend(vec![
                 "-c:v".to_string(), "copy".to_string(),
                 "-af".to_string(), audio_norm_douyin.to_string(),
@@ -135,8 +143,9 @@ fn build_ffmpeg_args(
                 "-ar".to_string(), "44100".to_string(),
                 "-ac".to_string(), "2".to_string(),
                 "-f".to_string(), "hls".to_string(),
-                "-hls_time".to_string(), "2".to_string(),
+                "-hls_time".to_string(), "1".to_string(),
                 "-hls_list_size".to_string(), "0".to_string(),
+                "-hls_playlist_type".to_string(), "event".to_string(),
                 "-hls_segment_filename".to_string(), ts_pattern.to_string(),
                 m3u8_path.to_string()
             ]);
@@ -156,6 +165,7 @@ fn build_ffmpeg_args(
                 ]);
             }
             args.extend(vec![
+                "-g".to_string(), "30".to_string(),
                 "-b:v".to_string(), "10M".to_string(),
                 "-maxrate".to_string(), "14M".to_string(),
                 "-bufsize".to_string(), "20M".to_string(),
@@ -165,8 +175,9 @@ fn build_ffmpeg_args(
                 "-ar".to_string(), "44100".to_string(),
                 "-ac".to_string(), "2".to_string(),
                 "-f".to_string(), "hls".to_string(),
-                "-hls_time".to_string(), "2".to_string(),
+                "-hls_time".to_string(), "1".to_string(),
                 "-hls_list_size".to_string(), "0".to_string(),
+                "-hls_playlist_type".to_string(), "event".to_string(),
                 "-hls_segment_filename".to_string(), ts_pattern.to_string(),
                 m3u8_path.to_string()
             ]);
@@ -971,82 +982,215 @@ fn strip_district_suffix(name: &str) -> String {
     t.to_string()
 }
 
-/// 根据当前城市与当前区，匹配当前区 + 临近三个区（共 4 个区域名称，不带“区”字）
-fn resolve_four_nearby_districts(city: &str, current_dist: &str) -> Vec<String> {
-    let cur = strip_district_suffix(current_dist);
-    let clean_city = strip_district_suffix(city);
+/// 规范化街道名称，确保带有“街道”或“镇”后缀（如“梅山” -> “梅山街道”，“梅山街道” -> “梅山街道”）
+fn normalize_street_name(name: &str) -> String {
+    let t = name.trim();
+    if t.is_empty() {
+        return String::new();
+    }
+    if t.ends_with("街道") || t.ends_with("镇") || t.ends_with("乡") {
+        return t.to_string();
+    }
+    for suffix in &["办事处", "片区", "商圈", "地区"] {
+        if let Some(s) = t.strip_suffix(suffix) {
+            if !s.is_empty() {
+                if s.ends_with("街道") || s.ends_with("镇") {
+                    return s.to_string();
+                }
+                return format!("{}街道", s);
+            }
+        }
+    }
+    format!("{}街道", t)
+}
 
-    // 针对南京各主城区的精准邻接排序（如玄武 -> 玄武 栖霞 雨花台 秦淮）
-    if clean_city == "南京" {
-        let nanjing_map: &[(&str, &[&str])] = &[
-            ("玄武", &["玄武", "栖霞", "雨花台", "秦淮"]),
-            ("秦淮", &["秦淮", "玄武", "雨花台", "建邺"]),
-            ("建邺", &["建邺", "秦淮", "鼓楼", "雨花台"]),
-            ("鼓楼", &["鼓楼", "玄武", "建邺", "栖霞"]),
-            ("栖霞", &["栖霞", "玄武", "鼓楼", "江宁"]),
-            ("雨花台", &["雨花台", "秦淮", "建邺", "江宁"]),
-            ("江宁", &["江宁", "雨花台", "秦淮", "栖霞"]),
-            ("浦口", &["浦口", "鼓楼", "建邺", "六合"]),
-            ("六合", &["六合", "浦口", "栖霞", "玄武"]),
-            ("溧水", &["溧水", "江宁", "高淳", "雨花台"]),
-            ("高淳", &["高淳", "溧水", "江宁", "雨花台"]),
-        ];
-        for (k, list) in nanjing_map {
-            if *k == cur {
+/// 任务 6 (Round 10)：根据当前城市、区县、街道或经纬度，匹配当前位置所在街道与邻近的三个街道（共 4 个街道名称）
+/// 例如南京市雨花台区梅山街道 -> “梅山街道 赛虹桥街道 铁心桥街道 西善桥街道”
+fn resolve_four_nearby_streets(
+    city: &str,
+    current_dist: &str,
+    current_street: &str,
+    lat: Option<f64>,
+    lon: Option<f64>,
+) -> Vec<String> {
+    let clean_city = strip_district_suffix(city);
+    let clean_dist = strip_district_suffix(current_dist);
+    let mut norm_street = normalize_street_name(current_street);
+
+    // 南京各街道经纬度中心点（当定位接口仅返回坐标或区名时，可根据坐标精准匹配所在街道）
+    let nanjing_street_coords: &[(&str, &str, f64, f64)] = &[
+        ("雨花台", "梅山街道", 31.946, 118.672),
+        ("雨花台", "西善桥街道", 31.966, 118.705),
+        ("雨花台", "铁心桥街道", 31.972, 118.756),
+        ("雨花台", "赛虹桥街道", 32.002, 118.758),
+        ("雨花台", "雨花街道", 31.996, 118.784),
+        ("雨花台", "板桥街道", 31.918, 118.662),
+        ("雨花台", "古雄街道", 31.902, 118.636),
+        ("玄武", "新街口街道", 32.048, 118.788),
+        ("玄武", "玄武门街道", 32.071, 118.785),
+        ("玄武", "梅园新村街道", 32.044, 118.805),
+        ("玄武", "锁金村街道", 32.078, 118.812),
+        ("玄武", "孝陵卫街道", 32.036, 118.858),
+        ("玄武", "红山街道", 32.092, 118.806),
+        ("秦淮", "夫子庙街道", 32.022, 118.788),
+        ("秦淮", "五老村街道", 32.038, 118.795),
+        ("秦淮", "洪武路街道", 32.031, 118.786),
+        ("秦淮", "朝天宫街道", 32.035, 118.774),
+        ("秦淮", "中华门街道", 32.009, 118.779),
+        ("建邺", "兴隆街道", 32.018, 118.736),
+        ("建邺", "莫愁湖街道", 32.034, 118.756),
+        ("建邺", "南苑街道", 32.016, 118.752),
+        ("建邺", "沙洲街道", 31.992, 118.725),
+        ("鼓楼", "湖南路街道", 32.068, 118.776),
+        ("鼓楼", "华侨路街道", 32.052, 118.774),
+        ("鼓楼", "宁海路街道", 32.062, 118.765),
+        ("鼓楼", "江东街道", 32.048, 118.738),
+        ("栖霞", "仙林街道", 32.105, 118.926),
+        ("栖霞", "马群街道", 32.054, 118.902),
+        ("栖霞", "迈皋桥街道", 32.104, 118.816),
+        ("栖霞", "尧化街道", 32.122, 118.868),
+        ("江宁", "东山街道", 31.954, 118.842),
+        ("江宁", "秣陵街道", 31.922, 118.818),
+        ("江宁", "淳化街道", 31.942, 118.928),
+        ("江宁", "麒麟街道", 32.024, 118.924),
+        ("浦口", "江浦街道", 32.058, 118.628),
+        ("浦口", "顶山街道", 32.105, 118.675),
+        ("浦口", "泰山街道", 32.142, 118.712),
+    ];
+
+    if norm_street.is_empty() && clean_city == "南京" {
+        if let (Some(la), Some(lo)) = (lat, lon) {
+            let mut best_st = "";
+            let mut best_dist_sq = f64::MAX;
+            for (d_name, st_name, sla, slo) in nanjing_street_coords {
+                if !clean_dist.is_empty() && *d_name != clean_dist {
+                    continue;
+                }
+                let dsq = (la - sla).powi(2) + (lo - slo).powi(2);
+                if dsq < best_dist_sq {
+                    best_dist_sq = dsq;
+                    best_st = st_name;
+                }
+            }
+            if !best_st.is_empty() {
+                norm_street = best_st.to_string();
+            }
+        }
+    }
+
+    // 针对南京市雨花台区各街道的精准邻接表（如梅山街道 -> 梅山街道 赛虹桥街道 铁心桥街道 西善桥街道）
+    let yuhuatai_map: &[(&str, &[&str])] = &[
+        ("梅山街道", &["梅山街道", "赛虹桥街道", "铁心桥街道", "西善桥街道"]),
+        ("赛虹桥街道", &["赛虹桥街道", "雨花街道", "铁心桥街道", "西善桥街道"]),
+        ("铁心桥街道", &["铁心桥街道", "赛虹桥街道", "雨花街道", "西善桥街道"]),
+        ("西善桥街道", &["西善桥街道", "梅山街道", "赛虹桥街道", "铁心桥街道"]),
+        ("雨花街道", &["雨花街道", "赛虹桥街道", "铁心桥街道", "西善桥街道"]),
+        ("板桥街道", &["板桥街道", "古雄街道", "梅山街道", "西善桥街道"]),
+        ("古雄街道", &["古雄街道", "板桥街道", "梅山街道", "西善桥街道"]),
+    ];
+
+    if clean_dist == "雨花台" || norm_street == "梅山街道" || norm_street == "赛虹桥街道" || norm_street == "铁心桥街道" || norm_street == "西善桥街道" {
+        for (k, list) in yuhuatai_map {
+            if *k == norm_street {
                 return list.iter().map(|s| s.to_string()).collect();
             }
         }
-        return vec!["玄武".into(), "栖霞".into(), "雨花台".into(), "秦淮".into()];
+        return vec![
+            "梅山街道".into(),
+            "赛虹桥街道".into(),
+            "铁心桥街道".into(),
+            "西善桥街道".into(),
+        ];
     }
 
-    let city_pools: &[(&str, &[&str])] = &[
-        ("北京", &["朝阳", "海淀", "东城", "西城", "丰台", "石景山", "通州", "昌平", "大兴"]),
-        ("上海", &["浦东", "黄浦", "徐汇", "静安", "长宁", "普陀", "虹口", "杨浦", "闵行"]),
-        ("广州", &["天河", "越秀", "海珠", "荔湾", "白云", "黄埔", "番禺", "花都"]),
-        ("深圳", &["福田", "南山", "罗湖", "宝安", "龙华", "龙岗", "盐田"]),
-        ("杭州", &["西湖", "上城", "拱墅", "滨江", "萧山", "余杭", "钱塘"]),
-        ("苏州", &["姑苏", "虎丘", "吴中", "相城", "吴江", "昆山"]),
-        ("无锡", &["梁溪", "滨湖", "新吴", "锡山", "惠山"]),
-        ("常州", &["天宁", "钟楼", "新北", "武进", "金坛"]),
-        ("成都", &["锦江", "青羊", "武侯", "成华", "金牛", "双流", "温江"]),
-        ("重庆", &["渝中", "江北", "南岸", "九龙坡", "沙坪坝", "渝北"]),
-        ("武汉", &["武昌", "江汉", "江岸", "洪山", "汉阳", "硚口"]),
-        ("西安", &["雁塔", "碑林", "新城", "莲湖", "未央", "长安"]),
-        ("天津", &["和平", "河西", "南开", "河东", "河北", "红桥"]),
-        ("合肥", &["蜀山", "庐阳", "包河", "瑶海"]),
-        ("长沙", &["岳麓", "芙蓉", "天心", "开福", "雨花"]),
-        ("郑州", &["金水", "中原", "二七", "管城", "惠济"]),
-        ("青岛", &["市南", "市北", "崂山", "李沧", "黄岛"]),
-        ("济南", &["历下", "市中", "槐荫", "天桥", "历城"]),
-        ("宁波", &["海曙", "鄞州", "江北", "镇海", "北仑"]),
-        ("厦门", &["思明", "湖里", "集美", "海沧"]),
-        ("福州", &["鼓楼", "台江", "仓山", "晋安", "马尾"]),
-        ("沈阳", &["和平", "沈河", "皇姑", "铁西", "浑南"]),
-        ("大连", &["中山", "西岗", "沙河口", "甘井子"]),
+    // 各区县街道池：当前街道置顶，自动补齐同区邻近三个街道
+    let district_street_pools: &[(&str, &str, &[&str])] = &[
+        ("南京", "玄武", &["新街口街道", "玄武门街道", "梅园新村街道", "锁金村街道", "孝陵卫街道", "红山街道", "玄武湖街道"]),
+        ("南京", "秦淮", &["夫子庙街道", "五老村街道", "洪武路街道", "朝天宫街道", "中华门街道", "双塘街道", "月牙湖街道", "光华路街道"]),
+        ("南京", "建邺", &["兴隆街道", "莫愁湖街道", "南苑街道", "沙洲街道", "双闸街道", "江心洲街道"]),
+        ("南京", "鼓楼", &["湖南路街道", "华侨路街道", "宁海路街道", "中央门街道", "挹江门街道", "江东街道", "凤凰街道", "热河南路街道"]),
+        ("南京", "栖霞", &["仙林街道", "马群街道", "迈皋桥街道", "尧化街道", "燕子矶街道", "栖霞街道", "龙潭街道", "西岗街道"]),
+        ("南京", "雨花台", &["梅山街道", "赛虹桥街道", "铁心桥街道", "西善桥街道", "雨花街道", "板桥街道", "古雄街道"]),
+        ("南京", "江宁", &["东山街道", "秣陵街道", "百家湖街道", "淳化街道", "麒麟街道", "江宁街道", "汤山街道", "禄口街道"]),
+        ("南京", "浦口", &["江浦街道", "顶山街道", "泰山街道", "沿江街道", "桥林街道", "汤泉街道"]),
+        ("南京", "六合", &["雄州街道", "龙池街道", "横梁街道", "金牛湖街道"]),
+        ("南京", "溧水", &["永阳街道", "柘塘街道", "东屏街道", "石湫街道"]),
+        ("南京", "高淳", &["淳溪街道", "古柏街道", "漆桥街道", "固城街道"]),
+        ("北京", "朝阳", &["建外街道", "朝外街道", "呼家楼街道", "三里屯街道", "望京街道", "奥园街道"]),
+        ("北京", "海淀", &["中关村街道", "海淀街道", "学院路街道", "万柳街道", "清河街道", "羊坊店街道"]),
+        ("北京", "东城", &["东华门街道", "景山街道", "交道口街道", "安定门街道", "北新桥街道"]),
+        ("北京", "西城", &["西长安街街道", "新街口街道", "月坛街道", "金融街街道", "什刹海街道"]),
+        ("上海", "浦东", &["陆家嘴街道", "惟明街道", "塘桥街道", "洋泾街道", "花木街道", "张江镇"]),
+        ("上海", "黄浦", &["外滩街道", "南京东路街道", "淮海中路街道", "瑞金二路街道", "豫园街道"]),
+        ("上海", "徐汇", &["徐家汇街道", "天平路街道", "湖南路街道", "枫林路街道", "漕河泾街道"]),
+        ("上海", "静安", &["静安寺街道", "南京西路街道", "江宁路街道", "曹家渡街道", "天目西路街道"]),
+        ("广州", "天河", &["天河南街道", "林和街道", "猎德街道", "冼村街道", "石牌街道", "五山街道"]),
+        ("广州", "越秀", &["北京街道", "光塔街道", "人民街道", "东山街道", "农林街道"]),
+        ("深圳", "南山", &["粤海街道", "南头街道", "南山街道", "沙河街道", "蛇口街道", "西丽街道"]),
+        ("深圳", "福田", &["福田街道", "华强北街道", "园岭街道", "南园街道", "沙头街道", "莲花街道"]),
+        ("杭州", "西湖", &["北山街道", "西溪街道", "灵隐街道", "翠苑街道", "文新街道", "古荡街道"]),
+        ("杭州", "上城", &["湖滨街道", "清波街道", "小营街道", "望江街道", "四季青街道"]),
+        ("苏州", "姑苏", &["平江街道", "金阊街道", "沧浪街道", "双塔街道", "虎丘街道"]),
+        ("无锡", "梁溪", &["崇安寺街道", "通江街道", "广瑞路街道", "迎龙桥街道", "南禅寺街道"]),
+        ("常州", "天宁", &["雕庄街道", "青龙街道", "茶山街道", "红梅街道", "天宁街道"]),
+        ("成都", "锦江", &["春熙路街道", "书院街街道", "合江亭街道", "牛市口街道", "沙河街道"]),
+        ("武汉", "武昌", &["黄鹤楼街道", "粮道街街道", "中华路街道", "水果湖街道", "中南路街道"]),
+        ("西安", "雁塔", &["小寨路街道", "大雁塔街道", "长延堡街道", "电子城街道", "曲江街道"]),
     ];
 
     let mut out = Vec::new();
-    if !cur.is_empty() {
-        out.push(cur.clone());
+    if !norm_street.is_empty() {
+        out.push(norm_street.clone());
     }
-    for (c_name, pool) in city_pools {
-        if *c_name == clean_city {
-            for d in *pool {
+
+    for (c_name, d_name, pool) in district_street_pools {
+        if (*c_name == clean_city && *d_name == clean_dist)
+            || (!norm_street.is_empty() && pool.iter().any(|s| *s == norm_street))
+        {
+            for st in *pool {
                 if out.len() >= 4 {
                     break;
                 }
-                let ds = d.to_string();
-                if !out.contains(&ds) {
-                    out.push(ds);
+                let st_str = st.to_string();
+                if !out.contains(&st_str) {
+                    out.push(st_str);
                 }
             }
             break;
         }
     }
-    if out.is_empty() && !clean_city.is_empty() {
-        out.push(clean_city);
+
+    if out.len() < 4 && clean_city == "南京" {
+        for fallback_st in &["梅山街道", "赛虹桥街道", "铁心桥街道", "西善桥街道"] {
+            if out.len() >= 4 {
+                break;
+            }
+            let s = fallback_st.to_string();
+            if !out.contains(&s) {
+                out.push(s);
+            }
+        }
     }
-    out
+
+    if out.len() < 4 {
+        let base = if !clean_dist.is_empty() { &clean_dist } else if !clean_city.is_empty() { &clean_city } else { "中心" };
+        let generic_fallbacks = [
+            format!("{}街道", base),
+            "新华街道".to_string(),
+            "朝阳街道".to_string(),
+            "南苑街道".to_string(),
+        ];
+        for g in &generic_fallbacks {
+            if out.len() >= 4 {
+                break;
+            }
+            if !out.contains(g) {
+                out.push(g.clone());
+            }
+        }
+    }
+
+    out.into_iter().take(4).collect()
 }
 
 #[tauri::command]
@@ -1066,6 +1210,7 @@ async fn fetch_weather_broadcast(
         let mut domestic_city = String::new();
         let mut domestic_district = String::new();
         let mut domestic_province = String::new();
+        let mut domestic_street = String::new();
 
         if let (Some(clat), Some(clon)) = (client_lat, client_lon) {
             if clat > 3.0 && clat < 55.0 && clon > 70.0 && clon < 145.0 {
@@ -1095,6 +1240,53 @@ async fn fetch_weather_broadcast(
                     }
                     if let Some(prov) = rg.get("province").and_then(|v| v.as_str()) {
                         domestic_province = prov.to_string();
+                    }
+                    for st_key in &["street", "township", "town", "areaName"] {
+                        if let Some(st) = rg.get(*st_key).and_then(|v| v.as_str()) {
+                            if !st.trim().is_empty() {
+                                domestic_street = st.trim().to_string();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 若有经纬度坐标，调用美团经纬度逆地理接口获取街道级定位信息
+        if let (Some(la), Some(lo)) = (lat, lon) {
+            let mt_rev_url = format!(
+                "https://apimobile.meituan.com/group/v1/city/latlng/{:.5},{:.5}?tag=0",
+                la, lo
+            );
+            let (_, mt_rev_json) = curl_get_json_direct(&mt_rev_url);
+            if let Some(mrj) = mt_rev_json {
+                if let Some(d) = mrj.get("data") {
+                    if domestic_city.is_empty() {
+                        if let Some(c) = d.get("city").and_then(|v| v.as_str()) {
+                            domestic_city = c.to_string();
+                        }
+                    }
+                    if domestic_district.is_empty() {
+                        if let Some(dist) = d.get("district").and_then(|v| v.as_str()) {
+                            domestic_district = dist.to_string();
+                        }
+                    }
+                    if domestic_province.is_empty() {
+                        if let Some(prov) = d.get("province").and_then(|v| v.as_str()) {
+                            domestic_province = prov.to_string();
+                        }
+                    }
+                    if domestic_street.is_empty() {
+                        for st_key in &["areaName", "street", "township", "town"] {
+                            if let Some(st) = d.get(*st_key).and_then(|v| v.as_str()) {
+                                let st_trim = st.trim();
+                                if !st_trim.is_empty() && st_trim != domestic_district && st_trim != domestic_city {
+                                    domestic_street = st_trim.to_string();
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1212,48 +1404,40 @@ async fn fetch_weather_broadcast(
             }
         }
 
-        // 构造当前区 + 临近三个区（不显示“区”字），若城市下有补充区划则优先补足 4 个
-        let mut four_districts = resolve_four_nearby_districts(&domestic_city, &domestic_district);
-        if four_districts.len() < 4 {
-            if let (Some(la), Some(lo)) = (lat, lon) {
-                let offsets = [(0.055, 0.045), (-0.055, -0.045), (0.045, -0.055)];
-                for (dlat, dlon) in &offsets {
-                    if four_districts.len() >= 4 {
-                        break;
-                    }
-                    let q_near = format!("{:.3},{:.3}", la + dlat, lo + dlon);
-                    let near_url = format!(
-                        "https://openapi.weathercn.com/locations/v1/cities/geoposition/search.json?q={}&apikey={}&language=zh-cn",
-                        q_near, api_key
-                    );
-                    let (_, near_json) = curl_get_json_direct(&near_url);
-                    if let Some(nj) = near_json {
-                        if let Some(ln) = nj.get("LocalizedName").and_then(|v| v.as_str()) {
-                            let stripped = strip_district_suffix(ln);
-                            if !stripped.is_empty() && !four_districts.contains(&stripped) {
-                                four_districts.push(stripped);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        let areas_display = four_districts.into_iter().take(4).collect::<Vec<_>>().join(" ");
+        // 任务 6 (Round 10)：构造当前所在街道 + 邻近三个街道（如“梅山街道 赛虹桥街道 铁心桥街道 西善桥街道”）
+        let four_streets = resolve_four_nearby_streets(
+            &domestic_city,
+            &domestic_district,
+            &domestic_street,
+            lat,
+            lon,
+        );
+        let areas_display = four_streets.into_iter().take(4).collect::<Vec<_>>().join(" ");
 
-        // 第二行居右机构名称：如“江苏气象台”
-        let clean_admin = admin_name
-            .trim_end_matches("省")
+        // 任务 6 (Round 10)：第二行居右气象台署名由省级改为市级（如“南京市气象台”）
+        let clean_city_name = domestic_city
+            .trim()
             .trim_end_matches("市")
-            .trim_end_matches("壮族自治区")
-            .trim_end_matches("回族自治区")
-            .trim_end_matches("维吾尔自治区")
-            .trim_end_matches("自治区")
-            .trim_end_matches("特别行政区")
+            .trim_end_matches("地区")
+            .trim_end_matches("自治州")
             .to_string();
-        let agency_name = if !clean_admin.is_empty() {
-            format!("{}气象台", clean_admin)
+        let agency_name = if !clean_city_name.is_empty() {
+            format!("{}市气象台", clean_city_name)
         } else {
-            "中央气象台".to_string()
+            let clean_admin = admin_name
+                .trim_end_matches("省")
+                .trim_end_matches("市")
+                .trim_end_matches("壮族自治区")
+                .trim_end_matches("回族自治区")
+                .trim_end_matches("维吾尔自治区")
+                .trim_end_matches("自治区")
+                .trim_end_matches("特别行政区")
+                .to_string();
+            if !clean_admin.is_empty() {
+                format!("{}市气象台", clean_admin)
+            } else {
+                "南京市气象台".to_string()
+            }
         };
 
         let mut warning_headline: Option<String> = None;
@@ -1505,8 +1689,31 @@ fn ensure_douyin_scraper(
                 }
             } catch(e) {}
 
+            // 任务 1 (Round 10)：启动时清除抖音页面自身缓存的旧推荐批次，并载入跨会话已展示视频 ID 集合，确保每次重启应用呈现的都是全新推荐流
             window.__FC_QUEUE__ = [];
             window.__FC_SEEN__ = new Set();
+            window.__FC_PERSIST_IDS__ = [];
+            try {
+                if (!window.__FC_SESSION_CLEANED__) {
+                    window.__FC_SESSION_CLEANED__ = true;
+                    try { sessionStorage.clear(); } catch (_) {}
+                    try {
+                        for (let ki = localStorage.length - 1; ki >= 0; ki--) {
+                            const k = localStorage.key(ki) || '';
+                            if (/jingxuan|discover_feed|feed_cache|aweme_list|prefetch|recommend_cache/i.test(k)) {
+                                localStorage.removeItem(k);
+                            }
+                        }
+                    } catch (_) {}
+                }
+                const savedIds = JSON.parse(localStorage.getItem('__fc_boot_seen_v1__') || '[]');
+                if (Array.isArray(savedIds)) {
+                    window.__FC_PERSIST_IDS__ = savedIds.slice(-90);
+                    for (const sid of window.__FC_PERSIST_IDS__) {
+                        if (sid) window.__FC_SEEN__.add(String(sid));
+                    }
+                }
+            } catch (e) {}
             window.__FC_FETCH_QUEUE__ = [];
             window.__FC_FETCHED_IDS__ = new Set();
 
@@ -1635,6 +1842,13 @@ fn ensure_douyin_scraper(
                 cover = normalizeHttps(cover);
                 if (playUrl && cover) {
                     window.__FC_SEEN__.add(idKey);
+                    try {
+                        window.__FC_PERSIST_IDS__.push(idKey);
+                        if (window.__FC_PERSIST_IDS__.length > 90) {
+                            window.__FC_PERSIST_IDS__ = window.__FC_PERSIST_IDS__.slice(-90);
+                        }
+                        localStorage.setItem('__fc_boot_seen_v1__', JSON.stringify(window.__FC_PERSIST_IDS__));
+                    } catch (_) {}
                     window.__FC_QUEUE__.push([desc, author, cover, playUrl]);
                 }
             }
@@ -1710,6 +1924,10 @@ fn ensure_douyin_scraper(
                 }, 1400);
             };
 
+            // 任务 1 (Round 10)：页面首次载入后自动触发动态下拉请求，确保每次重启无需手动刷新即可拉取全新推荐流
+            setTimeout(() => { if (window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 950);
+            setTimeout(() => { if (window.__FC_QUEUE__.length < 6 && window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 2200);
+
             window.__FC_SHOW_LOGIN_BAR__ = function() {
                 if (document.getElementById('fc-login-bar')) return;
                 const bar = document.createElement('div');
@@ -1737,7 +1955,7 @@ fn ensure_douyin_scraper(
                 const cards = document.querySelectorAll('[data-aweme-id]');
                 cards.forEach(card => {
                     const id = card.getAttribute('data-aweme-id');
-                    if (id && !window.__FC_FETCHED_IDS__.has(id)) {
+                    if (id && !window.__FC_FETCHED_IDS__.has(id) && !window.__FC_SEEN__.has(id)) {
                         window.__FC_FETCHED_IDS__.add(id);
                         window.__FC_FETCH_QUEUE__.push(id);
                     }
@@ -1753,7 +1971,12 @@ fn ensure_douyin_scraper(
         })();
     "#;
 
-    let parsed_url: tauri::Url = "https://www.douyin.com/discover".parse().unwrap();
+    let boot_ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(1);
+    let init_url_str = format!("https://www.douyin.com/discover?_fc_boot={}", boot_ts);
+    let parsed_url: tauri::Url = init_url_str.parse().unwrap();
     let _ = WebviewWindowBuilder::new(app, "douyin_scraper", WebviewUrl::External(parsed_url))
         .title("抖音账号登录")
         .inner_size(1180.0, 760.0)
@@ -1766,7 +1989,7 @@ fn ensure_douyin_scraper(
                 let _ = win.hide();
                 feed_arc.lock().unwrap().clear();
                 probing_arc.lock().unwrap().clear();
-                let _ = win.eval("window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
+                let _ = win.eval("window.__FC_QUEUE__ = []; window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
                 if let Some(main_win) = win.app_handle().get_webview_window("main") {
                     let _ = main_win.set_focus();
                 }
@@ -1832,11 +2055,17 @@ async fn get_douyin_feed(
     if refresh || cat_changed {
         state.douyin_feed.lock().unwrap().clear();
         state.douyin_probing.lock().unwrap().clear();
-        let target_url = category_to_douyin_url(&req_cat);
+        let base_url = category_to_douyin_url(&req_cat);
+        let ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(1);
+        let sep = if base_url.contains('?') { "&" } else { "?" };
+        let target_url = format!("{}{}_fc_t={}", base_url, sep, ts);
         if let Some(win) = app.get_webview_window("douyin_scraper") {
             let js = format!(
-                "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); if (window.location.href !== '{}') {{ window.location.href = '{}'; }} else {{ window.location.reload(); }}",
-                target_url, target_url
+                "window.__FC_QUEUE__ = []; window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
+                target_url
             );
             let _ = win.eval(&js);
         }
