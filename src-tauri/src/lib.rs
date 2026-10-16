@@ -15,7 +15,7 @@ struct AppState {
     ffmpeg_process: Arc<Mutex<Option<(u64, Child)>>>,
     ffmpeg_op_lock: Arc<Mutex<()>>,
     ffmpeg_generation: Arc<AtomicU64>,
-    douyin_feed: Arc<Mutex<Vec<DouyinItem>>>,
+    douyin_feed: Arc<Mutex<HashMap<String, Vec<DouyinItem>>>>,
     douyin_probing: Arc<Mutex<HashSet<String>>>,
     douyin_category: Arc<Mutex<String>>,
     thumb_lock: Arc<Mutex<()>>,
@@ -1658,8 +1658,9 @@ fn category_to_douyin_url(cat: &str) -> &'static str {
 
 fn ensure_douyin_scraper(
     app: &AppHandle,
-    feed_arc: Arc<Mutex<Vec<DouyinItem>>>,
+    feed_arc: Arc<Mutex<HashMap<String, Vec<DouyinItem>>>>,
     probing_arc: Arc<Mutex<HashSet<String>>>,
+    cat_arc: Arc<Mutex<String>>,
 ) {
     if app.get_webview_window("douyin_scraper").is_some() {
         return;
@@ -2013,6 +2014,7 @@ fn ensure_douyin_scraper(
                     }
 
                     let feed_clone = feed_arc.clone();
+                    let cat_clone = cat_arc.clone();
                     tauri::async_runtime::spawn_blocking(move || {
                         if let Some((verified_url, codec)) = probe_douyin_candidates(&play_url) {
                             let tagged_url = if codec == "h264" {
@@ -2020,9 +2022,11 @@ fn ensure_douyin_scraper(
                             } else {
                                 verified_url.clone()
                             };
-                            let mut feed = feed_clone.lock().unwrap();
-                            if !feed.iter().any(|x| x.3.ends_with(&verified_url)) {
-                                feed.push((desc, author, cover, tagged_url));
+                            let active_cat = cat_clone.lock().unwrap().clone();
+                            let mut feed_map = feed_clone.lock().unwrap();
+                            let cat_list = feed_map.entry(active_cat).or_insert_with(Vec::new);
+                            if !cat_list.iter().any(|x| x.3.ends_with(&verified_url)) {
+                                cat_list.push((desc, author, cover, tagged_url));
                             }
                         }
                     });
@@ -2032,6 +2036,7 @@ fn ensure_douyin_scraper(
         .build();
 }
 
+// 任务 7 (Round 11)：按分类独立缓存抖音推荐流，切换分类时绝不清空其他分类已加载的推荐流
 #[tauri::command]
 async fn get_douyin_feed(
     app: AppHandle,
@@ -2040,21 +2045,24 @@ async fn get_douyin_feed(
     category: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Vec<DouyinItem>, String> {
-    ensure_douyin_scraper(&app, state.douyin_feed.clone(), state.douyin_probing.clone());
+    ensure_douyin_scraper(
+        &app,
+        state.douyin_feed.clone(),
+        state.douyin_probing.clone(),
+        state.douyin_category.clone(),
+    );
 
     let req_cat = category.unwrap_or_else(|| "discover".to_string());
-    let mut cat_changed = false;
-    {
-        let mut cur_cat = state.douyin_category.lock().unwrap();
-        if *cur_cat != req_cat {
-            *cur_cat = req_cat.clone();
-            cat_changed = true;
-        }
-    }
 
-    if refresh || cat_changed {
-        state.douyin_feed.lock().unwrap().clear();
-        state.douyin_probing.lock().unwrap().clear();
+    if refresh {
+        {
+            let mut cur_cat = state.douyin_category.lock().unwrap();
+            *cur_cat = req_cat.clone();
+        }
+        {
+            let mut feed_map = state.douyin_feed.lock().unwrap();
+            feed_map.remove(&req_cat);
+        }
         let base_url = category_to_douyin_url(&req_cat);
         let ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -2072,19 +2080,54 @@ async fn get_douyin_feed(
         return Ok(Vec::new());
     }
 
-    if load_more.unwrap_or(false) {
-        if let Some(win) = app.get_webview_window("douyin_scraper") {
-            let _ = win.eval("if(window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__();");
+    let existing = {
+        let feed_map = state.douyin_feed.lock().unwrap();
+        feed_map.get(&req_cat).cloned().unwrap_or_default()
+    };
+
+    let want_more = load_more.unwrap_or(false);
+    if existing.is_empty() || want_more {
+        let mut cat_switched = false;
+        {
+            let mut cur_cat = state.douyin_category.lock().unwrap();
+            if *cur_cat != req_cat {
+                *cur_cat = req_cat.clone();
+                cat_switched = true;
+            }
+        }
+        if cat_switched {
+            let base_url = category_to_douyin_url(&req_cat);
+            let ts = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(1);
+            let sep = if base_url.contains('?') { "&" } else { "?" };
+            let target_url = format!("{}{}_fc_t={}", base_url, sep, ts);
+            if let Some(win) = app.get_webview_window("douyin_scraper") {
+                let js = format!(
+                    "window.__FC_QUEUE__ = []; window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
+                    target_url
+                );
+                let _ = win.eval(&js);
+            }
+        } else if want_more {
+            if let Some(win) = app.get_webview_window("douyin_scraper") {
+                let _ = win.eval("if(window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__();");
+            }
         }
     }
 
-    let feed = state.douyin_feed.lock().unwrap().clone();
-    Ok(feed)
+    Ok(existing)
 }
 
 #[tauri::command]
 async fn open_douyin_login(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    ensure_douyin_scraper(&app, state.douyin_feed.clone(), state.douyin_probing.clone());
+    ensure_douyin_scraper(
+        &app,
+        state.douyin_feed.clone(),
+        state.douyin_probing.clone(),
+        state.douyin_category.clone(),
+    );
     if let Some(win) = app.get_webview_window("douyin_scraper") {
         let _ = win.show();
         let _ = win.center();
@@ -2140,10 +2183,12 @@ async fn restart_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), S
 pub fn run() {
     cleanup_orphan_hls_ffmpeg();
 
-    let shared_douyin_feed: Arc<Mutex<Vec<DouyinItem>>> = Arc::new(Mutex::new(Vec::new()));
+    let shared_douyin_feed: Arc<Mutex<HashMap<String, Vec<DouyinItem>>>> = Arc::new(Mutex::new(HashMap::new()));
     let shared_douyin_probing: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
+    let shared_douyin_cat: Arc<Mutex<String>> = Arc::new(Mutex::new("discover".to_string()));
     let setup_feed = shared_douyin_feed.clone();
     let setup_probing = shared_douyin_probing.clone();
+    let setup_cat = shared_douyin_cat.clone();
 
     std::thread::spawn(move || {
         let _ = fs::create_dir_all("/tmp/cooltv_hls/thumbs");
@@ -2170,7 +2215,7 @@ pub fn run() {
             ffmpeg_generation: Arc::new(AtomicU64::new(0)),
             douyin_feed: shared_douyin_feed,
             douyin_probing: shared_douyin_probing,
-            douyin_category: Arc::new(Mutex::new("discover".to_string())),
+            douyin_category: shared_douyin_cat,
             thumb_lock: Arc::new(Mutex::new(())),
             minutecast_400_until: Arc::new(AtomicU64::new(0)),
             was_precipitating: Arc::new(Mutex::new(false)),
@@ -2180,7 +2225,7 @@ pub fn run() {
                 let _ = main_win.set_title("");
                 let _ = main_win.set_title_bar_style(TitleBarStyle::Overlay);
             }
-            ensure_douyin_scraper(app.handle(), setup_feed.clone(), setup_probing.clone());
+            ensure_douyin_scraper(app.handle(), setup_feed.clone(), setup_probing.clone(), setup_cat.clone());
             Ok(())
         })
         .on_window_event(|window, event| {
