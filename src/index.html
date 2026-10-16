@@ -455,16 +455,19 @@
             backdrop-filter: blur(42px) saturate(135%);
             -webkit-backdrop-filter: blur(42px) saturate(135%);
             z-index: 100;
-            display: none;
+            display: flex;
+            visibility: hidden;
+            pointer-events: none;
             opacity: 0;
-            transition: opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.36s cubic-bezier(0.22, 1, 0.36, 1);
             overflow-y: auto;
             overflow-x: hidden;
             box-sizing: border-box;
             scroll-behavior: smooth;
         }
         .fs-overlay-mask.active {
-            display: flex;
+            visibility: visible;
+            pointer-events: auto;
             opacity: 1;
         }
         .fs-settings-page {
@@ -540,7 +543,7 @@
         .form-input { width: 100%; height: 50px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #fff; padding: 0 18px; font-size: 16px; font-weight: 500; box-sizing: border-box; outline: none; transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
         .form-input::placeholder { color: rgba(255,255,255,0.38); }
         .form-input:focus, .form-input.modal-focused { border-color: #fff !important; background: rgba(0,0,0,0.58); box-shadow: 0 0 0 4px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.45); transform: scale(1.01); }
-        /* 任务 6 (Round 6) & 任务 10 (Round 11) & 任务 7 (Round 12)：全屏密码输入框颜色条先从左向右填满，填满后再从左向右消失 */
+        /* 任务 1 (Round 13)：密码输入颜色条两侧为渐变透明设计，填满瞬间（translate3d(0%,0,0)）两侧 0%~20% 与 80%~100% 渐变区完全处于可视范围（left:0~100%）外，随后从左向右消失 */
         .pwd-input-wrap {
             position: relative;
             width: 100%;
@@ -564,41 +567,55 @@
         }
         .pwd-fill-bar {
             position: absolute;
-            inset: 0;
-            border-radius: 20px;
+            top: 0;
+            bottom: 0;
+            left: -36%;
+            width: 172%;
             z-index: 3;
             pointer-events: none;
-            transform: scaleX(0);
-            transform-origin: left center;
+            transform: translate3d(-102%, 0, 0);
             opacity: 0;
+            will-change: transform, opacity;
         }
         .pwd-fill-bar.fill-error {
-            background: linear-gradient(90deg, rgba(255, 69, 58, 0.52) 0%, rgba(255, 59, 48, 0.68) 100%);
-            animation: pwdSweepInAndOut 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 59, 48, 0) 0%,
+                rgba(255, 59, 48, 0.28) 9%,
+                rgba(255, 59, 48, 0.68) 20%,
+                rgba(255, 59, 48, 0.68) 80%,
+                rgba(255, 59, 48, 0.28) 91%,
+                rgba(255, 59, 48, 0) 100%
+            );
+            animation: pwdSweepInAndOut 0.76s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .pwd-fill-bar.fill-success {
-            background: linear-gradient(90deg, rgba(48, 209, 88, 0.50) 0%, rgba(52, 199, 89, 0.68) 100%);
-            animation: pwdSweepInAndOut 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            background: linear-gradient(
+                90deg,
+                rgba(48, 209, 88, 0) 0%,
+                rgba(48, 209, 88, 0.28) 9%,
+                rgba(48, 209, 88, 0.68) 20%,
+                rgba(48, 209, 88, 0.68) 80%,
+                rgba(48, 209, 88, 0.28) 91%,
+                rgba(48, 209, 88, 0) 100%
+            );
+            animation: pwdSweepInAndOut 0.76s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes pwdSweepInAndOut {
             0% {
-                transform-origin: left center;
-                transform: scaleX(0);
+                transform: translate3d(-102%, 0, 0);
                 opacity: 1;
             }
-            45% {
-                transform-origin: left center;
-                transform: scaleX(1);
+            46% {
+                transform: translate3d(0%, 0, 0);
                 opacity: 1;
             }
-            54% {
-                transform-origin: right center;
-                transform: scaleX(1);
+            52% {
+                transform: translate3d(0%, 0, 0);
                 opacity: 1;
             }
             100% {
-                transform-origin: right center;
-                transform: scaleX(0);
+                transform: translate3d(102%, 0, 0);
                 opacity: 1;
             }
         }
@@ -652,7 +669,7 @@
         </div>
         <div class="nav-list" id="sidebarNav">
             <div class="nav-item focusable" id="navNowPlayingItem" tabindex="0" data-row="7" data-col="0" data-section-name="现在观看" data-title="现在观看" data-sub="正在播放与历史记录" title="长按停止后台播放并恢复动态背景">
-                <span class="nav-icon-slot" id="navNowPlayingIconSlot"><svg viewBox="0 0 24 24"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></span><span class="item-text" id="navNowPlayingText">现在观看</span>
+                <span class="nav-icon-slot" id="navNowPlayingIconSlot"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span><span class="item-text" id="navNowPlayingText">现在观看</span>
             </div>
             <div class="nav-item focusable" id="navCoolTvPlusItem" tabindex="0" data-row="1" data-col="0" data-section-name="很酷 TV+" data-title="很酷 TV+" data-sub="最新剧集与热门电影">
                 <svg viewBox="0 0 24 24"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span class="item-text">很酷 TV+</span>
@@ -789,17 +806,17 @@
         </div>
     </div>
 
-    <!-- 任务 6 (Round 12)：全屏沉浸式电源页面（与设置、密码页同款全屏遮罩与自适应缩放设计） -->
+    <!-- 任务 6 (Round 12) & 任务 3 (Round 13)：全屏沉浸式电源选项页面与更新措辞 -->
     <div class="fs-overlay-mask" id="powerModal">
         <div class="fs-power-page" id="powerPageContent">
             <div class="fs-page-header" style="margin-bottom: 32px;">
-                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">电源管理</h2>
-                <p class="fs-page-desc" style="font-size: 16px;">使用方向键选择操作并按回车确认，关闭或重新启动 Feel Cool TV。</p>
+                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">电源选项</h2>
+                <p class="fs-page-desc" style="font-size: 16px;">选取选项以关闭或重新启动应用程序。</p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 480px; margin: 0 auto;">
-                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 58px; font-size: 18px; border-radius: 16px;">关闭并退出 Feel Cool TV</button>
-                <button type="button" class="btn btn-primary btn-full" id="btnPowerRestart" style="height: 58px; font-size: 18px; border-radius: 16px;">重新启动应用</button>
-                <button type="button" class="btn btn-cancel btn-full" id="btnPowerCancel" style="height: 56px; font-size: 17px; border-radius: 16px;">取消 (Esc)</button>
+                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 58px; font-size: 18px; border-radius: 16px;">关闭并退出</button>
+                <button type="button" class="btn btn-primary btn-full" id="btnPowerRestart" style="height: 58px; font-size: 18px; border-radius: 16px;">重新启动</button>
+                <button type="button" class="btn btn-cancel btn-full" id="btnPowerCancel" style="height: 56px; font-size: 17px; border-radius: 16px;">取消</button>
             </div>
         </div>
     </div>
@@ -1396,7 +1413,7 @@
         var streamReqSeq = 0, isVideoReady = false;
         var fullScreenRow = 1, fullScreenCol = 1;
 
-        var PLAY_CIRCLE_SVG_HTML = '<svg viewBox="0 0 24 24"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>';
+        var PLAY_CIRCLE_SVG_HTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
         var WAVE_BARS_SVG_HTML = '<svg class="wave-bars-svg" viewBox="0 0 24 24"><rect class="wave-bar b1" x="4" y="5" width="3.2" height="14" rx="1.6"/><rect class="wave-bar b2" x="10.4" y="3" width="3.2" height="18" rx="1.6"/><rect class="wave-bar b3" x="16.8" y="6" width="3.2" height="13" rx="1.6"/></svg>';
 
         var watchHistoryList = [];
@@ -3524,11 +3541,17 @@
             setTimeout(() => setModalFocus(0), 50);
         }
 
-        function closePasswordModal() {
+        function closePasswordModal(keepFillBarAnimating) {
             isModalOpen = false;
             pwdAnimUnlocking = false;
             var fillBar = document.getElementById('pwdFillBar');
-            if (fillBar) fillBar.className = 'pwd-fill-bar';
+            if (!keepFillBarAnimating && fillBar) {
+                fillBar.className = 'pwd-fill-bar';
+            } else if (keepFillBarAnimating && fillBar) {
+                setTimeout(function() {
+                    if (!isModalOpen && fillBar) fillBar.className = 'pwd-fill-bar';
+                }, 400);
+            }
             modalFocusList.forEach(el => el.classList.remove('modal-focused'));
             document.getElementById('passwordModal').classList.remove('active');
             if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
@@ -3563,7 +3586,7 @@
         };
         document.getElementById('btnPowerCancel').onclick = closePowerModal;
 
-        // 任务 6 (Round 6) & 任务 2 (Round 8) & 任务 7 (Round 12)：密码为空时解锁按钮不可触发；验证通过或失败时颜色条从左到右出现，填满后再从左到右消失
+        // 任务 1 (Round 13)：验证通过时，在颜色条填满并开始向右消失的同时（380ms）渐变关闭密码验证页面；验证失败时，触发颜色条向右出现的同时立刻清空密码框
         function verifyAndUnlockPorn() {
             if (pwdAnimUnlocking) return;
             var input = document.getElementById('inputUnlockPwd');
@@ -3587,29 +3610,30 @@
                     activePornBrandKey = '';
                     var navPorn = document.getElementById('navPornItem');
                     navPorn.style.display = 'flex';
-                    closePasswordModal();
+                    closePasswordModal(true);
                     markUiMotion();
                     setFocus(navPorn);
                     setTimeout(function() {
                         scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
                     }, 320);
-                }, 740);
+                }, 380);
             } else {
                 pwdAnimUnlocking = true;
                 input.style.borderColor = '#FF453A';
+                input.value = '';
+                updateConfirmPwdBtnState();
+                setModalFocus(0);
                 if (fillBar) fillBar.className = 'pwd-fill-bar fill-error';
                 setTimeout(function() {
                     pwdAnimUnlocking = false;
                     if (!isModalOpen) return;
-                    input.value = '';
-                    updateConfirmPwdBtnState();
                     if (fillBar) fillBar.className = 'pwd-fill-bar';
-                    setModalFocus(0);
-                }, 740);
+                    input.style.borderColor = 'rgba(255,255,255,0.18)';
+                }, 760);
             }
         }
 
-        document.getElementById('btnCancelPwd').onclick = closePasswordModal;
+        document.getElementById('btnCancelPwd').onclick = function() { closePasswordModal(false); };
         document.getElementById('btnConfirmPwd').onclick = verifyAndUnlockPorn;
 
         function updateSettingsToggleButtons() {
