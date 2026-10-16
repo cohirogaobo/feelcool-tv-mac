@@ -63,6 +63,7 @@ fn build_ffmpeg_args(
     is_douyin: bool,
     can_stream_copy_h264: bool,
     use_sw_fallback: bool,
+    seek_sec: Option<f64>,
     ts_pattern: &str,
     m3u8_path: &str,
 ) -> Vec<String> {
@@ -71,6 +72,10 @@ fn build_ffmpeg_args(
     // 任务 1 (Round 5)：全链路音量均衡与峰值硬限幅滤镜，严控所有视频（尤其高响度抖音视频）不超过上限
     let audio_norm_std = "acompressor=threshold=-18dB:ratio=3.5:attack=5:release=85:makeup=1,alimiter=limit=0.75:attack=5:release=50";
     let audio_norm_douyin = "acompressor=threshold=-20dB:ratio=5:attack=4:release=75:makeup=1,alimiter=limit=0.55:attack=4:release=45";
+    let ss_val = match seek_sec {
+        Some(s) if s >= 0.0 => format!("{:.2}", s),
+        _ => "2".to_string(),
+    };
 
     if is_local_file {
         args.extend(vec![
@@ -78,7 +83,7 @@ fn build_ffmpeg_args(
             "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
             "-analyzeduration".to_string(), "10M".to_string(),
             "-probesize".to_string(), "10M".to_string(),
-            "-ss".to_string(), "2".to_string(),
+            "-ss".to_string(), ss_val,
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
@@ -242,7 +247,46 @@ fn probe_douyin_candidates(raw_candidates: &str) -> Option<(String, String)> {
 }
 
 #[tauri::command]
-async fn start_ffmpeg(url: String, state: State<'_, AppState>) -> Result<String, String> {
+async fn get_media_duration(url: String) -> Result<f64, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let raw_url = if let Some(s) = url.strip_prefix("douyin:h264:") {
+            s.split("@@").next().unwrap_or(s).to_string()
+        } else if let Some(s) = url.strip_prefix("douyin:") {
+            s.split("@@").next().unwrap_or(s).to_string()
+        } else {
+            url
+        };
+        let ffprobe_bin = get_ffprobe_bin();
+        let mut cmd = Command::new(ffprobe_bin);
+        cmd.args(&["-v", "error"]);
+        if raw_url.starts_with("http") {
+            let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+            let headers = "Referer: https://www.douyin.com/\r\nOrigin: https://www.douyin.com\r\n";
+            cmd.args(&["-user_agent", ua, "-headers", headers, "-rw_timeout", "5000000"]);
+        }
+        cmd.args(&[
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            &raw_url,
+        ]);
+        if let Ok(out) = cmd.output() {
+            if out.status.success() {
+                let txt = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if let Ok(dur) = txt.parse::<f64>() {
+                    if dur.is_finite() && dur > 0.0 {
+                        return Ok(dur);
+                    }
+                }
+            }
+        }
+        Err("无法获取视频时长".into())
+    })
+    .await
+    .map_err(|e| format!("查询时长异常: {}", e))?
+}
+
+#[tauri::command]
+async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppState>) -> Result<String, String> {
     let my_gen = state.ffmpeg_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let proc_arc = state.ffmpeg_process.clone();
     let op_lock_arc = state.ffmpeg_op_lock.clone();
@@ -323,6 +367,7 @@ async fn start_ffmpeg(url: String, state: State<'_, AppState>) -> Result<String,
                 is_douyin,
                 *copy_h264,
                 *use_sw,
+                seek_sec,
                 &ts_pattern,
                 &m3u8_path,
             );
@@ -1940,6 +1985,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             start_drag,
             start_ffmpeg,
+            get_media_duration,
             scan_local_folder,
             extract_video_thumb,
             fetch_douban_rating,
