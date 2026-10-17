@@ -510,7 +510,7 @@
         #heroBrandText { line-height: 20px; display: inline-flex; align-items: center; }
 
         .main-title { font-size: 42px; font-weight: 800; margin: 0 0 4px 0; letter-spacing: -0.5px; line-height: 1.15; max-width: 75%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        /* 任务 1 (Round 14) & 任务 2 (Round 15)：文字滚动时左侧也增加渐变透明效果，遮罩严格位于静止时第一个字的左侧；采用 inline-flex + 独立 GPU 合成层 + 双副本精确 50% 等宽对齐，彻底消除标题滚动结束归位时的闪烁 */
+        /* 任务 10 (Round 19)：采用双节点乒乓交替驻留跑马灯架构，当标题滚动回静止位 (0px) 时直接由当前可见节点驻留，仅在屏幕外重置隐藏节点，彻底消除归位闪烁 */
         .main-title.single-line-marquee {
             display: block;
             white-space: nowrap;
@@ -518,34 +518,29 @@
             max-width: 68%;
             margin-left: -26px;
             padding-left: 26px;
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
             -webkit-mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
             mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
         }
         .marquee-track {
-            display: inline-flex;
-            align-items: center;
-            width: max-content;
+            position: relative;
+            display: inline-block;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+        .marquee-track > span {
+            display: inline-block;
+            padding-right: 72px;
+            box-sizing: border-box;
             white-space: nowrap;
             will-change: transform;
             transform: translate3d(0, 0, 0);
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            animation: smoothMarquee var(--marquee-dur, 14s) linear infinite;
         }
-        .marquee-track > span {
-            flex: 0 0 auto;
-            display: inline-block;
-            padding-right: 72px;
-            box-sizing: border-box;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-        }
-        @keyframes smoothMarquee {
-            0%, 15% { transform: translate3d(0, 0, 0); }
-            99.99%, 100% { transform: translate3d(-50%, 0, 0); }
+        .marquee-track > span.marquee-copy-b {
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         /* 修复 8：TMDB 剧集 Logo 正方形/横向自适应放置容器 */
@@ -570,45 +565,77 @@
         /* 修复 6：剧集文字介绍强制顶格显示 */
         .hero-desc { font-size: 14px; color: rgba(255, 255, 255, 0.85); max-width: 620px; line-height: 1.38; margin-bottom: 10px; font-weight: 400; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-indent: 0 !important; }
 
-        /* 任务 4 (Round 6) & 任务 3 (Round 8) & 任务 6 (Round 11)：丸形菜单展开/折叠丝滑过渡动画 + 左侧刷新按钮支持圆形与“正在加载..”丸形丝滑变形 */
+        /* 任务 4 & 6 (Round 19)：流媒体左侧刷新符号改为无圆形容器纯状态指示器；流媒体二级菜单强制单行横向滚动并配備跑马灯同款左右渐变遮罩 */
         .season-bar { display: none; gap: 10px; margin-bottom: 10px; align-items: center; z-index: 6; flex-wrap: wrap; transition: opacity 0.26s cubic-bezier(0.22, 1, 0.36, 1), transform 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
         .season-bar.active { display: flex; }
-        .season-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
-        .season-pill.season-refresh-btn {
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            border-radius: 999px;
-            justify-content: center;
-            align-items: center;
-            gap: 0;
-            flex-shrink: 0;
-            box-sizing: border-box;
+        .season-bar.single-line-mode { flex-wrap: nowrap; width: 100%; max-width: 92%; overflow: visible; }
+        .season-pills-scroll-viewport {
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
+            margin-left: -26px;
+            padding: 10px 26px;
+            margin-top: -10px;
+            margin-bottom: -10px;
+            -webkit-mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
+        }
+        .season-pills-scroll-track {
+            display: inline-flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 10px;
+            width: max-content;
+            transform: translate3d(0, 0, 0);
+            transition: transform 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+        }
+        .season-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: none !important; outline: none; flex-shrink: 0; white-space: nowrap; transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
+        .season-pill.pressing { transform: scale3d(0.92, 0.92, 1) !important; background-color: rgba(255, 255, 255, 0.32) !important; }
+        .stream-refresh-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            height: 32px;
+            padding: 0 2px;
+            margin-right: 2px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: rgba(255, 255, 255, 0.82);
+            pointer-events: none;
+            flex-shrink: 0;
             white-space: nowrap;
-            transition: width 0.34s cubic-bezier(0.22, 1, 0.36, 1), padding 0.34s cubic-bezier(0.22, 1, 0.36, 1), gap 0.34s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease;
+            transition: gap 0.32s cubic-bezier(0.22, 1, 0.36, 1), color 0.22s ease;
         }
-        .season-pill.season-refresh-btn.loading-pill {
-            width: 118px;
-            padding: 0 14px;
+        .stream-refresh-indicator.loading-pill {
             gap: 6px;
+            color: #ffffff;
         }
-        .season-pill.season-refresh-btn svg { width: 16px; height: 16px; fill: currentColor; display: block; flex-shrink: 0; transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
-        .season-pill.season-refresh-btn .refresh-btn-label {
+        .stream-refresh-indicator svg {
+            width: 17px;
+            height: 17px;
+            fill: currentColor;
+            display: block;
+            flex-shrink: 0;
+        }
+        .stream-refresh-indicator .refresh-btn-label {
             max-width: 0;
             opacity: 0;
             overflow: hidden;
             font-size: 13px;
             font-weight: 600;
             line-height: 1;
-            transition: max-width 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+            transition: max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
         }
-        .season-pill.season-refresh-btn.loading-pill .refresh-btn-label {
-            max-width: 82px;
+        .stream-refresh-indicator.loading-pill .refresh-btn-label {
+            max-width: 72px;
             opacity: 1;
         }
-        .season-pill.season-refresh-btn.focused svg, .season-pill.season-refresh-btn:focus svg { transform: rotate(180deg); }
-        .season-pill.season-refresh-btn.spinning svg, .season-pill.season-refresh-btn.loading-pill svg { animation: spinRefreshIcon 0.72s linear infinite; }
+        .stream-refresh-indicator.spinning svg, .stream-refresh-indicator.loading-pill svg {
+            animation: spinRefreshIcon 0.72s linear infinite;
+        }
         .season-pill.pill-anim-expand { animation: pillExpandSpring 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
         .season-pill.pill-anim-collapse { animation: pillCollapseSpring 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @keyframes pillExpandSpring {
@@ -623,6 +650,9 @@
         .season-pill.focused, .season-pill:focus { background: #fff !important; color: #000 !important; border-color: #fff; transform: scale(1.06); box-shadow: 0 6px 16px rgba(0,0,0,0.35); }
         .pill-chevron-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-right: -2px; transition: transform 0.25s ease; }
         .pill-chevron-left-svg { width: 15px; height: 15px; fill: currentColor; opacity: 0.88; flex-shrink: 0; display: block; margin-left: -2px; }
+        .inline-power-hint-svg { width: 18px; height: 18px; fill: currentColor; display: inline-block; vertical-align: -3.5px; margin: 0 3px; opacity: 0.94; }
+        .tv-blackout-curtain { position: fixed; inset: 0; width: 100vw; height: 100vh; background: #000000; z-index: 300; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.25s ease, visibility 0.25s ease; }
+        .tv-blackout-curtain.active { opacity: 1; visibility: visible; pointer-events: auto; }
 
         .carousel-container { width: calc(100% + 90px); height: 240px; margin: -20px -45px; padding: 20px 45px; position: relative; box-sizing: border-box; overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent 0px, black 45px, black calc(100% - 45px), transparent 100%); }
         .carousel-track { display: flex; gap: 20px; padding: 5px 0; z-index: 5; width: max-content; transform: translate3d(0, 0, 0); transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
@@ -1304,7 +1334,7 @@
                 <button type="button" class="btn btn-cancel" id="btnCloseSettings">取消</button>
                 <button type="button" class="btn btn-primary" id="btnSaveSettings" title="长按显示限制级内容设置">保存并扫描</button>
             </div>
-            <div class="settings-version-footer" id="settingsVersionText">0.1.2</div>
+            <div class="settings-version-footer" id="settingsVersionText">0.1.3</div>
         </div>
     </div>
 
@@ -1352,20 +1382,31 @@
         </div>
     </div>
 
-    <!-- 任务 6 (Round 12) & 任务 3 (Round 13)：全屏沉浸式电源选项页面与更新措辞 -->
+    <!-- 任务 6 (Round 12) & 任务 3 (Round 13) & 任务 11 (Round 19)：全屏沉浸式电源选项页面与内嵌电源符号 SVG 提示措辞 -->
     <div class="fs-overlay-mask" id="powerModal">
         <div class="fs-power-page" id="powerPageContent">
             <div class="fs-page-header" style="margin-bottom: 32px;">
                 <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">电源选项</h2>
-                <p class="fs-page-desc" style="font-size: 16px;">选取选项以关闭或重新启动应用程序。</p>
+                <p class="fs-page-desc" style="font-size: 16px;">选取需要执行的选项或使用 <svg class="inline-power-hint-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg> 键关闭电视。</p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 480px; margin: 0 auto;">
-                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 58px; font-size: 18px; border-radius: 16px;">关闭并退出</button>
+                <button type="button" class="btn btn-danger btn-full" id="btnPowerQuit" style="height: 58px; font-size: 18px; border-radius: 16px;">退出</button>
                 <button type="button" class="btn btn-primary btn-full" id="btnPowerRestart" style="height: 58px; font-size: 18px; border-radius: 16px;">重新启动</button>
                 <button type="button" class="btn btn-cancel btn-full" id="btnPowerCancel" style="height: 56px; font-size: 17px; border-radius: 16px;">取消</button>
             </div>
         </div>
     </div>
+
+    <!-- 任务 9 (Round 19)：F19 触发关闭电视全屏模糊背景遮罩页（5 秒后进入 3 秒黑屏，随后静默回到主页并聚焦现在观看） -->
+    <div class="fs-overlay-mask" id="tvShuttingDownModal">
+        <div class="fs-power-page" id="tvShuttingDownContent">
+            <div class="fs-page-header" style="margin-bottom: 0;">
+                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">正在关闭电视..</h2>
+                <p class="fs-page-desc" style="font-size: 16px;">请稍候。</p>
+            </div>
+        </div>
+    </div>
+    <div class="tv-blackout-curtain" id="tvBlackoutCurtain"></div>
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script type="module">
@@ -1432,11 +1473,13 @@
             var settingsPage = document.getElementById('settingsPageContent');
             var passwordPage = document.getElementById('passwordPageContent');
             var powerPage = document.getElementById('powerPageContent');
+            var shutdownPage = document.getElementById('tvShuttingDownContent');
             var overlayZoom = (window.innerWidth / 1440) * (0.92 + (preset.factor - 1.0) * 0.65);
             overlayZoom = Math.max(0.85, Math.min(2.15, overlayZoom));
             if (settingsPage) settingsPage.style.zoom = overlayZoom;
             if (passwordPage) passwordPage.style.zoom = overlayZoom;
             if (powerPage) powerPage.style.zoom = overlayZoom;
+            if (shutdownPage) shutdownPage.style.zoom = overlayZoom;
             var telopEl = document.getElementById('jpWeatherTelop');
             if (telopEl) {
                 var telopScale = (window.innerWidth / 1680) * (0.81 + (preset.factor - 1.0) * 0.24);
@@ -2092,8 +2135,16 @@
         var PLAY_CIRCLE_SVG_HTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
         var WAVE_BARS_SVG_HTML = '<svg class="wave-bars-svg" viewBox="0 0 24 24"><rect class="wave-bar b1" x="4" y="5" width="3.2" height="14" rx="1.6"/><rect class="wave-bar b2" x="10.4" y="3" width="3.2" height="18" rx="1.6"/><rect class="wave-bar b3" x="16.8" y="6" width="3.2" height="13" rx="1.6"/></svg>';
 
-        // 任务 10 & 11 (Round 18)：正在观看/现在观看记忆保存功能，最多支持 20 条记录，并持久化观看进度
+        // 任务 10 & 11 (Round 18) & 任务 7 (Round 19)：正在观看/现在观看记忆保存功能，支持常规历史与限制级独立历史（限制级严禁混入“全部”分组）
         var watchHistoryList = [];
+        var restrictedWatchHistoryList = [];
+        var activeNowWatchingTab = 'all'; // 'all' | 'cooltv' | 'iptv' | 'streaming' | 'restricted'
+        const NOW_WATCHING_BASE_TABS = [
+            { id: 'all',        name: '全部' },
+            { id: 'cooltv',     name: '很酷 TV+' },
+            { id: 'iptv',       name: '有线电视' },
+            { id: 'streaming',  name: '流媒体' }
+        ];
         try {
             var rawHist = JSON.parse(localStorage.getItem('fc_watch_history_v1') || '[]');
             if (Array.isArray(rawHist)) {
@@ -2101,6 +2152,14 @@
                     if (!it || !it.url || it.row === 4 || it.sourceRow === 4) return false;
                     if (appSettings.pornPath && it.url.indexOf(appSettings.pornPath) === 0) return false;
                     return true;
+                }).slice(0, 20);
+            }
+        } catch (_) {}
+        try {
+            var rawPornHist = JSON.parse(localStorage.getItem('fc_watch_history_porn_v1') || '[]');
+            if (Array.isArray(rawPornHist)) {
+                restrictedWatchHistoryList = rawPornHist.filter(function(it) {
+                    return Boolean(it && it.url);
                 }).slice(0, 20);
             }
         } catch (_) {}
@@ -2186,12 +2245,14 @@
                 if (epgProg) subText = epgProg;
             }
 
-            // 任务 1 (Round 11) & 任务 3 (Round 15)：正在播放/现在观看板块（rowId === 7）卡片下方副标题在结尾标注媒体来源，如“@李子柒·抖音”、“@何同学·bilibili”、“新闻联播·有线电视”
+            // 任务 1 (Round 11) & 任务 3 (Round 15) & 任务 7 (Round 19)：正在播放/现在观看板块（rowId === 7）卡片下方副标题在结尾标注媒体来源
             if (rowId === 7 && item.action) {
                 var sourceLabel = '';
                 var actStr = String(item.action || '');
                 var prevStr = String(item.previewUrl || item.url || '');
-                if (actStr.indexOf('douyin:bili:') === 0 || actStr.indexOf('bilibili:') === 0 || prevStr.indexOf('douyin:bili:') === 0 || prevStr.indexOf('bilibili:') === 0) {
+                if (effectiveRow === 4) {
+                    sourceLabel = '限制级';
+                } else if (actStr.indexOf('douyin:bili:') === 0 || actStr.indexOf('bilibili:') === 0 || prevStr.indexOf('douyin:bili:') === 0 || prevStr.indexOf('bilibili:') === 0) {
                     sourceLabel = 'bilibili';
                 } else if (effectiveRow === 3 || actStr.indexOf('douyin:') === 0) {
                     sourceLabel = '抖音';
@@ -2221,7 +2282,7 @@
                    '</div>';
         }
 
-        // 任务 6 & 7 (Round 11) & 任务 2 & 3 (Round 12)：按流媒体分类独立缓存已加载推荐流；若推荐流仍在陆续增加卡片，刷新按钮持续保持丸形“正在加载..”状态，直至本次所有卡片加载完毕后恢复圆形
+        // 任务 6 & 7 (Round 11) & 任务 2 & 3 (Round 12) & 任务 4 (Round 19)：流媒体左侧刷新符号改为无容器状态指示器，长按任一丸形菜单触发刷新并显示“正在刷新”
         var DOUYIN_CATEGORY_CACHE = {};
         var isDouyinRefreshing = false;
         const DOUYIN_BATCH_SETTLE_MS = 2400;
@@ -2240,11 +2301,11 @@
         function updateDouyinRefreshBtnState() {
             var seasonBar = document.getElementById('seasonBar');
             if (!seasonBar) return;
-            var btn = seasonBar.querySelector('.season-refresh-btn');
-            if (!btn) return;
+            var ind = seasonBar.querySelector('.stream-refresh-indicator');
+            if (!ind) return;
             var loading = isDouyinCategoryLoading(activeDouyinCategory);
-            btn.classList.toggle('loading-pill', loading);
-            btn.classList.toggle('spinning', loading);
+            ind.classList.toggle('loading-pill', loading);
+            ind.classList.toggle('spinning', loading);
         }
 
         function renderDouyinTrackCardsOnly() {
@@ -2879,6 +2940,7 @@
             var seasonEps = allEps.filter(e => e.season === activeSeasonNum);
 
             var seasonBar = document.getElementById('seasonBar');
+            seasonBar.classList.remove('single-line-mode');
             var sHtml = '';
             for (var s = 0; s < seasons.length; s++) {
                 var sNum = seasons[s];
@@ -2888,6 +2950,9 @@
             }
             seasonBar.innerHTML = sHtml;
             seasonBar.classList.add('active');
+            if (typeof bindSeasonPillLongPressEvents === 'function') {
+                bindSeasonPillLongPressEvents(seasonBar);
+            }
 
             var meta = localTmdbCache[seriesKey] || { title: seriesKey, scoreLine: 'TMDB 剧集', desc: '', img: '' };
             var scorePrefix = getSeriesScorePrefix(meta);
@@ -2937,13 +3002,12 @@
         }
 
         var macVideo = document.createElement('video');
-        macVideo.id = 'mac-bg-video'; macVideo.autoplay = true; macVideo.muted = !appSettings.previewSound; macVideo.playsInline = true; 
-        macVideo.crossOrigin = 'anonymous';
+        macVideo.id = 'mac-bg-video'; macVideo.autoplay = true; macVideo.muted = !appSettings.previewSound; macVideo.playsInline = true;
         macVideo.width = 1920;
         macVideo.height = 1080;
         macVideo.setAttribute('width', '1920');
         macVideo.setAttribute('height', '1080');
-        // 修复 7 (Round 4) & 任务 4 (Round 7)：永不设置 visibility:hidden，隐藏态使用 opacity:0.002 保持 WebKit AVSampleBufferDisplayLayer 实时完成全屏几何布局，彻底根除预览与全屏闪现小画面再放大的 bug
+        // 修复 7 (Round 4) & 任务 4 (Round 7) & 任务 5 (Round 19)：永不设置 visibility:hidden，隐藏态使用 opacity:0.002 保持 WebKit AVSampleBufferDisplayLayer 实时完成全屏几何布局，移除 crossOrigin 避免本地 MSE 媒体流触发跨域渲染层隔离
         macVideo.style.cssText = 'position: fixed; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100vw !important; height: 100vh !important; min-width: 100vw; min-height: 100vh; max-width: 100vw; max-height: 100vh; object-fit: cover; object-position: center center; z-index: -2; transition: none; opacity: 0.002; visibility: visible; background: #000; pointer-events: none; transform: translate3d(0, 0, 0); -webkit-transform: translate3d(0, 0, 0); backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: opacity;';
         var heroOverlayEl = document.getElementById('heroOverlay');
         if (heroOverlayEl && heroOverlayEl.parentNode) {
@@ -2980,31 +3044,7 @@
             if (bl) bl.style.opacity = (visible || isFullScreen) ? '0' : '1';
         }
 
-        // 任务 1 (Round 5)：前端 Web Audio API 实时动态压缩限幅器 + 响度上限控制，确保不改变系统音量下所有视频（尤其抖音）音量不超过安全阈值
-        var audioCtx = null;
-        var audioSourceNode = null;
-        var audioCompressorNode = null;
-        var audioGainNode = null;
-
-        function ensureAudioNormalizerGraph() {
-            if (audioCtx || !window.AudioContext && !window.webkitAudioContext) return;
-            try {
-                var CtxClass = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new CtxClass();
-                audioSourceNode = audioCtx.createMediaElementSource(macVideo);
-                audioCompressorNode = audioCtx.createDynamicsCompressor();
-                audioCompressorNode.threshold.setValueAtTime(-22, audioCtx.currentTime);
-                audioCompressorNode.knee.setValueAtTime(14, audioCtx.currentTime);
-                audioCompressorNode.ratio.setValueAtTime(12, audioCtx.currentTime);
-                audioCompressorNode.attack.setValueAtTime(0.003, audioCtx.currentTime);
-                audioCompressorNode.release.setValueAtTime(0.18, audioCtx.currentTime);
-                audioGainNode = audioCtx.createGain();
-                audioSourceNode.connect(audioCompressorNode);
-                audioCompressorNode.connect(audioGainNode);
-                audioGainNode.connect(audioCtx.destination);
-            } catch (e) {}
-        }
-
+        // 任务 5 (Round 19)：不在前端对 MSE <video> 调用 createMediaElementSource（后端 FFmpeg 已在音频滤镜链内完成动态压缩与限幅，避免 WebAudio 接管 WebKit MSE 时钟导致视频帧卡顿及仅暂停时才刷新画面）
         function isCurrentStreamDouyin() {
             var u = String(currentBgUrl || currentPlayingStream || '');
             return u.indexOf('douyin:') === 0 || currentTrackRow === 3 || (isFullScreen && fullScreenRow === 3);
@@ -3015,23 +3055,103 @@
             macVideo.muted = isFullScreen ? false : !appSettings.previewSound;
             var isDy = isCurrentStreamDouyin();
             if (appSettings.volumeNorm) {
-                macVideo.volume = isDy ? 0.52 : 0.78;
-                ensureAudioNormalizerGraph();
-                if (audioCtx && audioCtx.state === 'suspended' && !macVideo.muted) {
-                    audioCtx.resume().catch(() => {});
-                }
-                if (audioGainNode && audioCtx) {
-                    var targetGain = isDy ? 0.72 : 0.90;
-                    audioGainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.04);
-                }
+                macVideo.volume = isDy ? 0.56 : 0.82;
             } else {
                 macVideo.volume = 1.0;
-                if (audioGainNode && audioCtx) {
-                    audioGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.04);
-                }
             }
         }
         window.addEventListener('mousedown', applyPreviewOrFullscreenAudio, { passive: true });
+
+        // 任务 10 (Round 19)：双节点乒乓驻留式无闪烁跑马灯引擎
+        // 当后置节点从右侧滚动抵达静止位 (0px) 时，直接原地驻留成为新的前置静止节点，仅将已滑出左侧遮罩外的旧节点移至右侧待命，彻底消除 100%->0% 瞬移归位造成的闪烁
+        var activeMarqueeControllers = new WeakMap();
+
+        function stopMarqueePingPong(containerEl) {
+            if (!containerEl) return;
+            var ctrl = activeMarqueeControllers.get(containerEl);
+            if (ctrl && ctrl.rafId) {
+                cancelAnimationFrame(ctrl.rafId);
+            }
+            activeMarqueeControllers.delete(containerEl);
+            containerEl.removeAttribute('data-marquee-key');
+        }
+
+        function startMarqueePingPong(containerEl, safeHtmlTitle, durSec, extraTrackStyle) {
+            if (!containerEl) return;
+            var totalMs = Math.max(8000, Math.round((durSec || 12) * 1000));
+            var holdStartMs = Math.round(totalMs * 0.18);
+            var moveMs = Math.round(totalMs * 0.68);
+            var styleAttr = extraTrackStyle ? (' style="' + extraTrackStyle + '"') : '';
+            containerEl.innerHTML =
+                '<div class="marquee-track"' + styleAttr + '>' +
+                    '<span class="marquee-copy-a">' + safeHtmlTitle + '</span>' +
+                    '<span class="marquee-copy-b">' + safeHtmlTitle + '</span>' +
+                '</div>';
+            var trackEl = containerEl.querySelector('.marquee-track');
+            if (!trackEl) return;
+            var spanA = trackEl.querySelector('.marquee-copy-a');
+            var spanB = trackEl.querySelector('.marquee-copy-b');
+            if (!spanA || !spanB) return;
+
+            var prevCtrl = activeMarqueeControllers.get(containerEl);
+            if (prevCtrl && prevCtrl.rafId) {
+                cancelAnimationFrame(prevCtrl.rafId);
+            }
+
+            var ctrl = {
+                rafId: 0,
+                frontSpan: spanA,
+                backSpan: spanB,
+                cycleStartTs: performance.now(),
+                swappedForEndHold: false
+            };
+            activeMarqueeControllers.set(containerEl, ctrl);
+
+            spanA.style.transform = 'translate3d(0px, 0, 0)';
+            spanB.style.transform = 'translate3d(9999px, 0, 0)';
+
+            function stepMarqueeFrame(now) {
+                if (!containerEl.isConnected || activeMarqueeControllers.get(containerEl) !== ctrl) return;
+                var stride = ctrl.frontSpan.offsetWidth || spanA.offsetWidth || 0;
+                if (stride <= 80) {
+                    ctrl.rafId = requestAnimationFrame(stepMarqueeFrame);
+                    return;
+                }
+                var elapsed = now - ctrl.cycleStartTs;
+                if (elapsed >= totalMs) {
+                    if (!ctrl.swappedForEndHold) {
+                        var tmp0 = ctrl.frontSpan;
+                        ctrl.frontSpan = ctrl.backSpan;
+                        ctrl.backSpan = tmp0;
+                    }
+                    ctrl.swappedForEndHold = false;
+                    ctrl.cycleStartTs = now;
+                    elapsed = 0;
+                }
+
+                if (elapsed < holdStartMs) {
+                    ctrl.frontSpan.style.transform = 'translate3d(0px, 0, 0)';
+                    ctrl.backSpan.style.transform = 'translate3d(' + stride + 'px, 0, 0)';
+                } else if (elapsed < holdStartMs + moveMs) {
+                    var prog = (elapsed - holdStartMs) / moveMs;
+                    var offsetPx = prog * stride;
+                    ctrl.frontSpan.style.transform = 'translate3d(' + (-offsetPx).toFixed(2) + 'px, 0, 0)';
+                    ctrl.backSpan.style.transform = 'translate3d(' + (stride - offsetPx).toFixed(2) + 'px, 0, 0)';
+                } else {
+                    if (!ctrl.swappedForEndHold) {
+                        ctrl.swappedForEndHold = true;
+                        var tmp = ctrl.frontSpan;
+                        ctrl.frontSpan = ctrl.backSpan;
+                        ctrl.backSpan = tmp;
+                        ctrl.frontSpan.style.transform = 'translate3d(0px, 0, 0)';
+                        ctrl.backSpan.style.transform = 'translate3d(' + stride + 'px, 0, 0)';
+                    }
+                }
+                ctrl.rafId = requestAnimationFrame(stepMarqueeFrame);
+            }
+
+            ctrl.rafId = requestAnimationFrame(stepMarqueeFrame);
+        }
 
         // 任务 14 (Round 5)：抖音视频正式全屏播放页面支持自动连播，并在靠近结尾时自动预加载更多视频流
         var lastAutoAdvanceTs = 0;
@@ -3139,13 +3259,30 @@
             return false;
         }
 
-        // 任务 10 & 11 (Round 18)：记录播放历史（仅当进入正式播放页面时才写入持久化列表，最多保留 20 条记录，并自动保存用户观看进度）
+        // 任务 3 & 7 (Round 19)：统一查找已保存的历史观看进度（支持常规历史与限制级独立历史，按 url 或 action 精确匹配）
+        function findSavedWatchHistoryEntry(urlOrAction) {
+            if (!urlOrAction) return null;
+            var target = String(urlOrAction);
+            var cleanUrl = target.startsWith('local:') ? target.substring(6) : (target.startsWith('iptv:') ? target.substring(5) : target);
+            var matchFn = function(it) {
+                if (!it) return false;
+                if (it.url === cleanUrl || it.previewUrl === cleanUrl || it.action === target) return true;
+                if (it.url === target || ('local:' + it.url) === target || ('iptv:' + it.url) === target) return true;
+                return false;
+            };
+            return watchHistoryList.find(matchFn) || restrictedWatchHistoryList.find(matchFn) || null;
+        }
+
+        // 任务 10 & 11 (Round 18) & 任务 3 & 7 (Round 19)：记录播放历史（支持常规列表与限制级独立列表，最多各保留 20 条记录并持久化观看进度）
         var lastWatchProgressSaveTs = 0;
 
         function recordWatchHistoryItem(meta) {
-            if (!meta || !meta.url || isRestrictedMeta(meta)) return;
-            var sRow = meta.sourceRow || ((meta.row >= 1 && meta.row <= 3) ? meta.row : 1);
-            if (sRow === 4) return;
+            if (!meta || !meta.url) return;
+            var isPorn = isRestrictedMeta(meta);
+            var sRow = isPorn ? 4 : (meta.sourceRow || ((meta.row >= 1 && meta.row <= 3) ? meta.row : 1));
+            var targetList = isPorn ? restrictedWatchHistoryList : watchHistoryList;
+            var storageKey = isPorn ? 'fc_watch_history_porn_v1' : 'fc_watch_history_v1';
+
             var fallbackCover = '';
             if (meta.img && meta.img !== DEFAULT_LOCAL_CARD_SVG) {
                 fallbackCover = meta.img;
@@ -3157,7 +3294,7 @@
             }
 
             var targetAct = meta.action || (meta.url.indexOf('douyin:') === 0 ? meta.url : (meta.url.indexOf('/') === 0 ? 'local:' + meta.url : 'iptv:' + meta.url));
-            var prevEntry = watchHistoryList.find(function(it) {
+            var prevEntry = targetList.find(function(it) {
                 return it && (it.url === meta.url || it.action === targetAct);
             });
 
@@ -3196,26 +3333,36 @@
                 ts: Date.now()
             };
 
-            watchHistoryList = watchHistoryList.filter(function(it) {
+            var updatedList = targetList.filter(function(it) {
                 return it && it.url !== entry.url && it.action !== entry.action;
             });
-            watchHistoryList.unshift(entry);
-            if (watchHistoryList.length > 20) {
-                watchHistoryList = watchHistoryList.slice(0, 20);
+            updatedList.unshift(entry);
+            if (updatedList.length > 20) {
+                updatedList = updatedList.slice(0, 20);
+            }
+            if (isPorn) {
+                restrictedWatchHistoryList = updatedList;
+            } else {
+                watchHistoryList = updatedList;
             }
             try {
-                localStorage.setItem('fc_watch_history_v1', JSON.stringify(watchHistoryList));
+                localStorage.setItem(storageKey, JSON.stringify(updatedList));
             } catch (_) {}
             syncNowWatchingRowData(false);
         }
 
+        // 任务 3 (Round 19)：仅在正式全屏播放 (isFullScreen === true) 时才更新持久化历史进度，严禁主页焦点背景预览把已保存的观看进度覆盖归零
         function updateActiveWatchHistoryProgress(forcePersist) {
-            if (isCurrentStreamIptv()) return;
+            if (!isFullScreen || isCurrentStreamIptv()) return;
             var curUrl = (activePreviewMeta && activePreviewMeta.url) ? activePreviewMeta.url : (currentBgUrl || currentPlayingStream || '');
             if (!curUrl) return;
             var curSec = getEffectiveCurrentTime();
             var durSec = getEffectiveDuration();
             if (!durSec || !isFinite(durSec) || durSec <= 0.5) return;
+            var histItem = findSavedWatchHistoryEntry(curUrl);
+            if (!isVideoReady && histItem && histItem.progressSec > 5 && curSec < 3) {
+                return;
+            }
             var pct = Math.max(2, Math.min(100, Math.round((curSec / durSec) * 100)));
 
             if (activePreviewMeta && activePreviewMeta.url === curUrl) {
@@ -3224,9 +3371,6 @@
                 activePreviewMeta.progressPct = pct;
             }
 
-            var histItem = watchHistoryList.find(function(it) {
-                return it && it.url === curUrl;
-            });
             if (histItem) {
                 histItem.progressSec = curSec;
                 histItem.durationSec = durSec;
@@ -3238,7 +3382,11 @@
                 if (forcePersist || (now - lastWatchProgressSaveTs >= 1800)) {
                     lastWatchProgressSaveTs = now;
                     try {
-                        localStorage.setItem('fc_watch_history_v1', JSON.stringify(watchHistoryList));
+                        if (isRestrictedMeta(histItem)) {
+                            localStorage.setItem('fc_watch_history_porn_v1', JSON.stringify(restrictedWatchHistoryList));
+                        } else {
+                            localStorage.setItem('fc_watch_history_v1', JSON.stringify(watchHistoryList));
+                        }
                     } catch (_) {}
                 }
             }
@@ -3262,51 +3410,109 @@
             updateActiveWatchHistoryProgress(true);
         });
 
-        // 任务 10 & 11 (Round 18)：构建“现在观看 / 正在观看”板块数据
-        // 若当前正在预览但未进入正式播放界面，仅在当前预览期间临时显示在第一张卡片，切换预览其他内容或停止预览时自动消失；进入过正式播放页面的记录保留在 watchHistoryList（最多 20 条）
+        // 任务 10 & 11 (Round 18) & 任务 7 (Round 19)：构建“现在观看 / 正在观看”板块数据，按 全部、很酷 TV+、有线电视、流媒体、限制级 分组
+        // 注意：限制级内容绝不出现在“全部”分组，且只有当 pornUnlocked === true 时才可查看“限制级”分组
         function syncNowWatchingRowData(forceReRenderTrack) {
+            if (!pornUnlocked && activeNowWatchingTab === 'restricted') {
+                activeNowWatchingTab = 'all';
+            }
             var list = [];
             var activeUrl = '';
-            if (hasActiveBgPlayback() && activePreviewMeta && activePreviewMeta.url && !isRestrictedMeta(activePreviewMeta)) {
-                activeUrl = activePreviewMeta.url;
-                var matchedHist = watchHistoryList.find(function(h) { return h && h.url === activeUrl; });
-                var curImg = activePreviewMeta.img || (matchedHist ? matchedHist.img : '') || iptvFrameCache[activeUrl] || '';
-                var sRowNow = activePreviewMeta.sourceRow || ((activePreviewMeta.row >= 1 && activePreviewMeta.row <= 3) ? activePreviewMeta.row : 1);
-                var liveCurSec = (sRowNow !== 2) ? (activePreviewMeta.progressSec || (matchedHist ? matchedHist.progressSec : 0) || 0) : 0;
-                var liveDurSec = (sRowNow !== 2) ? (activePreviewMeta.durationSec || (matchedHist ? matchedHist.durationSec : 0) || 0) : 0;
-                var livePct = (sRowNow !== 2) ? (activePreviewMeta.progressPct || (matchedHist ? matchedHist.progressPct : 0) || 0) : 0;
-                list.push({
-                    url: activeUrl,
-                    previewUrl: activeUrl,
-                    action: activePreviewMeta.action || (activeUrl.indexOf('douyin:') === 0 ? activeUrl : (activeUrl.indexOf('/') === 0 ? 'local:' + activeUrl : 'iptv:' + activeUrl)),
-                    title: activePreviewMeta.title || (matchedHist ? matchedHist.title : '正在播放'),
-                    sub: activePreviewMeta.sub || (matchedHist ? matchedHist.sub : ''),
-                    org: activePreviewMeta.org || (matchedHist ? matchedHist.org : ''),
-                    epg_name: activePreviewMeta.epg_name || (matchedHist ? matchedHist.epg_name : ''),
-                    desc: activePreviewMeta.desc || (matchedHist ? matchedHist.desc : ''),
-                    img: curImg,
-                    logo_url: activePreviewMeta.brandLogo || (matchedHist ? matchedHist.logo_url : ''),
-                    sourceRow: sRowNow,
-                    seriesKey: activePreviewMeta.seriesKey || (matchedHist ? matchedHist.seriesKey : ''),
-                    seasonNum: activePreviewMeta.seasonNum || (matchedHist ? matchedHist.seasonNum : 1) || 1,
-                    progressSec: liveCurSec,
-                    durationSec: liveDurSec,
-                    progressPct: livePct,
-                    isNowPlayingCard: true
-                });
-            }
+            var isRestTab = (activeNowWatchingTab === 'restricted' && pornUnlocked);
 
-            for (var i = 0; i < watchHistoryList.length; i++) {
-                if (list.length >= 20) break;
-                var hItem = watchHistoryList[i];
-                if (!hItem || !hItem.url || isRestrictedMeta(hItem)) continue;
-                if (activeUrl && hItem.url === activeUrl) continue;
-                var hCopy = Object.assign({}, hItem, {
-                    previewUrl: hItem.url,
-                    img: hItem.img || iptvFrameCache[hItem.url] || '',
-                    isNowPlayingCard: false
+            if (isRestTab) {
+                if (hasActiveBgPlayback() && activePreviewMeta && activePreviewMeta.url && isRestrictedMeta(activePreviewMeta)) {
+                    activeUrl = activePreviewMeta.url;
+                    var matchedPornHist = restrictedWatchHistoryList.find(function(h) { return h && h.url === activeUrl; });
+                    var curPornImg = activePreviewMeta.img || (matchedPornHist ? matchedPornHist.img : '') || iptvFrameCache[activeUrl] || '';
+                    var livePornCurSec = activePreviewMeta.progressSec || (matchedPornHist ? matchedPornHist.progressSec : 0) || 0;
+                    var livePornDurSec = activePreviewMeta.durationSec || (matchedPornHist ? matchedPornHist.durationSec : 0) || 0;
+                    var livePornPct = activePreviewMeta.progressPct || (matchedPornHist ? matchedPornHist.progressPct : 0) || 0;
+                    list.push({
+                        url: activeUrl,
+                        previewUrl: activeUrl,
+                        action: activePreviewMeta.action || ('local:' + activeUrl),
+                        title: activePreviewMeta.title || (matchedPornHist ? matchedPornHist.title : '正在播放'),
+                        sub: activePreviewMeta.sub || (matchedPornHist ? matchedPornHist.sub : ''),
+                        org: activePreviewMeta.org || (matchedPornHist ? matchedPornHist.org : ''),
+                        epg_name: '',
+                        desc: activePreviewMeta.desc || (matchedPornHist ? matchedPornHist.desc : ''),
+                        img: curPornImg,
+                        logo_url: activePreviewMeta.brandLogo || (matchedPornHist ? matchedPornHist.logo_url : ''),
+                        sourceRow: 4,
+                        seriesKey: '',
+                        seasonNum: 1,
+                        progressSec: livePornCurSec,
+                        durationSec: livePornDurSec,
+                        progressPct: livePornPct,
+                        isNowPlayingCard: true
+                    });
+                }
+                for (var pi = 0; pi < restrictedWatchHistoryList.length; pi++) {
+                    if (list.length >= 20) break;
+                    var pItem = restrictedWatchHistoryList[pi];
+                    if (!pItem || !pItem.url) continue;
+                    if (activeUrl && pItem.url === activeUrl) continue;
+                    list.push(Object.assign({}, pItem, {
+                        previewUrl: pItem.url,
+                        sourceRow: 4,
+                        img: pItem.img || iptvFrameCache[pItem.url] || '',
+                        isNowPlayingCard: false
+                    }));
+                }
+            } else {
+                if (hasActiveBgPlayback() && activePreviewMeta && activePreviewMeta.url && !isRestrictedMeta(activePreviewMeta)) {
+                    activeUrl = activePreviewMeta.url;
+                    var matchedHist = watchHistoryList.find(function(h) { return h && h.url === activeUrl; });
+                    var curImg = activePreviewMeta.img || (matchedHist ? matchedHist.img : '') || iptvFrameCache[activeUrl] || '';
+                    var sRowNow = activePreviewMeta.sourceRow || ((activePreviewMeta.row >= 1 && activePreviewMeta.row <= 3) ? activePreviewMeta.row : 1);
+                    if (sRowNow !== 4) {
+                        var liveCurSec = (sRowNow !== 2) ? (activePreviewMeta.progressSec || (matchedHist ? matchedHist.progressSec : 0) || 0) : 0;
+                        var liveDurSec = (sRowNow !== 2) ? (activePreviewMeta.durationSec || (matchedHist ? matchedHist.durationSec : 0) || 0) : 0;
+                        var livePct = (sRowNow !== 2) ? (activePreviewMeta.progressPct || (matchedHist ? matchedHist.progressPct : 0) || 0) : 0;
+                        list.push({
+                            url: activeUrl,
+                            previewUrl: activeUrl,
+                            action: activePreviewMeta.action || (activeUrl.indexOf('douyin:') === 0 ? activeUrl : (activeUrl.indexOf('/') === 0 ? 'local:' + activeUrl : 'iptv:' + activeUrl)),
+                            title: activePreviewMeta.title || (matchedHist ? matchedHist.title : '正在播放'),
+                            sub: activePreviewMeta.sub || (matchedHist ? matchedHist.sub : ''),
+                            org: activePreviewMeta.org || (matchedHist ? matchedHist.org : ''),
+                            epg_name: activePreviewMeta.epg_name || (matchedHist ? matchedHist.epg_name : ''),
+                            desc: activePreviewMeta.desc || (matchedHist ? matchedHist.desc : ''),
+                            img: curImg,
+                            logo_url: activePreviewMeta.brandLogo || (matchedHist ? matchedHist.logo_url : ''),
+                            sourceRow: sRowNow,
+                            seriesKey: activePreviewMeta.seriesKey || (matchedHist ? matchedHist.seriesKey : ''),
+                            seasonNum: activePreviewMeta.seasonNum || (matchedHist ? matchedHist.seasonNum : 1) || 1,
+                            progressSec: liveCurSec,
+                            durationSec: liveDurSec,
+                            progressPct: livePct,
+                            isNowPlayingCard: true
+                        });
+                    }
+                }
+
+                for (var i = 0; i < watchHistoryList.length; i++) {
+                    if (list.length >= 20) break;
+                    var hItem = watchHistoryList[i];
+                    if (!hItem || !hItem.url || isRestrictedMeta(hItem) || hItem.sourceRow === 4) continue;
+                    if (activeUrl && hItem.url === activeUrl) continue;
+                    var hCopy = Object.assign({}, hItem, {
+                        previewUrl: hItem.url,
+                        img: hItem.img || iptvFrameCache[hItem.url] || '',
+                        isNowPlayingCard: false
+                    });
+                    list.push(hCopy);
+                }
+
+                // 按当前选中的丸形菜单分组过滤（全部 / 很酷 TV+ / 有线电视 / 流媒体），确保限制级绝不出现在“全部”或任何常规分组中
+                list = list.filter(function(it) {
+                    if (!it || it.sourceRow === 4 || isRestrictedMeta(it)) return false;
+                    if (activeNowWatchingTab === 'cooltv') return it.sourceRow === 1;
+                    if (activeNowWatchingTab === 'iptv') return it.sourceRow === 2;
+                    if (activeNowWatchingTab === 'streaming') return it.sourceRow === 3;
+                    return true;
                 });
-                list.push(hCopy);
             }
 
             if (list.length > 20) {
@@ -3317,11 +3523,11 @@
                 list.push({
                     title: "暂无观看记录",
                     sub: "播放任意视频后将自动收录于此",
-                    desc: "您播放过的很酷 TV+本地视频、有线电视与流媒体内容都将自动汇总在此处。",
+                    desc: "您播放过的视频内容都将按分类自动汇总在此处。",
                     img: DEFAULT_LOCAL_CARD_SVG,
                     previewUrl: "",
                     action: "",
-                    sourceRow: 1,
+                    sourceRow: isRestTab ? 4 : (activeNowWatchingTab === 'iptv' ? 2 : (activeNowWatchingTab === 'streaming' ? 3 : 1)),
                     progressPct: 0,
                     isNowPlayingCard: false
                 });
@@ -3340,7 +3546,10 @@
         function updateNowWatchingDomBadges() {
             var track = document.getElementById('mainTrack');
             if (!track || currentTrackRow !== 7) return;
-            var activeUrl = (hasActiveBgPlayback() && !macVideo.paused && activePreviewMeta && !isRestrictedMeta(activePreviewMeta)) ? (activePreviewMeta.url || currentBgUrl || currentPlayingStream) : '';
+            var activeUrl = (hasActiveBgPlayback() && !macVideo.paused && activePreviewMeta) ? (activePreviewMeta.url || currentBgUrl || currentPlayingStream) : '';
+            if (activeUrl && isRestrictedMeta(activePreviewMeta) && activeNowWatchingTab !== 'restricted') {
+                activeUrl = '';
+            }
             var cards = track.querySelectorAll('.media-item[data-row="7"]');
             for (var i = 0; i < cards.length; i++) {
                 var c = cards[i];
@@ -3578,7 +3787,7 @@
             }, 3800);
         }
 
-        // 任务 2 & 3 (Round 9)：全屏底部黑色渐变遮罩 + 单行滚动标题 + 作者 + 非有线电视进度条展示
+        // 任务 2 & 3 (Round 9) & 任务 10 (Round 19)：全屏底部黑色渐变遮罩 + 双节点乒乓无闪烁单行滚动标题 + 作者 + 非有线电视进度条展示
         function showIptvFullscreenHud(title, sub, keepOpen) {
             var hud = document.getElementById('iptvFullscreenHud');
             var tEl = document.getElementById('iptvHudTitle');
@@ -3593,15 +3802,15 @@
             var safeHtmlTitle = formatDouyinBrandTextHtml(displayTitle);
 
             if (displayTitle && displayTitle.length > 20) {
-                var dur = Math.max(10, Math.round(displayTitle.length * 0.42)) + 's';
+                var durSec = Math.max(10, Math.round(displayTitle.length * 0.42));
                 var hudMarqueeKey = 'marquee:' + displayTitle;
                 if (tEl.getAttribute('data-marquee-key') !== hudMarqueeKey || !tEl.querySelector('.marquee-track')) {
                     tEl.setAttribute('data-marquee-key', hudMarqueeKey);
                     tEl.className = 'iptv-hud-title single-line-marquee';
-                    tEl.innerHTML = '<div class="marquee-track" style="--marquee-dur: ' + dur + ';"><span>' + safeHtmlTitle + '</span><span>' + safeHtmlTitle + '</span></div>';
+                    startMarqueePingPong(tEl, safeHtmlTitle, durSec, '');
                 }
             } else {
-                tEl.removeAttribute('data-marquee-key');
+                stopMarqueePingPong(tEl);
                 tEl.className = 'iptv-hud-title';
                 tEl.innerHTML = safeHtmlTitle;
             }
@@ -3990,7 +4199,18 @@
                 currentBgUrl = url;
                 lockedSeekTargetSec = null;
                 lockedSeekExpireTs = 0;
-                streamSeekBaseSec = (url && url.indexOf('/') === 0) ? 2 : 0;
+                // 任务 3 (Round 19)：若该内容存在已保存的历史观看进度，背景预览与起播直接从历史进度秒数开始
+                var savedPreviewHist = findSavedWatchHistoryEntry(url);
+                var previewResumeSec = (savedPreviewHist && savedPreviewHist.progressSec && savedPreviewHist.progressSec > 3 && (!savedPreviewHist.durationSec || savedPreviewHist.progressSec < savedPreviewHist.durationSec - 5))
+                    ? savedPreviewHist.progressSec
+                    : ((activePreviewMeta && activePreviewMeta.url === url && activePreviewMeta.progressSec > 3)
+                        ? activePreviewMeta.progressSec
+                        : ((url && url.indexOf('/') === 0) ? 2 : 0));
+                streamSeekBaseSec = previewResumeSec;
+                if (previewResumeSec > 3) {
+                    lockedSeekTargetSec = previewResumeSec;
+                    lockedSeekExpireTs = performance.now() + 6500;
+                }
                 var mySeq = ++streamReqSeq;
                 probeStreamDuration(url, mySeq);
                 // 任务 11 (Round 18)：未进入正式播放界面的预览内容不计入 watchHistoryList，仅通过 syncNowWatchingRowData 临时显示当前正在预览的卡片
@@ -3999,8 +4219,11 @@
                 var ffmpegSpec = (isCurrentStreamIptv() && activePreviewMeta && activePreviewMeta.title)
                     ? (url + '@@title=' + activePreviewMeta.title)
                     : url;
-                var p = invoke('start_ffmpeg', { url: ffmpegSpec });
-                inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
+                var previewFfmpegArgs = (previewResumeSec > 3)
+                    ? { url: ffmpegSpec, seekSec: previewResumeSec }
+                    : { url: ffmpegSpec };
+                var p = invoke('start_ffmpeg', previewFfmpegArgs);
+                inFlightFfmpegReq = { url: url, seq: mySeq, promise: p, seekSec: previewResumeSec };
                 p.then((localM3u8Url) => {
                     if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
                     if (mySeq !== streamReqSeq || currentBgUrl !== url) return; 
@@ -4411,6 +4634,13 @@
                 var hudTitle = title || (cardEl ? cardEl.getAttribute('data-title') : '') || activePreviewMeta.title || '';
                 var hudSub = cardEl ? (cardEl.getAttribute('data-sub') || cardEl.getAttribute('data-org') || '') : (activePreviewMeta.sub || '');
 
+                var savedHistEntry = findSavedWatchHistoryEntry(url) || findSavedWatchHistoryEntry(action);
+                var resumeSec = (savedHistEntry && savedHistEntry.progressSec && savedHistEntry.progressSec > 3 && (!savedHistEntry.durationSec || savedHistEntry.progressSec < savedHistEntry.durationSec - 5))
+                    ? savedHistEntry.progressSec
+                    : ((activePreviewMeta && activePreviewMeta.url === url && activePreviewMeta.progressSec > 3)
+                        ? activePreviewMeta.progressSec
+                        : ((url && url.indexOf('/') === 0) ? 2 : 0));
+
                 if (cardEl) {
                     var cSourceRow = parseInt(cardEl.getAttribute('data-source-row') || '0') || ((fullScreenRow >= 1 && fullScreenRow <= 4) ? fullScreenRow : 1);
                     var cardImgEl = cardEl.querySelector('img');
@@ -4435,7 +4665,10 @@
                         sourceRow: cSourceRow,
                         col: fullScreenCol,
                         seriesKey: rawSeriesKey,
-                        seasonNum: rawSeasonNum
+                        seasonNum: rawSeasonNum,
+                        progressSec: savedHistEntry ? (savedHistEntry.progressSec || 0) : (activePreviewMeta.progressSec || 0),
+                        durationSec: savedHistEntry ? (savedHistEntry.durationSec || 0) : (activePreviewMeta.durationSec || 0),
+                        progressPct: savedHistEntry ? (savedHistEntry.progressPct || 0) : (activePreviewMeta.progressPct || 0)
                     };
                 } else {
                     var resolvedFallback = resolveLocalSeriesByPath(url, activePreviewMeta.seriesKey || activeSeriesView || '');
@@ -4443,8 +4676,13 @@
                         activePreviewMeta.seriesKey = resolvedFallback.seriesKey;
                         activePreviewMeta.seasonNum = resolvedFallback.seasonNum;
                     }
+                    if (savedHistEntry) {
+                        activePreviewMeta.progressSec = savedHistEntry.progressSec || activePreviewMeta.progressSec || 0;
+                        activePreviewMeta.durationSec = savedHistEntry.durationSec || activePreviewMeta.durationSec || 0;
+                        activePreviewMeta.progressPct = savedHistEntry.progressPct || activePreviewMeta.progressPct || 0;
+                    }
                 }
-                // 任务 10 & 11 (Round 18)：进入正式播放画面时计入正在观看/现在观看列表并持久化
+                // 任务 10 & 11 (Round 18) & 任务 3 (Round 19)：进入正式播放画面时计入正在观看/现在观看列表并保留已保存的历史进度
                 recordWatchHistoryItem(activePreviewMeta);
 
                 // 任务 2 & 3 (Round 9) & 任务 6 (Round 16)：全屏播放页面展示底部渐变遮罩信息，进入正式播放默认处于播放态
@@ -4456,9 +4694,16 @@
                 }
 
                 var isPausedIptv = Boolean(macVideo.paused && (action.startsWith('iptv:') || isCurrentStreamIptv()));
+                var curEffSec = getEffectiveCurrentTime();
+                var needJumpToSavedProgress = Boolean(
+                    !isCurrentStreamIptv() &&
+                    resumeSec > 3 &&
+                    Math.abs(curEffSec - resumeSec) > 4.5 &&
+                    !(inFlightFfmpegReq && inFlightFfmpegReq.url === url && inFlightFfmpegReq.seq === streamReqSeq && Math.abs((inFlightFfmpegReq.seekSec || 0) - resumeSec) <= 3)
+                );
 
-                // 任务 2 (Round 17)：若预览流已对同一 URL 发起 FFmpeg 或已挂载 hlsInstance（即使尚在 380ms 显影等待期内），直接复用该流，严禁二次重启 FFmpeg 导致前序分片变成几秒黑屏假视频
-                if (currentBgUrl === url && !isPausedIptv && ((inFlightFfmpegReq && inFlightFfmpegReq.url === url && inFlightFfmpegReq.seq === streamReqSeq) || hlsInstance)) {
+                // 任务 2 (Round 17) & 任务 3 (Round 19)：若预览流已对同一 URL 发起 FFmpeg 或已挂载 hlsInstance，且起播位置已对齐历史进度，则直接复用该流；若尚未跳转到保存的历史进度位置，则立即执行精准跳转
+                if (currentBgUrl === url && !isPausedIptv && !needJumpToSavedProgress && ((inFlightFfmpegReq && inFlightFfmpegReq.url === url && inFlightFfmpegReq.seq === streamReqSeq) || hlsInstance)) {
                     if (objectFitTransitionTimer) {
                         clearTimeout(objectFitTransitionTimer);
                         objectFitTransitionTimer = null;
@@ -4480,29 +4725,34 @@
                     return;
                 }
 
-                // 切换全新视频流时，先彻底销毁旧 hlsInstance 并暂停重置 macVideo，防止等待新 FFmpeg 期间旧流在黑屏下继续走进度条
+                // 切换全新视频流或需跳转到历史保存进度时，先彻底销毁旧 hlsInstance 并暂停重置 macVideo
                 destroyActiveHlsAndResetVideo();
                 setVideoLayerVisible(isPausedIptv);
                 macVideo.style.objectFit = targetFit;
                 lastVideoGeometryChangeTs = performance.now();
                 currentBgUrl = url;
                 currentPlayingStream = url;
-                lockedSeekTargetSec = null;
-                lockedSeekExpireTs = 0;
-                var savedHistEntry = watchHistoryList.find(function(h) { return h && h.url === url; });
-                var resumeSec = (savedHistEntry && savedHistEntry.progressSec && savedHistEntry.progressSec > 3 && (!savedHistEntry.durationSec || savedHistEntry.progressSec < savedHistEntry.durationSec - 5))
-                    ? savedHistEntry.progressSec
-                    : ((url && url.indexOf('/') === 0) ? 2 : 0);
                 streamSeekBaseSec = resumeSec;
+                if (resumeSec > 3) {
+                    lockedSeekTargetSec = resumeSec;
+                    lockedSeekExpireTs = performance.now() + 6500;
+                } else {
+                    lockedSeekTargetSec = null;
+                    lockedSeekExpireTs = 0;
+                }
                 var mySeq = ++streamReqSeq;
                 probeStreamDuration(url, mySeq);
                 updateNowPlayingNavVisibility(true);
+                if (resumeSec > 3 && savedHistEntry && savedHistEntry.durationSec > 0) {
+                    trueMediaDuration = savedHistEntry.durationSec;
+                    renderFsProgressAt(resumeSec, trueMediaDuration);
+                }
                 var ffmpegSpec = ((action.startsWith('iptv:') || isCurrentStreamIptv()) && hudTitle)
                     ? (url + '@@title=' + hudTitle)
                     : url;
                 var ffmpegArgs = (resumeSec > 3) ? { url: ffmpegSpec, seekSec: resumeSec } : { url: ffmpegSpec };
                 var p = invoke('start_ffmpeg', ffmpegArgs);
-                inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
+                inFlightFfmpegReq = { url: url, seq: mySeq, promise: p, seekSec: resumeSec };
                 p.then((localM3u8Url) => {
                     if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
                     if (mySeq !== streamReqSeq || currentBgUrl !== url) return;
@@ -4628,12 +4878,22 @@
             if (pornUnlocked) {
                 pornUnlocked = false;
                 document.getElementById('navPornItem').style.display = 'none';
-                if (activePreviewMeta && activePreviewMeta.row === 4) {
+                if (activeNowWatchingTab === 'restricted') {
+                    activeNowWatchingTab = 'all';
+                }
+                if (activePreviewMeta && isRestrictedMeta(activePreviewMeta)) {
                     activePreviewMeta.action = '';
                     activePreviewMeta.url = '';
                     stopPreviewStream(true);
                 }
-                if (currentTrackRow === 4) setFocus(document.querySelector('.focusable[data-row="1"][data-col="0"]'));
+                if (currentTrackRow === 4) {
+                    setFocus(document.querySelector('.focusable[data-row="1"][data-col="0"]'));
+                } else if (currentTrackRow === 7) {
+                    lastRowColMap[7] = 1;
+                    syncNowWatchingRowData(true);
+                    var npNav = document.getElementById('navNowPlayingItem');
+                    if (npNav) setFocus(npNav);
+                }
             } else {
                 openPasswordModal();
             }
@@ -4787,6 +5047,14 @@
         (function bindPasswordKeypadEvents() {
             var inputEl = document.getElementById('inputUnlockPwd');
             if (inputEl) {
+                // 任务 2 (Round 19)：密码页输入框聚焦时按 Esc 直接关闭密码页返回主页（防止原生 password input 拦截 Esc）
+                inputEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' || e.code === 'Escape' || e.keyCode === 27) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closePasswordModal(false);
+                    }
+                });
                 inputEl.addEventListener('pointerdown', function(e) {
                     if (e.button !== 0) return;
                     var idx = modalFocusList.indexOf(inputEl);
@@ -4856,7 +5124,10 @@
                 pwdInputPointerTimer = null;
             }
             var inputEl = document.getElementById('inputUnlockPwd');
-            if (inputEl) inputEl.classList.remove('pressing');
+            if (inputEl) {
+                inputEl.classList.remove('pressing');
+                try { inputEl.blur(); } catch (_) {}
+            }
             var fillBar = document.getElementById('pwdFillBar');
             if (!keepFillBarAnimating && fillBar) {
                 fillBar.className = 'pwd-fill-bar';
@@ -4868,10 +5139,12 @@
             togglePwdKeypad(false);
             modalFocusList.forEach(el => el.classList.remove('modal-focused'));
             document.getElementById('passwordModal').classList.remove('active');
-            if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
+            if (currentFocusEl) {
+                setFocus(currentFocusEl);
+            }
         }
 
-        // 任务 12 (Round 5) & 任务 6 (Round 17)：电源管理弹窗打开、关闭与执行逻辑（支持任何情况下直接唤出覆盖当前画面）
+        // 任务 12 (Round 5) & 任务 6 (Round 17)：电源管理弹窗打开、关闭与执行逻辑
         function openPowerModal() {
             if (document.getElementById('settingsModal').classList.contains('active')) {
                 document.getElementById('settingsModal').classList.remove('active');
@@ -4898,6 +5171,146 @@
             var modal = document.getElementById('powerModal');
             if (modal) modal.classList.remove('active');
             if (!isFullScreen && currentFocusEl) currentFocusEl.focus({ preventScroll: true });
+        }
+
+        // 任务 9 (Round 19)：F19 键触发强制暂停当前播放内容 -> 显示电源页同款模糊色彩遮罩“正在关闭电视.. / 请稍候。”计时 5 秒 -> 黑屏 3 秒 -> 静默回到主页面并将焦点移动到现在观看
+        var tvShutdownPhase = 'idle'; // 'idle' | 'shutting_down' | 'blackout'
+        var tvShutdownTimer1 = null;
+        var tvShutdownTimer2 = null;
+
+        function cancelTvShutdownSequence(restoreFocus) {
+            if (tvShutdownTimer1) {
+                clearTimeout(tvShutdownTimer1);
+                tvShutdownTimer1 = null;
+            }
+            if (tvShutdownTimer2) {
+                clearTimeout(tvShutdownTimer2);
+                tvShutdownTimer2 = null;
+            }
+            tvShutdownPhase = 'idle';
+            var shutModal = document.getElementById('tvShuttingDownModal');
+            if (shutModal) shutModal.classList.remove('active');
+            var blackoutEl = document.getElementById('tvBlackoutCurtain');
+            if (blackoutEl) blackoutEl.classList.remove('active');
+            isModalOpen = false;
+            if (restoreFocus) {
+                var npEl = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
+                if (npEl) setFocus(npEl);
+            }
+        }
+
+        function triggerF19ShutdownSequence() {
+            if (tvShutdownPhase !== 'idle') return;
+
+            // 若当前处于其他弹窗或正式全屏播放页，先收起并保存观看进度
+            if (document.getElementById('settingsModal').classList.contains('active')) {
+                document.getElementById('settingsModal').classList.remove('active');
+            }
+            if (document.getElementById('passwordModal').classList.contains('active')) {
+                togglePwdKeypad(false);
+                document.getElementById('passwordModal').classList.remove('active');
+            }
+            if (document.getElementById('powerModal').classList.contains('active')) {
+                document.getElementById('powerModal').classList.remove('active');
+            }
+            modalFocusList.forEach(el => el.classList.remove('modal-focused'));
+
+            if (isFullScreen) {
+                closeFsEpisodePicker();
+                updateActiveWatchHistoryProgress(true);
+                isFullScreen = false;
+                isScrubbing = false;
+                scrubStepCount = 0;
+                if (seekDebounceTimer) {
+                    clearTimeout(seekDebounceTimer);
+                    seekDebounceTimer = null;
+                }
+                pendingAutoAdvanceDouyin = false;
+                hideIptvFullscreenHud();
+                document.getElementById('sidebar').style.opacity = '1';
+                document.getElementById('mainContent').style.opacity = '1';
+                document.getElementById('heroOverlay').style.opacity = '1';
+                var bl = document.getElementById('baseLayer');
+                if (bl) bl.style.opacity = '1';
+            }
+
+            // 强制暂停当前播放内容
+            clearTimeout(bgPreviewTimeout);
+            bgPreviewTimeout = null;
+            userPausedInFullscreen = true;
+            if (hlsInstance) {
+                try { hlsInstance.stopLoad(); } catch (_) {}
+            }
+            try { macVideo.pause(); } catch (_) {}
+            updateNowPlayingNavVisibility(false);
+            syncNowWatchingRowData(false);
+
+            syncOverlayThemeTint();
+            autoScaleUI();
+            isModalOpen = true;
+            tvShutdownPhase = 'shutting_down';
+            var shutModal = document.getElementById('tvShuttingDownModal');
+            var blackoutEl = document.getElementById('tvBlackoutCurtain');
+            if (blackoutEl) blackoutEl.classList.remove('active');
+            if (shutModal) shutModal.classList.add('active');
+
+            if (tvShutdownTimer1) clearTimeout(tvShutdownTimer1);
+            if (tvShutdownTimer2) clearTimeout(tvShutdownTimer2);
+
+            // 计时 5 秒后进入黑屏
+            tvShutdownTimer1 = setTimeout(function() {
+                tvShutdownTimer1 = null;
+                tvShutdownPhase = 'blackout';
+                if (blackoutEl) blackoutEl.classList.add('active');
+                if (shutModal) shutModal.classList.remove('active');
+
+                // 在黑屏幕后静默清理播放流并回到主页面，将焦点移动到“现在观看”
+                forceStoppedBgByUser = true;
+                activePreviewMeta = {
+                    url: '',
+                    action: '',
+                    title: '',
+                    sub: '',
+                    org: '',
+                    epg_name: '',
+                    desc: '',
+                    img: '',
+                    brandLogo: '',
+                    row: 0,
+                    sourceRow: 0,
+                    col: 1,
+                    seriesKey: '',
+                    seasonNum: 1
+                };
+                stopPreviewStream(true);
+                if (activeSeriesView) {
+                    activeSeriesView = null;
+                    var sb = document.getElementById('seasonBar');
+                    if (sb) {
+                        sb.classList.remove('active');
+                        sb.classList.remove('single-line-mode');
+                        sb.innerHTML = '';
+                    }
+                    currentTrackRow = -1;
+                }
+                syncNowWatchingRowData(true);
+                var npEl = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
+                if (npEl) {
+                    setFocus(npEl);
+                }
+
+                // 黑屏 3 秒后静默回到主页面
+                tvShutdownTimer2 = setTimeout(function() {
+                    tvShutdownTimer2 = null;
+                    tvShutdownPhase = 'idle';
+                    isModalOpen = false;
+                    if (blackoutEl) blackoutEl.classList.remove('active');
+                    var targetNp = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
+                    if (targetNp) {
+                        setFocus(targetNp);
+                    }
+                }, 3000);
+            }, 5000);
         }
 
         document.getElementById('btnPowerQuit').onclick = function() {
@@ -4995,7 +5408,7 @@
                 appSettings.locationMode = newVal;
                 localStorage.setItem('fc_location_mode', appSettings.locationMode);
                 updateSettingsToggleButtons();
-                pollWeatherBroadcast(true);
+                pollWeatherBroadcast(false);
             } else if (controlId === 'btnToggleRatingSource') {
                 appSettings.ratingSource = newVal;
                 localStorage.setItem('fc_rating_source', appSettings.ratingSource);
@@ -5091,7 +5504,7 @@
                     scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
                 }
                 loadDouyinNativeFeed(true, false);
-                pollWeatherBroadcast(true);
+                pollWeatherBroadcast(false);
             } finally {
                 setTimeout(function() {
                     if (refreshBtn) refreshBtn.classList.remove('refreshing');
@@ -5296,7 +5709,7 @@
             scrapeLocalMediaFolder(appSettings.mediaPath, 1, false);
             if (pornUnlocked) scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
             refreshEpgFromBackend();
-            pollWeatherBroadcast(true);
+            pollWeatherBroadcast(false);
         }
 
         document.getElementById('btnCloseSettings').onclick = closeSettingsModal;
@@ -5345,13 +5758,95 @@
             }).catch(function() {});
         }
 
-        // 任务 2 (Round 5) & 任务 4 (Round 6) & 任务 3 (Round 8) & 任务 6 & 7 (Round 11) & 任务 3 & 4 (Round 15)：流媒体丸形菜单支持抖音与 bilibili 双平台一级菜单及各自二级菜单（抖音系分区全名使用抖音美好体）
-        function triggerDouyinCategoryForceRefresh(btnEl) {
-            if (btnEl) {
-                btnEl.classList.add('loading-pill');
-                btnEl.classList.add('spinning');
+        // 任务 4 & 6 (Round 19)：流媒体左侧刷新符号改为无容器状态指示器（不再作为按钮），用户长按任意一个丸形菜单即可触发刷新当前内容（刷新符号旋转并显示“正在刷新”）；
+        // 流媒体二级菜单强制单行显示，超出屏幕范围时移动焦点自动横向滚动菜单，并以跑马灯同款渐变遮罩遮挡左右两侧
+        var pillLongPressTimer = null;
+        var pillLongPressTriggered = false;
+
+        function triggerDouyinCategoryForceRefresh() {
+            var seasonBar = document.getElementById('seasonBar');
+            var ind = seasonBar ? seasonBar.querySelector('.stream-refresh-indicator') : null;
+            if (ind) {
+                ind.classList.add('loading-pill');
+                ind.classList.add('spinning');
             }
             loadDouyinNativeFeed(true, false);
+        }
+
+        function triggerSeasonPillLongPress(pillEl) {
+            if (pillLongPressTimer) {
+                clearTimeout(pillLongPressTimer);
+                pillLongPressTimer = null;
+            }
+            pillLongPressTriggered = true;
+            if (pillEl) pillEl.classList.remove('pressing');
+
+            if (currentTrackRow === 3) {
+                triggerDouyinCategoryForceRefresh();
+                return true;
+            }
+            if (currentTrackRow === 7) {
+                syncNowWatchingRowData(false);
+                renderNowWatchingTrackCardsOnly();
+                return true;
+            }
+            if (currentTrackRow === 4 && pornUnlocked) {
+                scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
+                return true;
+            }
+            if (activeSeriesView) {
+                scrapeLocalMediaFolder(appSettings.mediaPath, 1, false);
+                return true;
+            }
+            return false;
+        }
+
+        function bindSeasonPillLongPressEvents(containerEl) {
+            if (!containerEl) return;
+            Array.from(containerEl.querySelectorAll('.season-pill.focusable')).forEach(function(pillEl) {
+                pillEl.addEventListener('pointerdown', function(e) {
+                    if (e.button !== 0) return;
+                    pillLongPressTriggered = false;
+                    setFocus(pillEl);
+                    pillEl.classList.add('pressing');
+                    if (pillLongPressTimer) clearTimeout(pillLongPressTimer);
+                    pillLongPressTimer = setTimeout(function() {
+                        triggerSeasonPillLongPress(pillEl);
+                    }, 550);
+                });
+                ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(evtName) {
+                    pillEl.addEventListener(evtName, function() {
+                        pillEl.classList.remove('pressing');
+                        if (pillLongPressTimer) {
+                            clearTimeout(pillLongPressTimer);
+                            pillLongPressTimer = null;
+                        }
+                    });
+                });
+            });
+        }
+
+        function scrollSeasonPillIntoView(pillEl) {
+            if (!pillEl) return;
+            var viewport = document.getElementById('seasonPillsViewport');
+            var track = document.getElementById('seasonPillsTrack');
+            if (!viewport || !track || !track.contains(pillEl)) return;
+            var vpWidth = viewport.clientWidth - 52;
+            var totalWidth = track.scrollWidth;
+            if (vpWidth <= 0 || totalWidth <= vpWidth) {
+                track.style.transform = 'translate3d(0px, 0, 0)';
+                return;
+            }
+            var pillLeft = pillEl.offsetLeft;
+            var pillWidth = pillEl.offsetWidth;
+            var pillCenter = pillLeft + pillWidth / 2;
+            var targetScroll = pillCenter - vpWidth / 2;
+            var maxScroll = Math.max(0, totalWidth - vpWidth + 16);
+            var clampedScroll = Math.max(0, Math.min(maxScroll, targetScroll));
+            if (parseInt(pillEl.getAttribute('data-col') || '1') <= 1) {
+                clampedScroll = 0;
+            }
+            track.style.transform = 'translate3d(-' + Math.round(clampedScroll) + 'px, 0, 0)';
         }
 
         function renderDouyinSeasonBar() {
@@ -5361,9 +5856,10 @@
             douyinBarAnimType = '';
             var loadingNow = isDouyinCategoryLoading(activeDouyinCategory);
             var stateCls = loadingNow ? ' loading-pill spinning' : '';
-            var refreshBtnHtml = '<div class="season-pill season-refresh-btn focusable' + stateCls + '" tabindex="0" data-row="0" data-col="1" data-douyin-refresh="1" data-no-bg-change="true" title="点击刷新当前分类推荐流">' + REFRESH_SVG_HTML + '<span class="refresh-btn-label">正在加载..</span></div>';
+            var refreshIndicatorHtml = '<div id="streamRefreshIndicator" class="stream-refresh-indicator' + stateCls + '" aria-hidden="true">' + REFRESH_SVG_HTML + '<span class="refresh-btn-label">正在刷新</span></div>';
 
             if (!douyinPillsExpanded) {
+                seasonBar.classList.remove('single-line-mode');
                 var curDyCat = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinSubCategory) || DOUYIN_CATEGORIES[0];
                 var curBiliCat = BILI_CATEGORIES.find(c => c.id === activeBiliSubCategory) || BILI_CATEGORIES[0];
                 var isBiliNow = isBiliCategory(activeDouyinCategory);
@@ -5371,30 +5867,27 @@
                 var biliCurCls = isBiliNow ? ' current' : '';
                 var biliLabel = biliSubExplicitlyChosen ? curBiliCat.name : 'bilibili';
                 seasonBar.innerHTML =
-                    refreshBtnHtml +
-                    '<div class="season-pill focusable' + dyCurCls + animCls + '" tabindex="0" data-row="0" data-col="2" data-douyin-collapsed="1" data-stream-platform="douyin" data-douyin-cat="' + curDyCat.id + '" data-no-bg-change="true"><span class="douyin-font">' + curDyCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>' +
-                    '<div class="season-pill focusable' + biliCurCls + animCls + '"' + (animCls ? ' style="animation-delay:22ms;"' : '') + ' tabindex="0" data-row="0" data-col="3" data-bili-collapsed="1" data-stream-platform="bilibili" data-douyin-cat="' + curBiliCat.id + '" data-no-bg-change="true"><span>' + biliLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                    refreshIndicatorHtml +
+                    '<div class="season-pill focusable' + dyCurCls + animCls + '" tabindex="0" data-row="0" data-col="1" data-douyin-collapsed="1" data-stream-platform="douyin" data-douyin-cat="' + curDyCat.id + '" data-no-bg-change="true"><span class="douyin-font">' + curDyCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>' +
+                    '<div class="season-pill focusable' + biliCurCls + animCls + '"' + (animCls ? ' style="animation-delay:22ms;"' : '') + ' tabindex="0" data-row="0" data-col="2" data-bili-collapsed="1" data-stream-platform="bilibili" data-douyin-cat="' + curBiliCat.id + '" data-no-bg-change="true"><span>' + biliLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.classList.add('active');
-                var refBtn = seasonBar.querySelector('.season-refresh-btn');
-                if (refBtn) {
-                    refBtn.onclick = function(ev) {
-                        ev.stopPropagation();
-                        setFocus(refBtn);
-                        triggerDouyinCategoryForceRefresh(refBtn);
-                    };
-                }
+                bindSeasonPillLongPressEvents(seasonBar);
                 var dyPill = seasonBar.querySelector('.season-pill[data-douyin-collapsed="1"]');
                 if (dyPill) {
                     dyPill.onclick = function(ev) {
                         ev.stopPropagation();
+                        if (pillLongPressTriggered) {
+                            pillLongPressTriggered = false;
+                            return;
+                        }
                         if (isBiliCategory(activeDouyinCategory)) {
                             switchDouyinCategoryWithoutClearing(activeDouyinSubCategory);
                         }
                         douyinPillsExpanded = 'douyin';
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
-                        var activeCol = Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
-                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill[data-col="2"]');
+                        var activeCol = Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
+                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill[data-col="1"]');
                         if (targetPill) setFocus(targetPill);
                     };
                 }
@@ -5402,41 +5895,49 @@
                 if (biliPill) {
                     biliPill.onclick = function(ev) {
                         ev.stopPropagation();
+                        if (pillLongPressTriggered) {
+                            pillLongPressTriggered = false;
+                            return;
+                        }
                         if (!isBiliCategory(activeDouyinCategory)) {
                             switchDouyinCategoryWithoutClearing(activeBiliSubCategory);
                         }
                         douyinPillsExpanded = 'bilibili';
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
-                        var activeCol = Math.max(2, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
-                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill[data-col="2"]');
+                        var activeCol = Math.max(1, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
+                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill[data-col="1"]');
                         if (targetPill) setFocus(targetPill);
                     };
                 }
             } else {
+                seasonBar.classList.add('single-line-mode');
                 var subList = (douyinPillsExpanded === 'bilibili') ? BILI_CATEGORIES : DOUYIN_CATEGORIES;
                 var isDySub = (douyinPillsExpanded !== 'bilibili');
-                var dHtml = refreshBtnHtml;
+                var pillsHtml = '';
                 for (var d = 0; d < subList.length; d++) {
                     var dc = subList[d];
                     var curCls = (dc.id === activeDouyinCategory) ? ' current' : '';
                     var delayStyle = animCls ? (' style="animation-delay:' + (d * 18) + 'ms;"') : '';
                     var spanCls = isDySub ? ' class="douyin-font"' : '';
-                    dHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 2) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span' + spanCls + '>' + dc.name + '</span></div>';
+                    pillsHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 1) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span' + spanCls + '>' + dc.name + '</span></div>';
                 }
-                seasonBar.innerHTML = dHtml;
+                seasonBar.innerHTML =
+                    refreshIndicatorHtml +
+                    '<div class="season-pills-scroll-viewport" id="seasonPillsViewport">' +
+                        '<div class="season-pills-scroll-track" id="seasonPillsTrack">' +
+                            pillsHtml +
+                        '</div>' +
+                    '</div>';
                 seasonBar.classList.add('active');
-                var refBtnExp = seasonBar.querySelector('.season-refresh-btn');
-                if (refBtnExp) {
-                    refBtnExp.onclick = function(ev) {
-                        ev.stopPropagation();
-                        setFocus(refBtnExp);
-                        triggerDouyinCategoryForceRefresh(refBtnExp);
-                    };
-                }
+                bindSeasonPillLongPressEvents(seasonBar);
                 Array.from(seasonBar.querySelectorAll('.season-pill[data-douyin-cat]')).forEach(function(pillEl) {
                     pillEl.onclick = function(ev) {
                         ev.stopPropagation();
+                        if (pillLongPressTriggered) {
+                            pillLongPressTriggered = false;
+                            return;
+                        }
                         var catId = pillEl.getAttribute('data-douyin-cat');
                         if (catId && isBiliCategory(catId)) {
                             biliSubExplicitlyChosen = true;
@@ -5447,7 +5948,96 @@
                         setFocus(pillEl);
                     };
                 });
+                var curActivePill = seasonBar.querySelector('.season-pill.current') || seasonBar.querySelector('.season-pill[data-col="1"]');
+                if (curActivePill) {
+                    requestAnimationFrame(function() { scrollSeasonPillIntoView(curActivePill); });
+                }
             }
+        }
+
+        // 任务 7 (Round 19)：为“正在观看/现在观看”增加丸形菜单，按 全部、很酷 TV+、有线电视、流媒体、限制级 分组
+        // 注意：限制级内容严禁出现在“全部”分组，且仅当限制级解锁后 (pornUnlocked === true) 才在丸形菜单中出现“限制级”选项
+        function getNowWatchingTabs() {
+            var tabs = NOW_WATCHING_BASE_TABS.slice();
+            if (pornUnlocked) {
+                tabs.push({ id: 'restricted', name: '限制级' });
+            }
+            return tabs;
+        }
+
+        function renderNowWatchingTrackCardsOnly() {
+            if (currentTrackRow !== 7) return;
+            var track = document.getElementById('mainTrack');
+            var heroText = document.getElementById('heroText');
+            if (!track) return;
+            var rowItems = ROW_DATA[7] || [];
+            if (rowItems.length > 0) {
+                var rememberedCol = lastRowColMap[7] || 1;
+                if (rememberedCol > rowItems.length || rememberedCol < 1) rememberedCol = 1;
+                lastRowColMap[7] = rememberedCol;
+                var html = '';
+                for (var idx = 0; idx < rowItems.length; idx++) {
+                    html += buildMediaCardHTML(7, rowItems[idx], idx + 1, idx);
+                }
+                track.innerHTML = html;
+                var offset = rememberedCol > 1 ? (rememberedCol - 1) * 240 : 0;
+                track.style.transform = 'translate3d(-' + offset + 'px, 0, 0)';
+                if (heroText) heroText.classList.remove('lowered');
+                bindTrackImages(track);
+
+                var histThumbTasks = [];
+                for (var hi = 0; hi < rowItems.length; hi++) {
+                    var hIt = rowItems[hi];
+                    if (hIt && hIt.previewUrl && hIt.previewUrl.indexOf('/') === 0 && !iptvFrameCache[hIt.previewUrl] && (!hIt.img || hIt.img === DEFAULT_LOCAL_CARD_SVG)) {
+                        histThumbTasks.push({ path: hIt.previewUrl, imgId: 'card_img_7_' + hi });
+                    }
+                }
+                if (histThumbTasks.length > 0) {
+                    scheduleThumbTasks(histThumbTasks, rememberedCol - 1);
+                }
+            } else {
+                track.innerHTML = '';
+                if (heroText) heroText.classList.add('lowered');
+            }
+        }
+
+        function renderNowWatchingSeasonBar() {
+            var seasonBar = document.getElementById('seasonBar');
+            if (!seasonBar) return;
+            seasonBar.classList.remove('single-line-mode');
+            if (!pornUnlocked && activeNowWatchingTab === 'restricted') {
+                activeNowWatchingTab = 'all';
+            }
+            var tabs = getNowWatchingTabs();
+            var html = '';
+            for (var i = 0; i < tabs.length; i++) {
+                var t = tabs[i];
+                var curCls = (t.id === activeNowWatchingTab) ? ' current' : '';
+                html += '<div class="season-pill focusable' + curCls + '" tabindex="0" data-row="0" data-col="' + (i + 1) + '" data-now-watching-tab="' + t.id + '" data-no-bg-change="true"><span>' + t.name + '</span></div>';
+            }
+            seasonBar.innerHTML = html;
+            seasonBar.classList.add('active');
+            bindSeasonPillLongPressEvents(seasonBar);
+            Array.from(seasonBar.querySelectorAll('.season-pill[data-now-watching-tab]')).forEach(function(pillEl) {
+                pillEl.onclick = function(ev) {
+                    ev.stopPropagation();
+                    if (pillLongPressTriggered) {
+                        pillLongPressTriggered = false;
+                        return;
+                    }
+                    var tabId = pillEl.getAttribute('data-now-watching-tab');
+                    if (tabId && tabId !== activeNowWatchingTab) {
+                        activeNowWatchingTab = tabId;
+                        lastRowColMap[7] = 1;
+                        Array.from(seasonBar.querySelectorAll('.season-pill[data-now-watching-tab]')).forEach(function(p) {
+                            p.classList.toggle('current', p.getAttribute('data-now-watching-tab') === activeNowWatchingTab);
+                        });
+                        syncNowWatchingRowData(false);
+                        renderNowWatchingTrackCardsOnly();
+                    }
+                    setFocus(pillEl);
+                };
+            });
         }
 
         // 任务 4 (Round 6)：限制级丸形菜单重构——默认直接展示“厂牌”和“其他”两个一级选项且默认选中“厂牌”
@@ -5455,6 +6045,7 @@
         function renderPornSeasonBar() {
             var seasonBar = document.getElementById('seasonBar');
             if (!seasonBar) return;
+            seasonBar.classList.remove('single-line-mode');
             var animCls = pornBarAnimType === 'expand' ? ' pill-anim-expand' : (pornBarAnimType === 'collapse' ? ' pill-anim-collapse' : '');
             pornBarAnimType = '';
 
@@ -5467,9 +6058,14 @@
                     '<div class="season-pill focusable' + oCls + animCls + '"' + (animCls ? ' style="animation-delay:22ms;"' : '') + ' tabindex="0" data-row="0" data-col="2" data-porn-primary="others" data-no-bg-change="true"><span>其他</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.innerHTML = html1;
                 seasonBar.classList.add('active');
+                bindSeasonPillLongPressEvents(seasonBar);
                 Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
                     pillEl.onclick = function(ev) {
                         ev.stopPropagation();
+                        if (pillLongPressTriggered) {
+                            pillLongPressTriggered = false;
+                            return;
+                        }
                         var pTab = pillEl.getAttribute('data-porn-primary');
                         if (pTab === 'brands') {
                             if (activePornPrimaryTab !== 'brands') {
@@ -5510,9 +6106,14 @@
                 }
                 seasonBar.innerHTML = html2;
                 seasonBar.classList.add('active');
+                bindSeasonPillLongPressEvents(seasonBar);
                 Array.from(seasonBar.querySelectorAll('.season-pill')).forEach(function(pillEl) {
                     pillEl.onclick = function(ev) {
                         ev.stopPropagation();
+                        if (pillLongPressTriggered) {
+                            pillLongPressTriggered = false;
+                            return;
+                        }
                         var folder = pillEl.getAttribute('data-porn-folder');
                         if (folder) {
                             activePornPrimaryTab = 'others';
@@ -5562,8 +6163,11 @@
             } else if (rowId === 4) {
                 syncPornRowData();
                 renderPornSeasonBar();
+            } else if (rowId === 7) {
+                renderNowWatchingSeasonBar();
             } else {
                 seasonBar.classList.remove('active');
+                seasonBar.classList.remove('single-line-mode');
                 seasonBar.innerHTML = '';
             }
 
@@ -5637,6 +6241,7 @@
 
         function renderHeroLogoElement(heroTitleEl, title, logoUrl) {
             if (!logoUrl || !heroTitleEl) return;
+            stopMarqueePingPong(heroTitleEl);
             heroTitleEl.className = 'main-title';
             var animStyle = '<style>@keyframes logoFadeIn { from { opacity: 0; transform: translateZ(0) translateY(8px); } to { opacity: 1; transform: translateZ(0) translateY(0); } }</style>';
             heroTitleEl.innerHTML = animStyle + '<div class="tmdb-logo-stage"><img id="activeHeroLogoImg" src="' + optimizeImageUrl(logoUrl) + '" style="height: auto; max-height: 84px; max-width: 320px; vertical-align: middle; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.5)); animation: logoFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;" alt="' + (title || '').replace(/"/g, '&quot;') + '"></div>';
@@ -5680,15 +6285,15 @@
             var formattedTitleHtml = formatHeroTitleHtml(title);
 
             if (isSingleLineMarquee && title && title.length > 18) {
-                var dur = Math.max(10, Math.round(title.length * 0.42)) + 's';
+                var durSec = Math.max(10, Math.round(title.length * 0.42));
                 var mKey = 'marquee:' + title;
                 if (heroTitleEl.getAttribute('data-marquee-key') !== mKey || !heroTitleEl.querySelector('.marquee-track')) {
                     heroTitleEl.setAttribute('data-marquee-key', mKey);
                     heroTitleEl.className = 'main-title single-line-marquee';
-                    heroTitleEl.innerHTML = '<div class="marquee-track" style="--marquee-dur: ' + dur + '; margin-bottom: 2px;"><span>' + formattedTitleHtml + '</span><span>' + formattedTitleHtml + '</span></div>';
+                    startMarqueePingPong(heroTitleEl, formattedTitleHtml, durSec, 'margin-bottom: 2px;');
                 }
             } else {
-                heroTitleEl.removeAttribute('data-marquee-key');
+                stopMarqueePingPong(heroTitleEl);
                 heroTitleEl.className = isSingleLineMarquee ? 'main-title single-line-marquee' : 'main-title';
                 heroTitleEl.innerHTML = '<span style="display: inline-block; margin-bottom: 2px; vertical-align: middle;">' + formattedTitleHtml + '</span>';
             }
@@ -5746,6 +6351,7 @@
             var row = parseInt(targetEl.getAttribute('data-row')), col = parseInt(targetEl.getAttribute('data-col'));
 
             if (row === 0 && targetEl.classList.contains('season-pill')) {
+                scrollSeasonPillIntoView(targetEl);
                 var sNum = parseInt(targetEl.getAttribute('data-season'));
                 if (sNum && sNum !== activeSeasonNum && activeSeriesView) {
                     lastRowColMap.series = 1;
@@ -5758,7 +6364,17 @@
                     }
                     return;
                 }
-                if (targetEl.getAttribute('data-douyin-refresh') === '1') {
+                var nwTab = targetEl.getAttribute('data-now-watching-tab');
+                if (nwTab) {
+                    if (nwTab !== activeNowWatchingTab) {
+                        activeNowWatchingTab = nwTab;
+                        lastRowColMap[7] = 1;
+                        Array.from(document.querySelectorAll('#seasonBar .season-pill[data-now-watching-tab]')).forEach(function(p) {
+                            p.classList.toggle('current', p.getAttribute('data-now-watching-tab') === activeNowWatchingTab);
+                        });
+                        syncNowWatchingRowData(false);
+                        renderNowWatchingTrackCardsOnly();
+                    }
                     return;
                 }
                 if (targetEl.getAttribute('data-douyin-collapsed') === '1' || targetEl.getAttribute('data-bili-collapsed') === '1') {
@@ -5888,13 +6504,13 @@
                 else if (targetAction.startsWith('local:')) targetStreamUrl = targetAction.substring(6);
             }
 
-            // 任务 5 (Round 9) & 任务 11 (Round 10 & Round 18)：背景预览流切换时，未进入正式播放页的旧预览流自动从正在观看列表消失
+            // 任务 5 (Round 9) & 任务 11 (Round 10 & Round 18) & 任务 3 (Round 19)：背景预览流切换时，读取已保存的历史进度并同步
             if (targetStreamUrl) {
                 var cardRow = parseInt(displayEl.getAttribute('data-row')) || row;
                 var cardSourceRow = parseInt(displayEl.getAttribute('data-source-row') || '0') || ((cardRow >= 1 && cardRow <= 4) ? cardRow : 1);
                 var cardCol = parseInt(displayEl.getAttribute('data-col')) || col || 1;
                 var cardImg = displayEl.querySelector('img');
-                var matchedHistItem = watchHistoryList.find(function(h) { return h && h.url === targetStreamUrl; });
+                var matchedHistItem = findSavedWatchHistoryEntry(targetStreamUrl) || findSavedWatchHistoryEntry(targetAction);
                 var isSameStream = (targetStreamUrl === currentPlayingStream);
                 if (!isSameStream) {
                     canReturnToFullscreenByF18 = false;
@@ -5986,10 +6602,10 @@
             return findTargetFocusable(r, c) || findTargetFocusable(r, 1);
         }
 
-        // 任务 1a (Round 18)：当丸形菜单项目过多换行时，自动识别多行布局并支持使用上下键直接切换丸形菜单所在行
+        // 任务 1a (Round 18) & 任务 6 (Round 19)：当丸形菜单项目过多换行时，自动识别多行布局并支持使用上下键直接切换丸形菜单所在行；流媒体二级单行滚动模式不跨行
         function findSeasonPillInAdjacentRow(currentPill, dir) {
             var seasonBar = document.getElementById('seasonBar');
-            if (!seasonBar || !seasonBar.classList.contains('active') || !currentPill) return null;
+            if (!seasonBar || !seasonBar.classList.contains('active') || seasonBar.classList.contains('single-line-mode') || !currentPill) return null;
             var pills = Array.from(seasonBar.querySelectorAll('.season-pill.focusable'));
             if (pills.length <= 1) return null;
 
@@ -6067,6 +6683,52 @@
 
         var enterHoldTimer = null, enterHoldRow = null, lastKeyTime = 0;
 
+        function executeSeasonPillShortPress(pillEl) {
+            if (!pillEl) return;
+            if (currentTrackRow === 3 && !douyinPillsExpanded) {
+                if (pillEl.getAttribute('data-bili-collapsed') === '1') {
+                    if (!isBiliCategory(activeDouyinCategory)) {
+                        switchDouyinCategoryWithoutClearing(activeBiliSubCategory);
+                    }
+                    douyinPillsExpanded = 'bilibili';
+                    douyinBarAnimType = 'expand';
+                    renderDouyinSeasonBar();
+                    var actBiliCol = Math.max(1, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
+                    var targetBiliPill = findTargetFocusable(0, actBiliCol) || findTargetFocusable(0, 1);
+                    if (targetBiliPill) setFocus(targetBiliPill);
+                    return;
+                }
+                if (isBiliCategory(activeDouyinCategory)) {
+                    switchDouyinCategoryWithoutClearing(activeDouyinSubCategory);
+                }
+                douyinPillsExpanded = 'douyin';
+                douyinBarAnimType = 'expand';
+                renderDouyinSeasonBar();
+                var actCol = Math.max(1, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1);
+                var targetExpPill = findTargetFocusable(0, actCol) || findTargetFocusable(0, 1);
+                if (targetExpPill) setFocus(targetExpPill);
+                return;
+            }
+            if (currentTrackRow === 4 && pornMenuLevel === 1 && pillEl.getAttribute('data-porn-primary') === 'others') {
+                activePornPrimaryTab = 'others';
+                if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
+                if (PORN_FOLDER_LIST.length > 0) {
+                    pornMenuLevel = 2;
+                    pornBarAnimType = 'expand';
+                    syncPornRowData();
+                    currentTrackRow = -1;
+                    renderTrack(4);
+                    var fIndex = Math.max(0, PORN_FOLDER_LIST.indexOf(activePornFolder));
+                    var subFolderPill = findTargetFocusable(0, fIndex + 1) || findTargetFocusable(0, 1);
+                    if (subFolderPill) setFocus(subFolderPill);
+                    return;
+                }
+            }
+            var tRow = activeSeriesView ? 1 : currentTrackRow;
+            var cardTarget = getRememberedCard(tRow);
+            if (cardTarget) setFocus(cardTarget);
+        }
+
         function exitFullscreenToMainView(restoreFocusToCurrentCard) {
             if (!isFullScreen) return;
             closeFsEpisodePicker();
@@ -6102,15 +6764,38 @@
             }
         }
 
-        // 任务 5 (Round 18)：F18 键用于主页和正式播放页的切换
-        // 若当前未进入过正式播放页，F18 只能用于回到主页并将焦点移动到正在观看/现在观看；
-        // 若当前位于正式播放页，F18 可用于回到主页并将焦点移动到正在观看/现在观看，也可用于从主页返回正式播放页
+        // 任务 1 (Round 19)：F18 键功能更新：
+        // 1) 在任何非主页面且非正式播放界面的页面（密码页/设置页/电源选项/关机遮罩/剧集选集子页等）按下 F18，切换到主页并将焦点移动到正在观看/现在观看；
+        // 2) 在正式播放界面按 F18，切换到主页并将焦点移动到正在观看/现在观看；
+        // 3) 只要当前在主页面，且背景正在播放预览内容，按 F18 键即可直接切换到正式播放界面。
         function handleF18KeyPress() {
-            if (isModalOpen) {
+            if (isModalOpen || tvShutdownPhase !== 'idle') {
+                if (tvShutdownPhase !== 'idle') {
+                    cancelTvShutdownSequence(false);
+                }
                 closeSettingsModal();
                 closePasswordModal(false);
                 closePowerModal();
+                if (isFullScreen) {
+                    exitFullscreenToMainView(false);
+                }
+                if (activeSeriesView) {
+                    activeSeriesView = null;
+                    var sbModal = document.getElementById('seasonBar');
+                    if (sbModal) {
+                        sbModal.classList.remove('active');
+                        sbModal.classList.remove('single-line-mode');
+                        sbModal.innerHTML = '';
+                    }
+                    currentTrackRow = -1;
+                }
+                var npModalTarget = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
+                if (npModalTarget) {
+                    setFocus(npModalTarget);
+                }
+                return;
             }
+
             if (isFullScreen) {
                 canReturnToFullscreenByF18 = true;
                 exitFullscreenToMainView(false);
@@ -6119,6 +6804,7 @@
                     var sb = document.getElementById('seasonBar');
                     if (sb) {
                         sb.classList.remove('active');
+                        sb.classList.remove('single-line-mode');
                         sb.innerHTML = '';
                     }
                     currentTrackRow = -1;
@@ -6130,23 +6816,28 @@
                 return;
             }
 
-            if (canReturnToFullscreenByF18 && hasActiveBgPlayback() && (activePreviewMeta.action || currentBgUrl)) {
-                var npNavEl = document.getElementById('navNowPlayingItem');
-                if (currentFocusEl && currentFocusEl === npNavEl && !activeSeriesView) {
-                    enterNowPlayingFullscreen();
-                    return;
-                }
-            }
-
             if (activeSeriesView) {
                 activeSeriesView = null;
                 var sb2 = document.getElementById('seasonBar');
                 if (sb2) {
                     sb2.classList.remove('active');
+                    sb2.classList.remove('single-line-mode');
                     sb2.innerHTML = '';
                 }
                 currentTrackRow = -1;
+                var npSeriesTarget = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
+                if (npSeriesTarget) {
+                    setFocus(npSeriesTarget);
+                }
+                return;
             }
+
+            // 当前在主页面：只要背景正在播放预览内容，按 F18 即可直接切换到正式播放界面
+            if (hasActiveBgPlayback() && !macVideo.paused && (activePreviewMeta.action || currentBgUrl || currentPlayingStream)) {
+                enterNowPlayingFullscreen();
+                return;
+            }
+
             var targetNpEl = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
             if (targetNpEl) {
                 setFocus(targetNpEl);
@@ -6171,7 +6862,7 @@
             return triggerCurrentFocusLongPressAction();
         }
 
-        // 任务 8 (Round 17)：按 F17 键一键触发当前焦点元素的长按动作
+        // 任务 8 (Round 17) & 任务 4 (Round 19)：按 F17 键一键触发当前焦点元素的长按动作（含长按任意丸形菜单刷新当前内容）
         function triggerCurrentFocusLongPressAction() {
             if (isModalOpen) {
                 var activeModalEl = modalFocusList[modalFocusIdx];
@@ -6192,6 +6883,9 @@
             if (!isFullScreen && currentFocusEl) {
                 var fRow = parseInt(currentFocusEl.getAttribute('data-row'));
                 var fCol = parseInt(currentFocusEl.getAttribute('data-col'));
+                if (fRow === 0 && currentFocusEl.classList.contains('season-pill')) {
+                    return triggerSeasonPillLongPress(currentFocusEl);
+                }
                 if (fCol === 0 && fRow === -1) {
                     triggerAvatarLongPress();
                     return true;
@@ -6282,17 +6976,17 @@
             markUiMotion();
             applyPreviewOrFullscreenAudio();
 
-            // 任务 6 (Round 17)：按 F19 键在任何情况下直接唤出全屏电源选项覆盖当前画面
+            // 任务 9 (Round 19)：按 F19 键不再唤出电源选项页，改为触发强制暂停当前播放内容 -> 显示“正在关闭电视.. / 请稍候。” 5 秒 -> 黑屏 3 秒 -> 静默回到主页面并将焦点移动到现在观看
             if (e.key === 'F19' || e.code === 'F19' || e.keyCode === 130) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (!e.repeat) {
-                    openPowerModal();
+                    triggerF19ShutdownSequence();
                 }
                 return;
             }
 
-            // 任务 5 (Round 18)：按 F18 键在主页与正式播放页之间切换（未进入正式播放页时仅回到主页聚焦正在观看/现在观看）
+            // 任务 1 (Round 19)：F18 键全局切换逻辑
             if (e.key === 'F18' || e.code === 'F18' || e.keyCode === 129) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -6302,7 +6996,13 @@
                 return;
             }
 
-            // 任务 8 (Round 17)：按 F17 键代替长按动作
+            if (tvShutdownPhase !== 'idle') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            // 任务 8 (Round 17) & 任务 4 (Round 19)：按 F17 键代替长按动作
             if (e.key === 'F17' || e.code === 'F17' || e.keyCode === 128) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -6324,7 +7024,8 @@
 
             if (isModalOpen) {
                 var activeModalEl = modalFocusList[modalFocusIdx];
-                if (e.key === 'Escape') {
+                // 任务 2 (Round 19)：密码页（以及电源页、设置页）支持按 Esc 直接返回主页
+                if (e.key === 'Escape' || e.code === 'Escape' || e.keyCode === 27) {
                     e.preventDefault();
                     e.stopPropagation();
                     if (document.getElementById('powerModal').classList.contains('active')) {
@@ -6471,11 +7172,11 @@
                 return;
             }
 
-            // 任务 3 & 5 (Round 11)：支持长按头像（解锁/锁定限制级）、长按“正在观看”（强制停止背景视频并恢复动态背景）、长按“流媒体”（强制刷新推荐流）
+            // 任务 3 & 5 (Round 11) & 任务 4 (Round 19)：支持长按头像、长按“正在观看”、长按“流媒体”、以及长按任意丸形菜单 (fRow === 0) 触发刷新当前内容
             if (e.key === 'Enter' && currentFocusEl) {
                 var fRow = parseInt(currentFocusEl.getAttribute('data-row'));
                 var fCol = parseInt(currentFocusEl.getAttribute('data-col'));
-                if (fCol === 0 && (fRow === -1 || fRow === 7 || fRow === 3)) {
+                if ((fCol === 0 && (fRow === -1 || fRow === 7 || fRow === 3)) || (fRow === 0 && currentFocusEl.classList.contains('season-pill'))) {
                     e.preventDefault();
                     if (!e.repeat && !enterHoldTimer) {
                         enterHoldRow = fRow;
@@ -6484,7 +7185,9 @@
                             enterHoldTimer = null;
                             var triggeredRow = enterHoldRow;
                             enterHoldRow = null;
-                            if (triggeredRow === -1) {
+                            if (triggeredRow === 0 && currentFocusEl && currentFocusEl.classList.contains('season-pill')) {
+                                triggerSeasonPillLongPress(currentFocusEl);
+                            } else if (triggeredRow === -1) {
                                 triggerAvatarLongPress();
                             } else if (triggeredRow === 7) {
                                 triggerNowPlayingLongPress();
@@ -6551,6 +7254,7 @@
                             var prevSeriesKey = activeSeriesView;
                             activeSeriesView = null;
                             document.getElementById('seasonBar').classList.remove('active');
+                            document.getElementById('seasonBar').classList.remove('single-line-mode');
                             document.getElementById('seasonBar').innerHTML = '';
                             currentTrackRow = -1;
                             renderTrack(1);
@@ -6560,11 +7264,11 @@
                             break;
                         }
                         if (currentTrackRow === 3 && douyinPillsExpanded) {
-                            var returnCol = (douyinPillsExpanded === 'bilibili') ? 3 : 2;
+                            var returnCol = (douyinPillsExpanded === 'bilibili') ? 2 : 1;
                             douyinPillsExpanded = false;
                             douyinBarAnimType = 'collapse';
                             renderDouyinSeasonBar();
-                            var collapsedPill = findTargetFocusable(0, returnCol) || findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
+                            var collapsedPill = findTargetFocusable(0, returnCol) || findTargetFocusable(0, 1);
                             if (collapsedPill) setFocus(collapsedPill);
                             return;
                         }
@@ -6606,8 +7310,8 @@
                         douyinPillsExpanded = 'bilibili';
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
-                        var expBiliCol = Math.min(BILI_CATEGORIES.length + 1, Math.max(2, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2));
-                        nextEl = findTargetFocusable(0, expBiliCol) || findTargetFocusable(0, 2);
+                        var expBiliCol = Math.min(BILI_CATEGORIES.length, Math.max(1, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 1));
+                        nextEl = findTargetFocusable(0, expBiliCol) || findTargetFocusable(0, 1);
                     } else if (row === 0 && currentTrackRow === 4 && pornMenuLevel === 1 && currentFocusEl.getAttribute('data-porn-primary') === 'others' && PORN_FOLDER_LIST.length > 0) {
                         activePornPrimaryTab = 'others';
                         if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
@@ -6645,52 +7349,8 @@
                     e.preventDefault();
                     if (e.repeat) break;
                     if (row === 0) {
-                        if (currentTrackRow === 3 && currentFocusEl.getAttribute('data-douyin-refresh') === '1') {
-                            triggerDouyinCategoryForceRefresh(currentFocusEl);
-                            return;
-                        }
-                        if (currentTrackRow === 3 && !douyinPillsExpanded) {
-                            if (currentFocusEl.getAttribute('data-bili-collapsed') === '1') {
-                                if (!isBiliCategory(activeDouyinCategory)) {
-                                    switchDouyinCategoryWithoutClearing(activeBiliSubCategory);
-                                }
-                                douyinPillsExpanded = 'bilibili';
-                                douyinBarAnimType = 'expand';
-                                renderDouyinSeasonBar();
-                                var actBiliCol = Math.max(2, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
-                                var targetBiliPill = findTargetFocusable(0, actBiliCol) || findTargetFocusable(0, 2);
-                                if (targetBiliPill) setFocus(targetBiliPill);
-                                return;
-                            }
-                            if (isBiliCategory(activeDouyinCategory)) {
-                                switchDouyinCategoryWithoutClearing(activeDouyinSubCategory);
-                            }
-                            douyinPillsExpanded = 'douyin';
-                            douyinBarAnimType = 'expand';
-                            renderDouyinSeasonBar();
-                            var actCol = Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
-                            var targetExpPill = findTargetFocusable(0, actCol) || findTargetFocusable(0, 2);
-                            if (targetExpPill) setFocus(targetExpPill);
-                            return;
-                        }
-                        if (currentTrackRow === 4 && pornMenuLevel === 1 && currentFocusEl.getAttribute('data-porn-primary') === 'others') {
-                            activePornPrimaryTab = 'others';
-                            if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
-                            if (PORN_FOLDER_LIST.length > 0) {
-                                pornMenuLevel = 2;
-                                pornBarAnimType = 'expand';
-                                syncPornRowData();
-                                currentTrackRow = -1;
-                                renderTrack(4);
-                                var fIndex = Math.max(0, PORN_FOLDER_LIST.indexOf(activePornFolder));
-                                var subFolderPill = findTargetFocusable(0, fIndex + 1) || findTargetFocusable(0, 1);
-                                if (subFolderPill) setFocus(subFolderPill);
-                                return;
-                            }
-                        }
-                        var tRow = activeSeriesView ? 1 : currentTrackRow;
-                        nextEl = getRememberedCard(tRow);
-                        break;
+                        executeSeasonPillShortPress(currentFocusEl);
+                        return;
                     }
                     var action = currentFocusEl.getAttribute('data-action');
                     if (action) executeItemAction(action, currentFocusEl.getAttribute('data-title') || '');
@@ -6714,6 +7374,9 @@
                 if (navNowPlayingEl) navNowPlayingEl.classList.remove('pressing');
                 if (navDouyinEl) navDouyinEl.classList.remove('pressing');
                 if (btnSaveSettingsEl) btnSaveSettingsEl.classList.remove('pressing');
+                if (currentFocusEl && currentFocusEl.classList.contains('season-pill')) {
+                    currentFocusEl.classList.remove('pressing');
+                }
                 var pwdInp = document.getElementById('inputUnlockPwd');
                 if (pwdInp) pwdInp.classList.remove('pressing');
                 if (pwdInputHoldTimer) {
@@ -6738,7 +7401,9 @@
                     enterHoldTimer = null;
                     var shortPressRow = enterHoldRow;
                     enterHoldRow = null;
-                    if (shortPressRow === 7) {
+                    if (shortPressRow === 0 && currentFocusEl && currentFocusEl.classList.contains('season-pill')) {
+                        executeSeasonPillShortPress(currentFocusEl);
+                    } else if (shortPressRow === 7) {
                         if (hasActiveBgPlayback() && (activePreviewMeta.action || currentBgUrl)) {
                             enterNowPlayingFullscreen();
                         } else {
@@ -6824,9 +7489,8 @@
             });
         }
 
-        // ================= 任务 6 & 7 (Round 10)：圆体气象信息 + 精细至街道 + 市级气象台 + 按气象类型动态配色半透明下划线 =================
+        // ================= 任务 6 & 7 (Round 10) & 任务 8 (Round 19)：取消定时气象速报，只保留降水、高湿、灾害预警等即时气象信息 =================
         var weatherHideTimer = null;
-        var weatherFollowupTimer = null;
         var lastWeatherAlertKey = '';
 
         function getTelopUnderlineColor(mainText) {
@@ -6849,7 +7513,6 @@
             if (txt.indexOf('高湿') !== -1 || txt.indexOf('寒潮') !== -1 || txt.indexOf('大风') !== -1) {
                 return 'rgba(50, 173, 230, 0.62)';
             }
-            // 默认气象速报：半透明蓝色
             return 'rgba(10, 132, 255, 0.60)';
         }
 
@@ -6881,9 +7544,8 @@
             });
         }
 
-        // isRoutineSchedule = true：每30分钟一次定时展示常规气象速报（每次展示 15 秒，间隔 1 分钟播报下一条）；
-        // isRoutineSchedule = false：后台高频轮询特殊天气与灾害预警，检测到即实时推送（刚进入 App 时不触发常规气象速报）
-        async function pollWeatherBroadcast(isRoutineSchedule) {
+        // 任务 8 (Round 19)：取消定时气象速报（不再播报 routine_headline），只保留降水、高湿、灾害预警等即时气象信息（warning_headline）
+        async function pollWeatherBroadcast() {
             try {
                 var locMode = appSettings.locationMode || 'auto';
                 var coords = (locMode === 'auto') ? await getMacNativeGeolocation() : null;
@@ -6896,24 +7558,12 @@
                     manualStreet: appSettings.locStreet || ''
                 });
                 if (!res) return;
-                var routineText = res.routine_headline || '';
                 var warnText = res.warning_headline || '';
                 var warnKey = res.warning_key || '';
                 var areasText = res.areas || '';
                 var agencyText = res.agency || '';
 
-                if (isRoutineSchedule) {
-                    if (routineText) {
-                        displayWeatherTelop(routineText, areasText, agencyText, 15000);
-                    }
-                    if (warnText && warnKey && warnKey !== lastWeatherAlertKey) {
-                        lastWeatherAlertKey = warnKey;
-                        if (weatherFollowupTimer) clearTimeout(weatherFollowupTimer);
-                        weatherFollowupTimer = setTimeout(function() {
-                            displayWeatherTelop(warnText, areasText, agencyText, 15000);
-                        }, 75000);
-                    }
-                } else if (warnText && warnKey && warnKey !== lastWeatherAlertKey) {
+                if (warnText && warnKey && warnKey !== lastWeatherAlertKey) {
                     lastWeatherAlertKey = warnKey;
                     displayWeatherTelop(warnText, areasText, agencyText, 15000);
                 }
@@ -7024,10 +7674,9 @@
             refreshEpgFromBackend();
             setInterval(refreshEpgFromBackend, 5 * 60 * 1000);
 
-            // 4. 任务 11 (Round 5)：取消刚进入 App 时的常规气象速报，仅保留每 30 分钟定时气象速报与实时特殊天气预警推送
-            setTimeout(() => pollWeatherBroadcast(false), 3500);
-            setInterval(() => pollWeatherBroadcast(true), 30 * 60 * 1000);
-            setInterval(() => pollWeatherBroadcast(false), 2 * 60 * 1000);
+            // 4. 任务 8 (Round 19)：取消定时气象速报，仅保留实时降水、高湿、灾害预警等即时气象信息轮询
+            setTimeout(() => pollWeatherBroadcast(), 3500);
+            setInterval(() => pollWeatherBroadcast(), 2 * 60 * 1000);
 
             var initial = document.querySelector('.focusable[data-row="1"][data-col="0"]');
             setTimeout(() => setFocus(initial), 100);

@@ -1,9 +1,9 @@
-# Feel Cool TV 技术规范与架构维护手册 (v0.1.2 持续演进版)
+# Feel Cool TV 技术规范与架构维护手册 (v0.1.3 持续演进版)
 
 本文档面向参与 **Feel Cool TV (`cooltv-mac`)** 后续迭代的开发人员，系统梳理产品的核心调性、视觉与交互设计规范、界面文案措辞准则、全局快捷键与遥控映射体系，并重点复盘前端（WebKit / HTML5 / CSS3 / HLS.js）与后端（Tauri v2 / Rust / FFmpeg / Rouille）在历次迭代中遇到的疑难问题、底层成因及最终工程解决方案。
 
-> **版本同步强制规范**：每次完成迭代任务后，必须同步更新产品版本号（当前版本：**`0.1.2`**），涉及位置包括：
-> 1. `src/index.html` -> `#settingsVersionText`（仅显示纯数字版本号如 `0.1.2`）；
+> **版本同步强制规范**：每次完成迭代任务后，必须同步更新产品版本号（当前版本：**`0.1.3`**），涉及位置包括：
+> 1. `src/index.html` -> `#settingsVersionText`（仅显示纯数字版本号如 `0.1.3`）；
 > 2. `src-tauri/tauri.conf.json` -> `"version"`；
 > 3. `src-tauri/Cargo.toml` -> `[package] version`；
 > 4. `package.json` -> `"version"`；
@@ -19,25 +19,30 @@
    - **全局彻底隐藏鼠标指针（Round 18 新增）**：在应用程序窗口内部（含主页、全屏设置/密码/电源页及全屏播放画面），鼠标指针始终彻底不可见（全局 `cursor: none !important`）；仅当用户将鼠标指针移出 App 窗口边界时，系统鼠标指针才恢复可见。
 2. **全键盘/遥控器优先，二维十字轴精准方向键导航**
    - 所有界面元素均可通过方向键（`ArrowUp` / `ArrowDown` / `ArrowLeft` / `ArrowRight`）、确认键（`Enter`）、返回键（`Escape` / `Backspace`）及全局功能键（`F16` / `F17` / `F18` / `F19`）完成闭环导航。
-   - **多行丸形菜单（`#seasonBar`）自动行检测与上下键跨行直达（Round 18 新增）**：
-     - 当丸形菜单项目较多自动换行（`flex-wrap: wrap`）形成多行时，`findSeasonPillInAdjacentRow()` 自动按各按钮的视觉纵坐标（`rect.top`）聚类识别多行结构：
-       - 按 `ArrowDown`：若当前丸形按钮下方仍有下一行丸形按钮，则直接移动到下一行水平中心（`centerX`）最接近的丸形按钮，无需一直按右键遍历完第一行；仅当已处于最后一行丸形按钮时，按 `ArrowDown` 才进入下方卡片轨道。
-       - 按 `ArrowUp`：若当前丸形按钮上方仍有上一行丸形按钮，则直接移动到上一行水平中心最接近的丸形按钮；仅当已处于第一行丸形按钮时，按 `ArrowUp` 才折叠二级丸形菜单或返回左侧边栏。
-   - **设置页与弹窗严格的“上下键跨行、左右键同行”二维导航规范（Round 18 新增）**：
-     - 在设置页（`#settingsModal`）与密码页（`#passwordModal`）中，**`ArrowUp` / `ArrowDown` 只能用于在不同行之间上下移动，绝不横向切换同行元素；`ArrowLeft` / `ArrowRight` 只能用于在同一行内的并排控件（如 `[登录 抖音, 登录 bilibili]`、`[城市, 区, 街道]`、`[取消, 保存并扫描]`）或分段控制器（`.seg-control`）选项之间左右移动，绝不跨行跳转**。
+   - **丸形菜单（`#seasonBar`）导航与流媒体单行横向滚动遮罩规范（Round 18 & Round 19 演进）**：
+     - 流媒体二级分类菜单（`douyinPillsExpanded`）强制只显示一行（`.season-bar.single-line-mode`），置于 `.season-pills-scroll-viewport` 内，左右两侧采用跑马灯同款渐变透明遮罩（`linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%)`），当用户左右移动焦点时通过 `scrollSeasonPillIntoView()` 平滑横向滚动菜单；
+     - 流媒体左侧刷新元素改为无圆形容器的纯刷新符号状态指示器（`.stream-refresh-indicator`），不再作为可聚焦按钮；**用户长按任何一个丸形菜单项（或聚焦任意丸形菜单时按 `F17`）即可触发刷新当前内容**，刷新期间刷新符号旋转并展开显示“正在刷新”；
+     - 非单行模式下的多行丸形菜单仍通过 `findSeasonPillInAdjacentRow()` 自动按视觉纵坐标聚类识别多行结构，支持 `ArrowUp` / `ArrowDown` 跨行直达。
+   - **设置页与弹窗严格的“上下键跨行、左右键同行”二维导航规范（Round 18 & Round 19 演进）**：
+     - 在设置页（`#settingsModal`）与密码页（`#passwordModal`）中，**`ArrowUp` / `ArrowDown` 只能用于在不同行之间上下移动，绝不横向切换同行元素；`ArrowLeft` / `ArrowRight` 只能用于在同一行内的并排控件或分段控制器（`.seg-control`）选项之间左右移动**；
+     - 密码页（`#passwordModal`）全面支持按 `Escape` 直接关闭并返回主页（含 `#inputUnlockPwd` 原生密码输入框处于聚焦态或屏幕数字键盘展开态时的直接拦截响应）。
    - **上键（`ArrowUp`）与 `ESC` 键等价返回规范（Round 17 新增）**：在主界面中，所有通过按 `ArrowUp` 实现返回层级的操作，必须同步支持按 `Escape` 键实现返回。
-   - **全局功能快捷键规范（Round 17 & Round 18 演进）**：
-     - **`F19`（全局电源键）**：在任何情况下直接唤出全屏电源选项页（`#powerModal`）覆盖当前画面。
-     - **`F18`（主页与正式播放页双向切换键，Round 18 升级）**：
-       - 若当前**未进入过正式播放页**（仅在主页浏览或仅触发了背景预览），按 `F18` 只能用于回到主页面并将焦点放置在左侧边栏 **“正在观看 / 现在观看”**（`#navNowPlayingItem`）导航项上；
-       - 若当前**位于正式播放页**，按 `F18` 可回到主页面并将焦点放置在 `#navNowPlayingItem`；此后只要未切换其他视频流，在主页面 `#navNowPlayingItem` 再次按 `F18` 可直接返回正式播放页（`enterNowPlayingFullscreen()`）。
-     - **`F17`（全局长按替代键）**：当用户不便长按回车键时，单击一次 `F17` 即可立即触发当前焦点元素的长按动作。
+   - **全局功能快捷键规范（Round 19 演进）**：
+     - **`F19`（模拟关闭电视睡眠流程键，Round 19 升级）**：按下 `F19` 不再唤出电源选项页，改为立即触发**强制暂停当前播放内容**，展示与电源选项页同款的模糊色彩遮罩层（`#tvShuttingDownModal`），画面中央以与电源页完全一致的大标题（`38px`）显示 **“正在关闭电视..”**、小标题（`16px`）显示 **“请稍候。”**；计时 **5 秒**后切入全黑屏（`#tvBlackoutCurtain`），黑屏持续 **3 秒**后静默回到主页面，并将焦点移动到 **“现在观看”**（`#navNowPlayingItem`）。
+     - **`F18`（主页与正式播放页快速切换键，Round 19 升级）**：
+       - 只要当前在**主页面**（非弹窗、非正式全屏、非剧集选集子页），且**背景正在播放预览内容**，无论当前焦点位于主页何处，按 `F18` 键均可直接切换到正式播放界面（`enterNowPlayingFullscreen()`）；
+       - 在**正式播放界面**按 `F18` 键，切换到主页面并将焦点移动到“正在观看 / 现在观看”（`#navNowPlayingItem`）；
+       - 在**任何非主页面且非正式播放界面的页面**（密码页 / 设置页 / 电源选项页 / 关机遮罩页 / 剧集选集子页等）按下 `F18`，立即关闭当前子页/遮罩，切换到主页面并将焦点移动到“正在观看 / 现在观看”。
+     - **`F17`（全局长按替代键）**：当用户不便长按回车键时，单击一次 `F17` 即可立即触发当前焦点元素的长按动作（包括在任意丸形菜单上按 `F17` 触发刷新当前内容）。
      - **`F16`（全局上下文菜单键 & 本地剧集选集呼出键，Round 18 新增）**：
-       - 全局拦截并禁用 macOS WebKit 底层原生右键菜单（`contextmenu` 事件 `e.preventDefault(); e.stopPropagation();`，彻底屏蔽 `Reload`、`Play All Animations`、`Inspect Element`）；
+       - 全局拦截并禁用 macOS WebKit 底层原生右键菜单（`contextmenu` 事件 `e.preventDefault(); e.stopPropagation();`）；
        - 本地剧集在正式全屏播放期间，按 `F16` 键在画面底部唤出/收起选集列表遮罩（`#fsEpisodePickerHud`），支持左右键选集及通过左右两端 SVG `<` / `>` 箭头切换当前季。
 3. **双空间隐私架构与屏幕数字键盘（常规空间 + 隐藏限制级空间）**
    - 默认界面与设置页对限制级功能实现**零视觉暴露**。
    - 在密码验证页长按密码输入框（或按 `F17`）可唤出/收起右侧大九键屏幕数字键盘（`#pwdNumpadPanel`，含 Apple 规范 `delete.left` 退格键）。
+   - **“正在观看 / 现在观看”丸形菜单分组与限制级隐私隔离（Round 19 新增）**：
+     - “正在观看 / 现在观看”页面配备丸形菜单（`#seasonBar`），将卡片按 **全部**、**很酷 TV+**、**有线电视**、**流媒体**、**限制级** 分组；
+     - **限制级内容严禁出现在“全部”分组中**（常规历史存于 `fc_watch_history_v1`，限制级历史独立存于 `fc_watch_history_porn_v1`）；且**只有当限制级内容解锁后（`pornUnlocked === true`），才会在“正在观看 / 现在观看”丸形菜单中出现“限制级”选项**。
 
 ---
 
@@ -185,12 +190,33 @@
      - 在 `deepScan` 中跳过 `favorite_list`、`digg_list`、`like_list`、`collect_list`、`history_list` 键；
      - 在 `recordAweme(aweme)` 中严格校验 `aweme.user_digged === 1 || aweme.is_digged === 1 || aweme.collect_stat === 1 || aweme.user_favorited === 1 || (aweme.status && aweme.status.is_digged)`，命中即直接丢弃，彻底杜绝已点赞内容混入推荐流。
 
-### 9. 正在观看/现在观看持久化记忆（上限 20 条）、卡片底部贴边白线进度条与“预览不入库、正式播放才入库”机制（Round 18 重点复盘）
+### 9. 正在观看/现在观看持久化记忆（上限 20 条）、卡片底部贴边白线进度条与“预览不入库、正式播放才入库”机制（Round 18 & Round 19 重点复盘）
 - **核心设计规范 (`src/index.html`)**：
   1. **未进入正式播放的预览内容绝不计入历史记录 (`startPreviewStream` vs `executeItemAction`)**：
      - 焦点停留在卡片上触发的背景预览（`startPreviewStream`）仅调用 `syncNowWatchingRowData(false)`，使当前正在预览的内容临时作为“正在观看”页的第一张卡片展示；一旦用户预览其他内容或停止预览，该未进入正式播放的临时记录自动消失；
-     - 只有当用户按回车/点击真正进入**正式全屏播放页面**（`isFullScreen = true`）时，才调用 `recordWatchHistoryItem(activePreviewMeta)` 将记录写入 `watchHistoryList` 并持久化至 `localStorage.fc_watch_history_v1`。
-  2. **跨会话记忆保存、最多 20 条上限与观看进度自动保存**：
-     - 应用退出重开后从 `localStorage.fc_watch_history_v1` 自动恢复历史观看列表，严格限制最多保存 **20 条**记录（超出自动截断最旧记录）；
-     - 播放期间通过 `timeupdate`、`seeked`、`pause`、`exitFullscreenToMainView` 与 `beforeunload` 自动计算并持久化 `progressSec`、`durationSec` 与 `progressPct`，并在“正在观看 / 现在观看”卡片（`rowId === 7`）底部渲染贴边白色进度线条（`.card-watch-progress-track` / `.card-watch-progress-fill`），再次从历史记录进入正式播放时自动从上次观看进度续播。
+     - 只有当用户按回车/点击真正进入**正式全屏播放页面**（`isFullScreen = true`）时，才调用 `recordWatchHistoryItem(activePreviewMeta)` 将记录写入 `watchHistoryList`（或限制级独立列表 `restrictedWatchHistoryList`）并持久化。
+  2. **跨会话记忆保存、最多 20 条上限与观看进度精准恢复（Round 19 修复 Task 3）**：
+     - **历史卡片无法跳转保存进度的根因与修复**：
+       - **根因 A**：此前 `updateActiveWatchHistoryProgress()` 在非全屏背景预览（`!isFullScreen`）的 `timeupdate` 事件中也会执行，导致用户聚焦到“正在观看 / 现在观看”的历史卡片触发背景预览时，初始 `0s~2s` 的预览时间戳直接覆盖了 `watchHistoryList` 中已保存的 `progressSec`；
+       - **根因 B**：当背景预览流已在播放该 URL 时，按回车触发 `executeItemAction()` 命中了 `currentBgUrl === url` 的流复用分支提前返回，跳过了后续的 `savedHistEntry.progressSec` 起播检查。
+       - **修复方案**：`updateActiveWatchHistoryProgress()` 严格限制仅在 `isFullScreen === true` 时才允许更新已保存的历史进度；同时在 `startPreviewStream()` 与 `executeItemAction()` 中均通过 `findSavedWatchHistoryEntry()` 读取历史 `progressSec`，并在复用预览流时校验当前播放秒数是否已对齐 `resumeSec`（若偏差超过 `4.5s` 则立即通过 `seekSec` 重新定位起播）。
+
+### 10. 部分流媒体视频画面卡顿、仅暂停才刷新画面及标题背景画面不同步问题（Round 19 重点复盘 Task 5）
+- **历史异常表现**：
+  - 部分流媒体（抖音 / bilibili）视频播放时画面卡顿难以正常推进，每次触发暂停才会使视频画面变化一帧，且主界面标题文字区域的背景画面出现撕裂/不同步。
+- **底层根因**：
+  1. **`+igndts` 叠加 `-fps_mode passthrough` 破坏含 B 帧视频流的解码时序**：抖音与 bilibili 高码率视频流普遍包含高阶 B 帧重排（PTS 与 DTS 不一致）或可变帧率（VFR）。此前 FFmpeg 输入端开启了 `-fflags +genpts+discardcorrupt+igndts` 并配合 `-fps_mode passthrough`，丢弃原始 DTS 后直接透传时间戳会导致生成的 HLS 分片出现非单调 DTS 跳变，macOS WebKit `AVSampleBufferDisplayLayer` 硬件渲染队列因等待参考帧时间戳而冻结，仅在触发 `pause()` 强制刷新渲染管线时才吐出一帧。
+  2. **前端对 MSE `<video>` 挂载 `AudioContext.createMediaElementSource` 劫持媒体时钟**：前端在 `hls.js` MediaSource Extensions (`MSE`) 视频元素上重复挂载了 Web Audio API 动态压缩节点，在 macOS `WKWebView` 下会劫持 MSE 音频主时钟，并在音频采样率切换时引发音画时钟死锁。
+- **最终解决方案 (`src-tauri/src/lib.rs` & `src/index.html`)**：
+  1. **后端 FFmpeg 恒定帧率重采样与零 B 帧低延迟编码 (`build_ffmpeg_args`)**：
+     - 移除 `+igndts`，将 `-fps_mode passthrough` 改为 `-fps_mode cfr -r 30`；
+     - 视频滤镜统一限制在 `scale='min(1920,iw)':'min(1080,ih)'` 并串联 `fps=30,format=yuv420p`，编码端指定 `-profile:v main -bf 0`（禁用 B 帧重排缓冲），音频滤镜前置 `aresample=async=1:first_pts=0` 自动補償首帧时间戳偏移。
+  2. **前端移除 `createMediaElementSource` 与 `crossOrigin` 隔离**：由后端 FFmpeg 的 `acompressor` + `alimiter` 统一负责响度均衡，前端直接通过 `macVideo.volume` 控制增益，彻底消除 WebKit MSE 时钟死锁与标题区图层撕裂。
+
+### 11. 滚动标题（Marquee）滚回静止位时的瞬时闪烁根因与双节点乒乓驻留方案（Round 19 重点复盘 Task 10）
+- **底层根因**：
+  - 原 CSS `@keyframes smoothMarquee` 在 `100%`（`translate3d(-50%, 0, 0)`）切换到下一周期 `0%`（`translate3d(0, 0, 0)`）的瞬间，将原本处于屏幕可视区 `x = 0` 的第 2 个 `<span>` 瞬间替换为刚在左侧遮罩外（`-50%`）被 WebKit 视口剔除（Offscreen Culling）的第 1 个 `<span>`，GPU 纹理重上传造成明显的 1 帧闪烁。
+- **最终解决方案 (`src/index.html` -> `startMarqueePingPong`)**：
+  - 废除 CSS Keyframes 归零跳变，改用 `requestAnimationFrame` 驱动的双节点乒乓驻留引擎（`span.marquee-copy-a` 与 `span.marquee-copy-b`）：当后置节点从右侧（`+stride`）平滑滚动抵达静止位（`0px`）时，**不执行归零替换，而是直接让该可见节点原地驻留（`0px`）成为下一周期的前置静止节点**，仅将已经完全滑出左侧遮罩外的旧节点在幕后移至右侧（`+stride`）待命，实现静止位零 DOM/纹理切换与零闪烁。
+
 

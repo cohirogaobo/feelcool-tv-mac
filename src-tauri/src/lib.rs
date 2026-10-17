@@ -105,9 +105,9 @@ fn build_ffmpeg_args(
 ) -> Vec<String> {
     let mut args = vec!["-v".to_string(), "error".to_string()];
     let v_codec = if use_sw_fallback { "libx264" } else { "h264_videotoolbox" };
-    // 任务 1 (Round 5)：全链路音量均衡与峰值硬限幅滤镜，严控所有视频（尤其高响度抖音/流媒体视频）不超过上限
-    let audio_norm_std = "acompressor=threshold=-18dB:ratio=3.5:attack=5:release=85:makeup=1,alimiter=limit=0.75:attack=5:release=50";
-    let audio_norm_douyin = "acompressor=threshold=-20dB:ratio=5:attack=4:release=75:makeup=1,alimiter=limit=0.55:attack=4:release=45";
+    // 任务 1 (Round 5) & 任务 5 (Round 19)：全链路音量均衡、峰值硬限幅与 aresample 音画时钟同步滤镜
+    let audio_norm_std = "aresample=async=1:first_pts=0,acompressor=threshold=-18dB:ratio=3.5:attack=5:release=85:makeup=1,alimiter=limit=0.75:attack=5:release=50";
+    let audio_norm_douyin = "aresample=async=1:first_pts=0,acompressor=threshold=-20dB:ratio=5:attack=4:release=75:makeup=1,alimiter=limit=0.55:attack=4:release=45";
     let ss_val = match seek_sec {
         Some(s) if s >= 0.0 => format!("{:.2}", s),
         _ => "2".to_string(),
@@ -115,15 +115,19 @@ fn build_ffmpeg_args(
 
     if is_local_file {
         args.extend(vec![
-            "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
+            "-fflags".to_string(), "+genpts+discardcorrupt".to_string(),
             "-analyzeduration".to_string(), "10M".to_string(),
             "-probesize".to_string(), "10M".to_string(),
             "-ss".to_string(), ss_val,
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
-            "-vf".to_string(), "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
+            "-fps_mode".to_string(), "cfr".to_string(),
+            "-r".to_string(), "30".to_string(),
+            "-vf".to_string(), "scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30,format=yuv420p".to_string(),
             "-c:v".to_string(), v_codec.to_string(),
+            "-profile:v".to_string(), "main".to_string(),
+            "-bf".to_string(), "0".to_string(),
         ]);
         if use_sw_fallback {
             args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
@@ -171,21 +175,24 @@ fn build_ffmpeg_args(
             "-multiple_requests".to_string(), "1".to_string(),
             "-analyzeduration".to_string(), "1200000".to_string(),
             "-probesize".to_string(), "1500000".to_string(),
-            "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
+            "-fflags".to_string(), "+genpts+discardcorrupt".to_string(),
         ]);
         if let Some(s) = seek_sec {
             if s > 0.05 {
                 args.extend(vec!["-ss".to_string(), format!("{:.2}", s)]);
             }
         }
-        // 任务 2 (Round 17)：流媒体统一使用 VideoToolbox / libx264 重整 GOP（-g 30 -hls_time 1 -hls_flags independent_segments），彻底消除 -c:v copy 因源视频 7s 长 GOP / MP4 EditList 偏移导致的开头数秒黑屏假分片
+        // 任务 2 (Round 17) & 任务 5 (Round 19)：流媒体移除破坏 B 帧解码顺序的 +igndts，统一使用 CFR 30fps + 零 B 帧 (-bf 0) + 1080p yuv420p 重整 GOP，彻底根除高帧率/VFR/B帧重排导致的画面撕裂不同步与卡顿假死
         args.extend(vec![
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
-            "-fps_mode".to_string(), "passthrough".to_string(),
-            "-vf".to_string(), "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
+            "-fps_mode".to_string(), "cfr".to_string(),
+            "-r".to_string(), "30".to_string(),
+            "-vf".to_string(), "scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30,format=yuv420p".to_string(),
             "-c:v".to_string(), v_codec.to_string(),
+            "-profile:v".to_string(), "main".to_string(),
+            "-bf".to_string(), "0".to_string(),
         ]);
         if use_sw_fallback {
             args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
@@ -227,12 +234,16 @@ fn build_ffmpeg_args(
             "-rw_timeout".to_string(), "8000000".to_string(),
             "-analyzeduration".to_string(), "2200000".to_string(),
             "-probesize".to_string(), "2200000".to_string(),
-            "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
+            "-fflags".to_string(), "+genpts+discardcorrupt".to_string(),
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
-            "-vf".to_string(), "yadif=0:-1:1,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
+            "-fps_mode".to_string(), "cfr".to_string(),
+            "-r".to_string(), "30".to_string(),
+            "-vf".to_string(), "yadif=0:-1:1,scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30,format=yuv420p".to_string(),
             "-c:v".to_string(), v_codec.to_string(),
+            "-profile:v".to_string(), "main".to_string(),
+            "-bf".to_string(), "0".to_string(),
         ]);
         if use_sw_fallback {
             args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
