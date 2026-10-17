@@ -13,8 +13,9 @@
         "title": "Feel Cool TV",
         "width": 1920,
         "height": 1080,
-        "decorations": false,  
-        "fullscreen": true
+        "decorations": false,
+        "fullscreen": true,
+        "backgroundColor": "#000000"
       }
     ],
     "security": {

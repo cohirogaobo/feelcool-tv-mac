@@ -630,13 +630,14 @@
         }
         .sync-time-box {
             flex: 1;
-            height: 54px;
-            border-radius: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.06);
-            padding: 0 18px;
+            height: auto;
+            border: none;
+            background: transparent;
+            padding: 0 6px 0 0;
             display: flex;
             align-items: center;
+            justify-content: flex-end;
+            text-align: right;
             font-size: 16px;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.85);
@@ -809,7 +810,8 @@
         .btn-cancel { background: rgba(255,255,255,0.12); color: #fff; }
         .btn-primary { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.28); color: #fff; }
         .btn-danger { background: rgba(255, 69, 58, 0.22); border-color: rgba(255, 69, 58, 0.42); color: #ff6961; }
-        .btn-full { flex: 1; min-width: 0; width: 100%; height: 54px; background: rgba(255,255,255,0.09); border: 2px solid rgba(255,255,255,0.16); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; font-size: 15px; border-radius: 14px; }
+        .btn-full { width: 100%; height: 54px; background: rgba(255,255,255,0.09); border: 2px solid rgba(255,255,255,0.16); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; font-size: 15px; border-radius: 14px; }
+        .setting-row-right .btn-full, .setting-row-right .form-input { flex: 1; min-width: 0; }
         .btn:focus, .btn.modal-focused { border-color: #fff !important; transform: scale(1.03); box-shadow: 0 10px 28px rgba(0,0,0,0.5); background: #fff !important; color: #000 !important; }
         .btn.pressing { transform: scale(0.95) !important; }
     </style>
@@ -948,6 +950,23 @@
             </div>
 
             <div class="settings-section-heading">个性化设置</div>
+            <div class="setting-row">
+                <span class="setting-row-label">气象信息定位</span>
+                <div class="setting-row-right">
+                    <div class="seg-control" id="btnToggleLocationMode" tabindex="0">
+                        <span class="seg-opt active" data-val="auto">自动定位</span>
+                        <span class="seg-opt" data-val="manual">手动输入</span>
+                    </div>
+                </div>
+            </div>
+            <div class="setting-row" id="manualLocationRow">
+                <span class="setting-row-label">所在地位置</span>
+                <div class="setting-row-right">
+                    <input type="text" class="form-input" id="inputLocCity" placeholder="城市">
+                    <input type="text" class="form-input" id="inputLocDistrict" placeholder="区">
+                    <input type="text" class="form-input" id="inputLocStreet" placeholder="街道">
+                </div>
+            </div>
             <div class="setting-row">
                 <span class="setting-row-label">影片评分来源</span>
                 <div class="setting-row-right">
@@ -1629,6 +1648,10 @@
             pornPath: localStorage.getItem('fc_porn_path') || '',
             pornPwd: localStorage.getItem('fc_porn_pwd') || '8888',
             epgUrl: localStorage.getItem('fc_epg_url') || DEFAULT_EPG_URL,
+            locationMode: localStorage.getItem('fc_location_mode') || 'auto',
+            locCity: localStorage.getItem('fc_loc_city') || '',
+            locDistrict: localStorage.getItem('fc_loc_district') || '',
+            locStreet: localStorage.getItem('fc_loc_street') || '',
             ratingSource: localStorage.getItem('fc_rating_source') || 'douban',
             bgTheme: localStorage.getItem('fc_bg_theme') || 'random',
             previewSound: localStorage.getItem('fc_preview_sound') !== 'false',
@@ -1711,6 +1734,35 @@
             navDy.setAttribute('data-title', isBiliCategory(activeDouyinCategory) ? 'bilibili' : '抖音');
         }
 
+        // 任务 2 (Round 16)：当在文字中插入抖音品牌字体时，“抖音”二字或抖音产品字样的两边加入空格（如“正在刷新 抖音 推荐视频流”）；单独出现时不受此影响
+        function formatDouyinBrandTextHtml(rawText) {
+            var s = String(rawText || '');
+            var trimmed = s.trim();
+            if (!trimmed) return '';
+            if (trimmed === '抖音') {
+                return '<span class="douyin-font">抖音</span>';
+            }
+            for (var i = 0; i < DOUYIN_CATEGORIES.length; i++) {
+                if (trimmed === DOUYIN_CATEGORIES[i].name) {
+                    return '<span class="douyin-font">' + trimmed + '</span>';
+                }
+            }
+            var safe = s
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            if (safe.indexOf('抖音') === -1) return safe;
+            var pattern = /(抖音精选|抖音推荐|抖音知识|抖音二次元|抖音游戏|抖音美食|抖音体育|抖音时尚|抖音音乐|抖音)/g;
+            return safe.replace(pattern, function(match, _p1, offset, fullStr) {
+                var prevChar = offset > 0 ? fullStr.charAt(offset - 1) : '';
+                var nextIdx = offset + match.length;
+                var nextChar = nextIdx < fullStr.length ? fullStr.charAt(nextIdx) : '';
+                var needLeftSpace = prevChar !== '' && !/\s/.test(prevChar);
+                var needRightSpace = nextChar !== '' && !/\s/.test(nextChar);
+                return (needLeftSpace ? ' ' : '') + '<span class="douyin-font">' + match + '</span>' + (needRightSpace ? ' ' : '');
+            });
+        }
+
         var globalConfig = { user: { name: "高博", avatar_url: "" }, api: { tmdb_api_key: "f7762624a95e4c3823500736d40162cd", epg_url: DEFAULT_EPG_URL } };
         var currentFocusEl = null, currentTrackRow = -1, bgPreviewTimeout = null;
         var isFullScreen = false, hlsInstance = null, currentBgUrl = '';
@@ -1735,7 +1787,7 @@
         var ROW_DATA = {
             1: [],
             2: [],
-            3: [{ title: "正在加载抖音精选...", sub: "抖音", desc: "", isRefreshCard: true, action: "douyin:refresh" }],
+            3: [{ title: "正在加载 抖音精选 视频流...", sub: "抖音", desc: "", isRefreshCard: true, action: "douyin:refresh" }],
             4: [],
             7: []
         };
@@ -1831,10 +1883,12 @@
 
             var cleanDesc = cleanOverviewText(item.desc || '');
             var brandLogoUrl = item.logo_url || item.logo || item.brandLogo || '';
+            var cardTitleHtml = isRefresh ? formatDouyinBrandTextHtml(item.title || '') : (item.title || '');
+            var cardMetaHtml = (subText === '抖音' || subText.slice(-3) === '·抖音') ? formatDouyinBrandTextHtml(subText) : subText;
 
             return '<div class="media-item focusable" tabindex="0" data-row="' + rowId + '" data-source-row="' + effectiveRow + '" data-col="' + col + '" data-title="' + (item.title || '').replace(/"/g, '&quot;') + '" data-epg-name="' + epgName.replace(/"/g, '&quot;') + '" data-org="' + orgName.replace(/"/g, '&quot;') + '" data-sub="' + subText.replace(/"/g, '&quot;') + '" data-desc="' + cleanDesc.replace(/"/g, '&quot;') + '" data-brand-logo="' + brandLogoUrl.replace(/"/g, '&quot;') + '" data-series-key="' + (item.seriesKey || '') + '" data-preview="' + (item.previewUrl || item.url || '') + '" data-action="' + (item.action || '') + '">' +
                         innerBox +
-                        '<div class="card-info"><div class="card-title">' + (item.title || '') + '</div><div class="card-meta">' + subText + '</div></div>' +
+                        '<div class="card-info"><div class="card-title">' + cardTitleHtml + '</div><div class="card-meta">' + cardMetaHtml + '</div></div>' +
                    '</div>';
         }
 
@@ -1924,7 +1978,7 @@
                 isDouyinRefreshing = true;
                 lastDouyinCount = 0;
                 lastRowColMap[3] = 1;
-                var placeholderCards = [{ title: "正在加载" + catObj.name + "视频流...", sub: "请稍候", desc: "", isRefreshCard: true, action: "douyin:refresh" }];
+                var placeholderCards = [{ title: "正在加载 " + catObj.name + " 视频流...", sub: "请稍候", desc: "", isRefreshCard: true, action: "douyin:refresh" }];
                 DOUYIN_CATEGORY_CACHE[newCatId] = {
                     cards: placeholderCards,
                     rawCount: 0,
@@ -1968,7 +2022,7 @@
                 if (isCurrentStreamDouyin()) {
                     stopPreviewStream(true);
                 }
-                var refreshPlaceholder = [{ title: "正在刷新" + catObj.name + "视频流...", sub: "请稍候", desc: "", isRefreshCard: true, action: "douyin:refresh" }];
+                var refreshPlaceholder = [{ title: "正在刷新 " + catObj.name + " 视频流...", sub: "请稍候", desc: "", isRefreshCard: true, action: "douyin:refresh" }];
                 DOUYIN_CATEGORY_CACHE[reqCat] = {
                     cards: refreshPlaceholder,
                     rawCount: 0,
@@ -2016,7 +2070,7 @@
                     var stillAddingCards = (nowMs - growthTs) < settleMs;
 
                     var cards = cappedList.map((item, idx) => ({
-                        title: item[0] || (catObj.name + '视频 #' + (idx + 1)),
+                        title: item[0] || (catObj.name + ' 视频 #' + (idx + 1)),
                         sub: item[1],
                         desc: '',
                         img: item[2],
@@ -2024,7 +2078,7 @@
                         action: 'douyin:' + item[3]
                     }));
                     cards.push({
-                        title: "刷新" + catObj.name + "流",
+                        title: "刷新 " + catObj.name + " 流",
                         sub: "换一批视频",
                         desc: "",
                         isRefreshCard: true,
@@ -2959,10 +3013,14 @@
             return false;
         }
 
+        var userPausedInFullscreen = false;
+        var inFlightFfmpegReq = null;
+
         function updateFsPlayPauseIcon() {
             var svgEl = document.getElementById('fsPlayStateSvg');
             if (!svgEl) return;
-            if (macVideo && macVideo.paused) {
+            var showPausedIcon = userPausedInFullscreen || (isVideoReady && macVideo && macVideo.paused);
+            if (showPausedIcon) {
                 svgEl.innerHTML = '<path d="M8 5v14l11-7z"/>';
             } else {
                 svgEl.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
@@ -2990,6 +3048,7 @@
         }
 
         macVideo.addEventListener('play', function() {
+            userPausedInFullscreen = false;
             updateFsPlayPauseIcon();
             updateNowPlayingNavVisibility(true);
         });
@@ -3037,7 +3096,7 @@
         function scheduleHudAutoHide() {
             if (iptvHudTimer) clearTimeout(iptvHudTimer);
             iptvHudTimer = setTimeout(function() {
-                if ((macVideo && macVideo.paused) || isScrubbing || seekDebounceTimer) return;
+                if (userPausedInFullscreen || (isVideoReady && macVideo && macVideo.paused) || isScrubbing || seekDebounceTimer) return;
                 var hud = document.getElementById('iptvFullscreenHud');
                 if (hud) hud.classList.remove('visible');
             }, 3800);
@@ -3055,10 +3114,7 @@
             if (sub !== undefined) currentHudSub = sub || '';
 
             var displayTitle = currentHudTitle;
-            var safeHtmlTitle = displayTitle
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+            var safeHtmlTitle = formatDouyinBrandTextHtml(displayTitle);
 
             if (displayTitle && displayTitle.length > 20) {
                 var dur = Math.max(10, Math.round(displayTitle.length * 0.42)) + 's';
@@ -3071,7 +3127,7 @@
             } else {
                 tEl.removeAttribute('data-marquee-key');
                 tEl.className = 'iptv-hud-title';
-                tEl.textContent = displayTitle;
+                tEl.innerHTML = safeHtmlTitle;
             }
             sEl.textContent = currentHudSub || '';
 
@@ -3086,7 +3142,7 @@
 
             hud.classList.add('visible');
             if (iptvHudTimer) clearTimeout(iptvHudTimer);
-            if (!keepOpen && !(macVideo && macVideo.paused)) {
+            if (!keepOpen && !userPausedInFullscreen) {
                 scheduleHudAutoHide();
             }
         }
@@ -3107,7 +3163,8 @@
         // 任务 2 (Round 11)：支持所有全屏视频（含有线电视）暂停与恢复；有线电视恢复播放时自动重新加载实时直播视频流
         function toggleFullscreenPlayPause() {
             if (!isFullScreen) return;
-            if (macVideo.paused) {
+            if (macVideo.paused || userPausedInFullscreen) {
+                userPausedInFullscreen = false;
                 if (isCurrentStreamIptv() && currentBgUrl) {
                     var liveUrl = currentBgUrl;
                     var mySeq = ++streamReqSeq;
@@ -3124,6 +3181,7 @@
                     showIptvFullscreenHud(currentHudTitle, currentHudSub, false);
                 }).catch(function() {});
             } else {
+                userPausedInFullscreen = true;
                 if (isCurrentStreamIptv() && hlsInstance) {
                     try { hlsInstance.stopLoad(); } catch (_) {}
                 }
@@ -3313,12 +3371,14 @@
             applyPreviewOrFullscreenAudio();
             macVideo.play().then(function() {
                 if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                updateFsPlayPauseIcon();
                 revealVideoWhenFrameReady(reqSeq);
             }).catch(function() {
                 if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
                 macVideo.muted = true;
                 macVideo.play().then(function() {
                     if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                    updateFsPlayPauseIcon();
                     revealVideoWhenFrameReady(reqSeq);
                 }).catch(function() {});
             });
@@ -3338,6 +3398,7 @@
             }
         }
 
+        // 任务 6 (Round 16)：采用分段流式加载缓冲策略（小窗口渐进缓冲，避免长视频一次性拉取），并确保首个分片就绪或进入正式播放时若非用户主动暂停则立即触发播放
         function loadAndPlayVideo(url, isMuted, reqSeq, keepLayerVisibleDuringSeek) {
             if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
             if (activeRevealCleanup) {
@@ -3357,20 +3418,33 @@
                     debug: false,
                     enableWorker: true,
                     lowLatencyMode: false,
-                    backBufferLength: 60,
-                    maxBufferLength: 60,
+                    backBufferLength: 15,
+                    maxBufferLength: 20,
+                    maxMaxBufferLength: 40,
+                    maxBufferHole: 0.5,
+                    highBufferWatchdogPeriod: 2,
+                    nudgeOffset: 0.15,
+                    nudgeMaxRetry: 5,
+                    startFragPrefetch: true,
                     manifestLoadingTimeOut: 12000,
-                    manifestLoadingMaxRetry: 4,
-                    manifestLoadingRetryDelay: 500,
+                    manifestLoadingMaxRetry: 5,
+                    manifestLoadingRetryDelay: 400,
                     levelLoadingTimeOut: 12000,
-                    fragLoadingTimeOut: 15000,
-                    fragLoadingMaxRetry: 4
+                    fragLoadingTimeOut: 20000,
+                    fragLoadingMaxRetry: 6
                 });
                 hlsInstance.loadSource(url);
                 hlsInstance.attachMedia(macVideo);
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                    if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
                     lastVideoGeometryChangeTs = performance.now();
                     startVideoPlaybackWithFallback(reqSeq);
+                });
+                hlsInstance.on(Hls.Events.FRAG_BUFFERED, function() {
+                    if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                    if (!userPausedInFullscreen && macVideo.paused && !forceStoppedBgByUser) {
+                        startVideoPlaybackWithFallback(reqSeq);
+                    }
                 });
                 hlsInstance.on(Hls.Events.ERROR, function(event, data) {
                     if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
@@ -3385,10 +3459,17 @@
             } else {
                 macVideo.src = url;
                 macVideo.onloadedmetadata = function() {
+                    if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
                     lastVideoGeometryChangeTs = performance.now();
                     startVideoPlaybackWithFallback(reqSeq);
                 };
             }
+            macVideo.oncanplay = function() {
+                if (reqSeq !== undefined && reqSeq !== streamReqSeq) return;
+                if (!userPausedInFullscreen && macVideo.paused && !forceStoppedBgByUser) {
+                    startVideoPlaybackWithFallback(reqSeq);
+                }
+            };
         }
 
         function onBackgroundVideoStarted() {
@@ -3406,6 +3487,7 @@
 
         var forceStoppedBgByUser = false;
         var navLongPressTriggered = false;
+        var inFlightFfmpegReq = null;
 
         function startPreviewStream(url) {
             if (isFullScreen) return;
@@ -3420,10 +3502,15 @@
                 probeStreamDuration(url, mySeq);
                 recordWatchHistoryItem(activePreviewMeta);
                 updateNowPlayingNavVisibility(true);
-                invoke('start_ffmpeg', { url: url }).then((localM3u8Url) => {
+                var p = invoke('start_ffmpeg', { url: url });
+                inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
+                p.then((localM3u8Url) => {
+                    if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
                     if (mySeq !== streamReqSeq || currentBgUrl !== url) return; 
                     loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), isFullScreen ? false : previewMuted, mySeq);
-                }).catch(e => {}); 
+                }).catch(e => {
+                    if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
+                }); 
             } else {
                 applyPreviewOrFullscreenAudio();
                 recordWatchHistoryItem(activePreviewMeta);
@@ -3443,6 +3530,7 @@
         function stopPreviewStream(clearNowPlaying) {
             if (isFullScreen) return;
             ++streamReqSeq;
+            inFlightFfmpegReq = null;
             if (activeRevealCleanup) {
                 activeRevealCleanup();
                 activeRevealCleanup = null;
@@ -3462,6 +3550,7 @@
                 hlsInstance = null;
             }
             macVideo.onloadedmetadata = null;
+            macVideo.oncanplay = null;
             macVideo.pause();
         }
 
@@ -3536,6 +3625,7 @@
             if (action.startsWith('iptv:') || action.startsWith('local:') || action.startsWith('douyin:')) {
                 var url = action.startsWith('douyin:') ? action : (action.startsWith('iptv:') ? action.substring(5) : action.substring(6));
                 forceStoppedBgByUser = false;
+                userPausedInFullscreen = false;
                 isFullScreen = true;
                 pendingAutoAdvanceDouyin = false;
                 updateClock();
@@ -3582,11 +3672,22 @@
                 }
                 recordWatchHistoryItem(activePreviewMeta);
 
-                // 任务 2 & 3 (Round 9)：全屏播放页面展示底部渐变遮罩信息（标题 + 作者/副标题 + 非有线电视进度条）
+                // 任务 2 & 3 (Round 9) & 任务 6 (Round 16)：全屏播放页面展示底部渐变遮罩信息，进入正式播放默认处于播放态
                 showIptvFullscreenHud(hudTitle, hudSub, false);
+                updateFsPlayPauseIcon();
 
                 if (fullScreenRow === 3 && ROW_DATA[3] && fullScreenCol >= Math.max(1, ROW_DATA[3].length - 6)) {
                     requestMoreDouyinStreams();
+                }
+
+                // 任务 6 (Round 16)：若预览流正在请求同一 URL 的 FFmpeg 分片，直接复用其请求并切换为有声正式播放，避免重启 FFmpeg 或卡在暂停状态
+                if (inFlightFfmpegReq && inFlightFfmpegReq.url === url && inFlightFfmpegReq.seq === streamReqSeq) {
+                    macVideo.style.objectFit = targetFit;
+                    currentPlayingStream = url;
+                    applyPreviewOrFullscreenAudio();
+                    updateNowPlayingNavVisibility(true);
+                    updateFsProgressUI();
+                    return;
                 }
 
                 // 任务 1 (Round 9) & 任务 2 (Round 11)：若当前预览流已在播放则无缝切入全屏；若有线电视此前处于暂停状态，恢复播放时自动重新加载实时直播视频流
@@ -3603,10 +3704,15 @@
                     var mySeq = ++streamReqSeq;
                     probeStreamDuration(url, mySeq);
                     updateNowPlayingNavVisibility(true);
-                    invoke('start_ffmpeg', { url: url }).then((localM3u8Url) => {
+                    var p = invoke('start_ffmpeg', { url: url });
+                    inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
+                    p.then((localM3u8Url) => {
+                        if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
                         if (mySeq !== streamReqSeq || currentBgUrl !== url) return;
                         loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), false, mySeq, isPausedIptv);
-                    }).catch(() => {});
+                    }).catch(() => {
+                        if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
+                    });
                 } else {
                     if (objectFitTransitionTimer) {
                         clearTimeout(objectFitTransitionTimer);
@@ -3618,11 +3724,8 @@
                     if (!trueMediaDuration && !isCurrentStreamIptv()) {
                         probeStreamDuration(url, streamReqSeq);
                     }
-                    if (macVideo.paused) {
-                        macVideo.play().then(() => {
-                            updateNowPlayingNavVisibility(true);
-                        }).catch(() => {});
-                    }
+                    startVideoPlaybackWithFallback(streamReqSeq);
+                    updateNowPlayingNavVisibility(true);
                     updateFsProgressUI();
                 }
             }
@@ -3679,6 +3782,8 @@
                 var offset = nextCol > 1 ? (nextCol - 1) * 240 : 0;
                 if (track) track.style.transform = 'translate3d(-' + offset + 'px, 0, 0)';
                 currentBgUrl = '';
+                inFlightFfmpegReq = null;
+                userPausedInFullscreen = false;
                 var nextTitle = nextCard.getAttribute('data-title') || '';
                 var nextSub = nextCard.getAttribute('data-sub') || nextCard.getAttribute('data-org') || '';
                 var nextUrl = nextCard.getAttribute('data-preview') || (nextAction.startsWith('douyin:') ? nextAction : (nextAction.startsWith('iptv:') ? nextAction.substring(5) : nextAction.substring(6)));
@@ -3912,7 +4017,15 @@
             invoke('quit_app').catch(() => { window.close(); });
         };
         document.getElementById('btnPowerRestart').onclick = function() {
-            invoke('restart_app').catch(() => { window.location.reload(); });
+            document.documentElement.style.backgroundColor = '#000';
+            document.body.style.backgroundColor = '#000';
+            document.body.style.transition = 'opacity 0.18s ease';
+            document.body.style.opacity = '0';
+            invoke('restart_app').then(function() {
+                setTimeout(function() { window.location.reload(); }, 60);
+            }).catch(function() {
+                window.location.reload();
+            });
         };
         document.getElementById('btnPowerCancel').onclick = closePowerModal;
 
@@ -3976,16 +4089,26 @@
         }
 
         function updateSettingsToggleButtons() {
+            setSegControlActiveVal('btnToggleLocationMode', appSettings.locationMode || 'auto');
             setSegControlActiveVal('btnToggleRatingSource', appSettings.ratingSource || 'douban');
             setSegControlActiveVal('btnToggleBgTheme', appSettings.bgTheme || 'random');
             setSegControlActiveVal('btnToggleUiScale', getCurrentUiScalePreset().id);
             setSegControlActiveVal('btnTogglePreviewSound', appSettings.previewSound ? 'true' : 'false');
             setSegControlActiveVal('btnToggleVolumeNorm', appSettings.volumeNorm ? 'true' : 'false');
+            var manualRow = document.getElementById('manualLocationRow');
+            if (manualRow) {
+                manualRow.style.opacity = (appSettings.locationMode === 'manual') ? '1' : '0.78';
+            }
         }
 
         function applySegControlValue(controlId, newVal) {
             if (!newVal) return;
-            if (controlId === 'btnToggleRatingSource') {
+            if (controlId === 'btnToggleLocationMode') {
+                appSettings.locationMode = newVal;
+                localStorage.setItem('fc_location_mode', appSettings.locationMode);
+                updateSettingsToggleButtons();
+                pollWeatherBroadcast(true);
+            } else if (controlId === 'btnToggleRatingSource') {
                 appSettings.ratingSource = newVal;
                 localStorage.setItem('fc_rating_source', appSettings.ratingSource);
                 updateSettingsToggleButtons();
@@ -4032,7 +4155,7 @@
             return true;
         }
 
-        ['btnToggleRatingSource', 'btnToggleBgTheme', 'btnToggleUiScale', 'btnTogglePreviewSound', 'btnToggleVolumeNorm'].forEach(function(segId) {
+        ['btnToggleLocationMode', 'btnToggleRatingSource', 'btnToggleBgTheme', 'btnToggleUiScale', 'btnTogglePreviewSound', 'btnToggleVolumeNorm'].forEach(function(segId) {
             var segEl = document.getElementById(segId);
             if (!segEl) return;
             segEl.addEventListener('click', function(ev) {
@@ -4043,6 +4166,18 @@
                     applySegControlValue(segId, optEl.getAttribute('data-val'));
                 } else {
                     stepSegControl(segEl, 1);
+                }
+            });
+        });
+
+        ['inputLocCity', 'inputLocDistrict', 'inputLocStreet'].forEach(function(locInputId) {
+            var el = document.getElementById(locInputId);
+            if (!el) return;
+            el.addEventListener('input', function() {
+                if (appSettings.locationMode !== 'manual') {
+                    appSettings.locationMode = 'manual';
+                    localStorage.setItem('fc_location_mode', 'manual');
+                    updateSettingsToggleButtons();
                 }
             });
         });
@@ -4085,6 +4220,10 @@
                 document.getElementById('inputEpgUrl'),
                 document.getElementById('btnDouyinLogin'),
                 document.getElementById('btnBilibiliLogin'),
+                document.getElementById('btnToggleLocationMode'),
+                document.getElementById('inputLocCity'),
+                document.getElementById('inputLocDistrict'),
+                document.getElementById('inputLocStreet'),
                 document.getElementById('btnToggleRatingSource'),
                 document.getElementById('btnToggleBgTheme'),
                 document.getElementById('btnToggleUiScale'),
@@ -4130,6 +4269,12 @@
             document.getElementById('inputPornPath').value = appSettings.pornPath;
             document.getElementById('inputEpgUrl').value = appSettings.epgUrl || DEFAULT_EPG_URL;
             document.getElementById('inputPornPwd').value = appSettings.pornPwd;
+            var cityEl = document.getElementById('inputLocCity');
+            var distEl = document.getElementById('inputLocDistrict');
+            var streetEl = document.getElementById('inputLocStreet');
+            if (cityEl) cityEl.value = appSettings.locCity || '';
+            if (distEl) distEl.value = appSettings.locDistrict || '';
+            if (streetEl) streetEl.value = appSettings.locStreet || '';
             updateSettingsToggleButtons();
             document.getElementById('settingsModal').classList.add('active');
             buildSettingsModalFocusList();
@@ -4154,11 +4299,21 @@
             appSettings.pornPath = document.getElementById('inputPornPath').value.trim();
             appSettings.epgUrl = document.getElementById('inputEpgUrl').value.trim() || DEFAULT_EPG_URL;
             appSettings.pornPwd = document.getElementById('inputPornPwd').value.trim() || '8888';
+            var cityEl = document.getElementById('inputLocCity');
+            var distEl = document.getElementById('inputLocDistrict');
+            var streetEl = document.getElementById('inputLocStreet');
+            if (cityEl) appSettings.locCity = cityEl.value.trim();
+            if (distEl) appSettings.locDistrict = distEl.value.trim();
+            if (streetEl) appSettings.locStreet = streetEl.value.trim();
 
             localStorage.setItem('fc_media_path', appSettings.mediaPath);
             localStorage.setItem('fc_porn_path', appSettings.pornPath);
             localStorage.setItem('fc_epg_url', appSettings.epgUrl);
             localStorage.setItem('fc_porn_pwd', appSettings.pornPwd);
+            localStorage.setItem('fc_location_mode', appSettings.locationMode || 'auto');
+            localStorage.setItem('fc_loc_city', appSettings.locCity || '');
+            localStorage.setItem('fc_loc_district', appSettings.locDistrict || '');
+            localStorage.setItem('fc_loc_street', appSettings.locStreet || '');
             localStorage.setItem('fc_rating_source', appSettings.ratingSource);
             localStorage.setItem('fc_bg_theme', appSettings.bgTheme);
             localStorage.setItem('fc_preview_sound', appSettings.previewSound ? 'true' : 'false');
@@ -4173,6 +4328,7 @@
             scrapeLocalMediaFolder(appSettings.mediaPath, 1, false);
             if (pornUnlocked) scrapeLocalMediaFolder(appSettings.pornPath, 4, true);
             refreshEpgFromBackend();
+            pollWeatherBroadcast(true);
         }
 
         document.getElementById('btnCloseSettings').onclick = closeSettingsModal;
@@ -4542,21 +4698,7 @@
         }
 
         function formatHeroTitleHtml(rawTitle) {
-            var s = String(rawTitle || '');
-            if (s === '抖音') {
-                return '<span class="douyin-font">抖音</span>';
-            }
-            var safe = s
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            for (var i = 0; i < DOUYIN_CATEGORIES.length; i++) {
-                var cname = DOUYIN_CATEGORIES[i].name;
-                if (safe.indexOf(cname) !== -1) {
-                    safe = safe.split(cname).join('<span class="douyin-font">' + cname + '</span>');
-                }
-            }
-            return safe;
+            return formatDouyinBrandTextHtml(rawTitle);
         }
 
         function updateHeroUI(title, sub, desc, brandName, svgIconHTML, isVerified, skipLogo, isSingleLineMarquee, explicitLogoUrl) {
@@ -4594,6 +4736,8 @@
                 } else {
                     subTextEl.innerHTML = '<span style="color: #00d474; font-weight: 600;">' + sub + '</span>';
                 }
+            } else if (sub && (sub === '抖音' || String(sub).slice(-3) === '·抖音')) {
+                subTextEl.innerHTML = formatDouyinBrandTextHtml(sub);
             } else {
                 subTextEl.innerText = sub || '';
             }
@@ -5448,10 +5592,15 @@
         // isRoutineSchedule = false：后台高频轮询特殊天气与灾害预警，检测到即实时推送（刚进入 App 时不触发常规气象速报）
         async function pollWeatherBroadcast(isRoutineSchedule) {
             try {
-                var coords = await getMacNativeGeolocation();
+                var locMode = appSettings.locationMode || 'auto';
+                var coords = (locMode === 'auto') ? await getMacNativeGeolocation() : null;
                 var res = await invoke('fetch_weather_broadcast', {
                     clientLat: coords ? coords.lat : null,
-                    clientLon: coords ? coords.lon : null
+                    clientLon: coords ? coords.lon : null,
+                    locationMode: locMode,
+                    manualCity: appSettings.locCity || '',
+                    manualDistrict: appSettings.locDistrict || '',
+                    manualStreet: appSettings.locStreet || ''
                 });
                 if (!res) return;
                 var routineText = res.routine_headline || '';

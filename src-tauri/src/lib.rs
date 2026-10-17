@@ -129,6 +129,10 @@ fn build_ffmpeg_args(
             "-reconnect_streamed".to_string(), "1".to_string(),
             "-reconnect_delay_max".to_string(), "2".to_string(),
             "-rw_timeout".to_string(), "8000000".to_string(),
+            "-seekable".to_string(), "1".to_string(),
+            "-multiple_requests".to_string(), "1".to_string(),
+            "-analyzeduration".to_string(), "1200000".to_string(),
+            "-probesize".to_string(), "1500000".to_string(),
             "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
         ]);
         if let Some(s) = seek_sec {
@@ -330,18 +334,23 @@ fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<Stri
         return (Vec::new(), duration_opt);
     }
 
-    let mut urls: Vec<String> = Vec::new();
-    let api_endpoints = [
-        format!(
-            "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=80&type=&otype=json&platform=html5&high_quality=1",
-            bvid, cid
-        ),
-        format!(
-            "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=64&fnval=1&platform=pc&otype=json",
-            bvid, cid
-        ),
-    ];
+    // 任务 6 (Round 16)：针对 bilibili 长视频（> 300s），优先请求分段式流式接口（fnval=1&platform=pc），避免单文件超大 moov 索引导致首包阻塞；同时保留 html5 高清源作为双保险
+    let is_long_video = duration_opt.unwrap_or(0.0) > 300.0;
+    let ep_html5 = format!(
+        "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=64&type=&otype=json&platform=html5&high_quality=1",
+        bvid, cid
+    );
+    let ep_pc_stream = format!(
+        "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=64&fnval=1&platform=pc&otype=json",
+        bvid, cid
+    );
+    let api_endpoints = if is_long_video {
+        [ep_pc_stream, ep_html5]
+    } else {
+        [ep_html5, ep_pc_stream]
+    };
 
+    let mut urls: Vec<String> = Vec::new();
     for ep in &api_endpoints {
         if let Some(pj) = curl_bili_json(ep) {
             if let Some(d) = pj.get("data") {
@@ -1372,6 +1381,10 @@ fn resolve_four_nearby_streets(
 async fn fetch_weather_broadcast(
     client_lat: Option<f64>,
     client_lon: Option<f64>,
+    location_mode: Option<String>,
+    manual_city: Option<String>,
+    manual_district: Option<String>,
+    manual_street: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<WeatherBroadcastPayload, String> {
     let mc_400_arc = state.minutecast_400_until.clone();
@@ -1380,6 +1393,31 @@ async fn fetch_weather_broadcast(
     tauri::async_runtime::spawn_blocking(move || {
         let api_key = "oLpVBp2pSM2J0ofeGZDdzfMPYePEbRZK";
 
+        let is_china_coord = |la: f64, lo: f64| -> bool {
+            la >= 16.0 && la <= 54.0 && lo >= 73.0 && lo <= 136.0
+        };
+        let is_china_country = |c: &str| -> bool {
+            let t = c.trim();
+            t.is_empty() || t == "中国" || t.eq_ignore_ascii_case("cn") || t.eq_ignore_ascii_case("china")
+        };
+        let is_foreign_place_name = |name: &str| -> bool {
+            let t = name.trim();
+            if t.is_empty() {
+                return false;
+            }
+            let foreign_keywords = [
+                "阿姆斯特丹", "荷兰", "美国", "弗吉尼亚", "阿什本", "洛杉矶", "圣何塞",
+                "新加坡", "东京", "日本", "首尔", "韩国", "伦敦", "英国", "法兰克福", "德国",
+            ];
+            foreign_keywords.iter().any(|kw| t.contains(kw))
+        };
+
+        let m_city = manual_city.unwrap_or_default().trim().to_string();
+        let m_dist = manual_district.unwrap_or_default().trim().to_string();
+        let m_street = manual_street.unwrap_or_default().trim().to_string();
+        let is_manual = location_mode.as_deref() == Some("manual")
+            && (!m_city.is_empty() || !m_dist.is_empty() || !m_street.is_empty());
+
         let mut lat: Option<f64> = None;
         let mut lon: Option<f64> = None;
         let mut domestic_city = String::new();
@@ -1387,131 +1425,172 @@ async fn fetch_weather_broadcast(
         let mut domestic_province = String::new();
         let mut domestic_street = String::new();
 
-        if let (Some(clat), Some(clon)) = (client_lat, client_lon) {
-            if clat > 3.0 && clat < 55.0 && clon > 70.0 && clon < 145.0 {
-                lat = Some(clat);
-                lon = Some(clon);
-            }
-        }
-
-        // 强制直连调用美团高精度位置接口
-        let (_, mt_json) = curl_get_json_direct("https://apimobile.meituan.com/locate/v2/ip/loc?rgeo=true");
-        if let Some(mj) = mt_json {
-            if let Some(d) = mj.get("data") {
-                if lat.is_none() {
-                    if let (Some(la), Some(lo)) = (d.get("lat").and_then(|v| v.as_f64()), d.get("lng").and_then(|v| v.as_f64())) {
-                        if la.abs() > 1.0 && lo.abs() > 1.0 {
-                            lat = Some(la);
-                            lon = Some(lo);
-                        }
-                    }
+        if is_manual {
+            domestic_city = m_city.clone();
+            domestic_district = m_dist.clone();
+            domestic_street = m_street.clone();
+        } else {
+            if let (Some(clat), Some(clon)) = (client_lat, client_lon) {
+                if is_china_coord(clat, clon) {
+                    lat = Some(clat);
+                    lon = Some(clon);
                 }
-                if let Some(rg) = d.get("rgeo") {
-                    if let Some(c) = rg.get("city").and_then(|v| v.as_str()) {
-                        domestic_city = c.to_string();
-                    }
-                    if let Some(dist) = rg.get("district").and_then(|v| v.as_str()) {
-                        domestic_district = dist.to_string();
-                    }
-                    if let Some(prov) = rg.get("province").and_then(|v| v.as_str()) {
-                        domestic_province = prov.to_string();
-                    }
-                    for st_key in &["street", "township", "town", "areaName"] {
-                        if let Some(st) = rg.get(*st_key).and_then(|v| v.as_str()) {
-                            if !st.trim().is_empty() {
-                                domestic_street = st.trim().to_string();
-                                break;
+            }
+
+            // 强制直连调用美团高精度位置接口（严格校验中国境内坐标与国家，拦截 VPN 海外出口如阿姆斯特丹）
+            let (_, mt_json) = curl_get_json_direct("https://apimobile.meituan.com/locate/v2/ip/loc?rgeo=true");
+            if let Some(mj) = mt_json {
+                if let Some(d) = mj.get("data") {
+                    let rg_opt = d.get("rgeo");
+                    let country_str = rg_opt
+                        .and_then(|rg| rg.get("country"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let city_str = rg_opt
+                        .and_then(|rg| rg.get("city"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let coord_ok = match (d.get("lat").and_then(|v| v.as_f64()), d.get("lng").and_then(|v| v.as_f64())) {
+                        (Some(la), Some(lo)) => is_china_coord(la, lo),
+                        _ => false,
+                    };
+                    if coord_ok && is_china_country(country_str) && !is_foreign_place_name(city_str) {
+                        if lat.is_none() {
+                            if let (Some(la), Some(lo)) = (d.get("lat").and_then(|v| v.as_f64()), d.get("lng").and_then(|v| v.as_f64())) {
+                                lat = Some(la);
+                                lon = Some(lo);
                             }
                         }
-                    }
-                }
-            }
-        }
-
-        // 若有经纬度坐标，调用美团经纬度逆地理接口获取街道级定位信息
-        if let (Some(la), Some(lo)) = (lat, lon) {
-            let mt_rev_url = format!(
-                "https://apimobile.meituan.com/group/v1/city/latlng/{:.5},{:.5}?tag=0",
-                la, lo
-            );
-            let (_, mt_rev_json) = curl_get_json_direct(&mt_rev_url);
-            if let Some(mrj) = mt_rev_json {
-                if let Some(d) = mrj.get("data") {
-                    if domestic_city.is_empty() {
-                        if let Some(c) = d.get("city").and_then(|v| v.as_str()) {
-                            domestic_city = c.to_string();
-                        }
-                    }
-                    if domestic_district.is_empty() {
-                        if let Some(dist) = d.get("district").and_then(|v| v.as_str()) {
-                            domestic_district = dist.to_string();
-                        }
-                    }
-                    if domestic_province.is_empty() {
-                        if let Some(prov) = d.get("province").and_then(|v| v.as_str()) {
-                            domestic_province = prov.to_string();
-                        }
-                    }
-                    if domestic_street.is_empty() {
-                        for st_key in &["areaName", "street", "township", "town"] {
-                            if let Some(st) = d.get(*st_key).and_then(|v| v.as_str()) {
-                                let st_trim = st.trim();
-                                if !st_trim.is_empty() && st_trim != domestic_district && st_trim != domestic_city {
-                                    domestic_street = st_trim.to_string();
-                                    break;
+                        if let Some(rg) = rg_opt {
+                            if !city_str.is_empty() {
+                                domestic_city = city_str.to_string();
+                            }
+                            if let Some(dist) = rg.get("district").and_then(|v| v.as_str()) {
+                                domestic_district = dist.to_string();
+                            }
+                            if let Some(prov) = rg.get("province").and_then(|v| v.as_str()) {
+                                domestic_province = prov.to_string();
+                            }
+                            for st_key in &["street", "township", "town", "areaName"] {
+                                if let Some(st) = rg.get(*st_key).and_then(|v| v.as_str()) {
+                                    if !st.trim().is_empty() {
+                                        domestic_street = st.trim().to_string();
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // 备选直连：哔哩哔哩国内 IP 定位接口
-        if lat.is_none() || domestic_city.is_empty() {
-            let (_, bili_json) = curl_get_json_direct("https://api.live.bilibili.com/client/v1/Ip/getInfoNew");
-            if let Some(bj) = bili_json {
-                if let Some(d) = bj.get("data") {
-                    if lat.is_none() {
-                        let la_opt = d.get("latitude").and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok())));
-                        let lo_opt = d.get("longitude").and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok())));
-                        if let (Some(la), Some(lo)) = (la_opt, lo_opt) {
-                            if la.abs() > 1.0 && lo.abs() > 1.0 {
-                                lat = Some(la);
-                                lon = Some(lo);
+            // 若有中国境内经纬度坐标，调用美团经纬度逆地理接口获取街道级定位信息
+            if let (Some(la), Some(lo)) = (lat, lon) {
+                if is_china_coord(la, lo) {
+                    let mt_rev_url = format!(
+                        "https://apimobile.meituan.com/group/v1/city/latlng/{:.5},{:.5}?tag=0",
+                        la, lo
+                    );
+                    let (_, mt_rev_json) = curl_get_json_direct(&mt_rev_url);
+                    if let Some(mrj) = mt_rev_json {
+                        if let Some(d) = mrj.get("data") {
+                            let c_name = d.get("city").and_then(|v| v.as_str()).unwrap_or("");
+                            if !is_foreign_place_name(c_name) {
+                                if domestic_city.is_empty() && !c_name.is_empty() {
+                                    domestic_city = c_name.to_string();
+                                }
+                                if domestic_district.is_empty() {
+                                    if let Some(dist) = d.get("district").and_then(|v| v.as_str()) {
+                                        domestic_district = dist.to_string();
+                                    }
+                                }
+                                if domestic_province.is_empty() {
+                                    if let Some(prov) = d.get("province").and_then(|v| v.as_str()) {
+                                        domestic_province = prov.to_string();
+                                    }
+                                }
+                                if domestic_street.is_empty() {
+                                    for st_key in &["areaName", "street", "township", "town"] {
+                                        if let Some(st) = d.get(*st_key).and_then(|v| v.as_str()) {
+                                            let st_trim = st.trim();
+                                            if !st_trim.is_empty() && st_trim != domestic_district && st_trim != domestic_city {
+                                                domestic_street = st_trim.to_string();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }
-                    }
-                    if domestic_city.is_empty() {
-                        if let Some(c) = d.get("city").and_then(|v| v.as_str()) {
-                            domestic_city = c.to_string();
-                        }
-                    }
-                    if domestic_province.is_empty() {
-                        if let Some(p) = d.get("province").and_then(|v| v.as_str()) {
-                            domestic_province = p.to_string();
                         }
                     }
                 }
             }
-        }
 
-        // 备选直连：腾讯位置接口
-        if domestic_city.is_empty() {
-            let (_, qq_json) = curl_get_json_direct("https://r.inews.qq.com/api/ip2city");
-            if let Some(qj) = qq_json {
-                if let Some(c) = qj.get("city").and_then(|v| v.as_str()) {
-                    domestic_city = c.to_string();
-                }
-                if let Some(dist) = qj.get("district").and_then(|v| v.as_str()) {
-                    if domestic_district.is_empty() {
-                        domestic_district = dist.to_string();
+            // 备选直连：哔哩哔哩国内 IP 定位接口（严格校验中国境内）
+            if lat.is_none() || domestic_city.is_empty() {
+                let (_, bili_json) = curl_get_json_direct("https://api.live.bilibili.com/client/v1/Ip/getInfoNew");
+                if let Some(bj) = bili_json {
+                    if let Some(d) = bj.get("data") {
+                        let country_str = d.get("country").and_then(|v| v.as_str()).unwrap_or("");
+                        let city_str = d.get("city").and_then(|v| v.as_str()).unwrap_or("");
+                        if is_china_country(country_str) && !is_foreign_place_name(city_str) {
+                            if lat.is_none() {
+                                let la_opt = d.get("latitude").and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok())));
+                                let lo_opt = d.get("longitude").and_then(|v| v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok())));
+                                if let (Some(la), Some(lo)) = (la_opt, lo_opt) {
+                                    if is_china_coord(la, lo) {
+                                        lat = Some(la);
+                                        lon = Some(lo);
+                                    }
+                                }
+                            }
+                            if domestic_city.is_empty() && !city_str.is_empty() {
+                                domestic_city = city_str.to_string();
+                            }
+                            if domestic_province.is_empty() {
+                                if let Some(p) = d.get("province").and_then(|v| v.as_str()) {
+                                    if !is_foreign_place_name(p) {
+                                        domestic_province = p.to_string();
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                if let Some(p) = qj.get("province").and_then(|v| v.as_str()) {
-                    if domestic_province.is_empty() {
-                        domestic_province = p.to_string();
+            }
+
+            // 备选直连：腾讯位置接口（严格校验 country == "中国"）
+            if domestic_city.is_empty() {
+                let (_, qq_json) = curl_get_json_direct("https://r.inews.qq.com/api/ip2city");
+                if let Some(qj) = qq_json {
+                    let country_str = qj.get("country").and_then(|v| v.as_str()).unwrap_or("");
+                    let city_str = qj.get("city").and_then(|v| v.as_str()).unwrap_or("");
+                    if is_china_country(country_str) && !is_foreign_place_name(city_str) && !city_str.is_empty() {
+                        domestic_city = city_str.to_string();
+                        if let Some(dist) = qj.get("district").and_then(|v| v.as_str()) {
+                            if domestic_district.is_empty() {
+                                domestic_district = dist.to_string();
+                            }
+                        }
+                        if let Some(p) = qj.get("province").and_then(|v| v.as_str()) {
+                            if domestic_province.is_empty() {
+                                domestic_province = p.to_string();
+                            }
+                        }
                     }
+                }
+            }
+
+            // 若因全局 VPN/TUN 代理导致所有 IP 定位均返回海外节点，优先回退用户保存的手动位置，否则回退默认国内城市（南京）
+            if domestic_city.is_empty() && domestic_district.is_empty() && lat.is_none() {
+                if !m_city.is_empty() || !m_dist.is_empty() || !m_street.is_empty() {
+                    domestic_city = m_city;
+                    domestic_district = m_dist;
+                    domestic_street = m_street;
+                } else {
+                    domestic_city = "南京".to_string();
+                    domestic_district = "雨花台区".to_string();
+                    domestic_street = "梅山街道".to_string();
                 }
             }
         }
@@ -1520,31 +1599,34 @@ async fn fetch_weather_broadcast(
         let mut admin_name = domestic_province.clone();
 
         if let (Some(la), Some(lo)) = (lat, lon) {
-            let lat_round = (la * 1000.0).round() / 1000.0;
-            let lon_round = (lo * 1000.0).round() / 1000.0;
-            let q_coord = format!("{:.3},{:.3}", lat_round, lon_round);
-            let geo_url = format!(
-                "https://openapi.weathercn.com/locations/v1/cities/geoposition/search.json?q={}&apikey={}&language=zh-cn&details=true",
-                q_coord, api_key
-            );
-            let (_, geo_json) = curl_get_json_direct(&geo_url);
-            if let Some(gj) = geo_json {
-                if let Some(k) = gj.get("Key").and_then(|v| v.as_str()) {
-                    loc_key = k.to_string();
-                }
-                if domestic_district.is_empty() {
-                    if let Some(local_name) = gj.get("LocalizedName").and_then(|v| v.as_str()) {
-                        domestic_district = local_name.to_string();
-                    }
-                }
-                if domestic_city.is_empty() {
-                    if let Some(parent_name) = gj.get("ParentCity").and_then(|p| p.get("LocalizedName")).and_then(|v| v.as_str()) {
-                        domestic_city = parent_name.to_string();
-                    }
-                }
-                if let Some(adm) = gj.get("AdministrativeArea").and_then(|a| a.get("LocalizedName")).and_then(|v| v.as_str()) {
-                    if !adm.is_empty() {
-                        admin_name = adm.to_string();
+            if is_china_coord(la, lo) {
+                let lat_round = (la * 1000.0).round() / 1000.0;
+                let lon_round = (lo * 1000.0).round() / 1000.0;
+                let q_coord = format!("{:.3},{:.3}", lat_round, lon_round);
+                let geo_url = format!(
+                    "https://openapi.weathercn.com/locations/v1/cities/geoposition/search.json?q={}&apikey={}&language=zh-cn&details=true",
+                    q_coord, api_key
+                );
+                let (_, geo_json) = curl_get_json_direct(&geo_url);
+                if let Some(gj) = geo_json {
+                    let local_name = gj.get("LocalizedName").and_then(|v| v.as_str()).unwrap_or("");
+                    if !is_foreign_place_name(local_name) {
+                        if let Some(k) = gj.get("Key").and_then(|v| v.as_str()) {
+                            loc_key = k.to_string();
+                        }
+                        if domestic_district.is_empty() && !local_name.is_empty() {
+                            domestic_district = local_name.to_string();
+                        }
+                        if domestic_city.is_empty() {
+                            if let Some(parent_name) = gj.get("ParentCity").and_then(|p| p.get("LocalizedName")).and_then(|v| v.as_str()) {
+                                domestic_city = parent_name.to_string();
+                            }
+                        }
+                        if let Some(adm) = gj.get("AdministrativeArea").and_then(|a| a.get("LocalizedName")).and_then(|v| v.as_str()) {
+                            if !adm.is_empty() {
+                                admin_name = adm.to_string();
+                            }
+                        }
                     }
                 }
             }
@@ -1567,8 +1649,17 @@ async fn fetch_weather_broadcast(
                         first_hit.get("GeoPosition").and_then(|g| g.get("Latitude")).and_then(|v| v.as_f64()),
                         first_hit.get("GeoPosition").and_then(|g| g.get("Longitude")).and_then(|v| v.as_f64()),
                     ) {
-                        lat = Some(la);
-                        lon = Some(lo);
+                        if is_china_coord(la, lo) {
+                            lat = Some(la);
+                            lon = Some(lo);
+                        }
+                    }
+                    if domestic_city.is_empty() {
+                        if let Some(parent_name) = first_hit.get("ParentCity").and_then(|p| p.get("LocalizedName")).and_then(|v| v.as_str()) {
+                            domestic_city = parent_name.to_string();
+                        } else if let Some(ln) = first_hit.get("LocalizedName").and_then(|v| v.as_str()) {
+                            domestic_city = ln.to_string();
+                        }
                     }
                     if let Some(adm) = first_hit.get("AdministrativeArea").and_then(|a| a.get("LocalizedName")).and_then(|v| v.as_str()) {
                         if !adm.is_empty() {
@@ -1865,11 +1956,11 @@ fn ensure_douyin_scraper(
                 }
             } catch(e) {}
 
-            // 任务 1 (Round 10)：启动时清除抖音页面自身缓存的旧推荐批次，并载入跨会话已展示视频 ID 集合，确保每次重启应用呈现的都是全新推荐流
+            // 任务 1 & 7 (Round 16)：移除跨会话 __fc_boot_seen_v1__ 过滤（避免冷启动首屏推荐流被误判为已读而丢弃导致空白），仅在当前会话内去重
             window.__FC_QUEUE__ = [];
             window.__FC_SEEN__ = new Set();
-            window.__FC_PERSIST_IDS__ = [];
             try {
+                localStorage.removeItem('__fc_boot_seen_v1__');
                 if (!window.__FC_SESSION_CLEANED__) {
                     window.__FC_SESSION_CLEANED__ = true;
                     try { sessionStorage.clear(); } catch (_) {}
@@ -1881,13 +1972,6 @@ fn ensure_douyin_scraper(
                             }
                         }
                     } catch (_) {}
-                }
-                const savedIds = JSON.parse(localStorage.getItem('__fc_boot_seen_v1__') || '[]');
-                if (Array.isArray(savedIds)) {
-                    window.__FC_PERSIST_IDS__ = savedIds.slice(-90);
-                    for (const sid of window.__FC_PERSIST_IDS__) {
-                        if (sid) window.__FC_SEEN__.add(String(sid));
-                    }
                 }
             } catch (e) {}
             window.__FC_FETCH_QUEUE__ = [];
@@ -1901,7 +1985,7 @@ fn ensure_douyin_scraper(
                         document.title = '__FC_ITEM__:' + payload + '|||' + Date.now();
                     } catch(e) {}
                 }
-            }, 90);
+            }, 65);
 
             function normalizeHttps(u) {
                 if (!u || typeof u !== 'string') return '';
@@ -1948,7 +2032,6 @@ fn ensure_douyin_scraper(
                 const hasBitRateList = Array.isArray(v.bit_rate) && v.bit_rate.length > 0;
                 let allBitRatesAreByteVC2 = hasBitRateList;
 
-                // 任务 10 (Round 5)：按帧率 (FPS, 优先 60fps) 与码率 (bit_rate) 降序排列，确保大屏下优先拉取最高帧率与最高画质源
                 const sortedBitRates = hasBitRateList ? v.bit_rate.slice().sort((a, b) => {
                     const fpsA = Number((a && (a.FPS || a.fps)) || 30);
                     const fpsB = Number((b && (b.FPS || b.fps)) || 30);
@@ -2018,13 +2101,6 @@ fn ensure_douyin_scraper(
                 cover = normalizeHttps(cover);
                 if (playUrl && cover) {
                     window.__FC_SEEN__.add(idKey);
-                    try {
-                        window.__FC_PERSIST_IDS__.push(idKey);
-                        if (window.__FC_PERSIST_IDS__.length > 90) {
-                            window.__FC_PERSIST_IDS__ = window.__FC_PERSIST_IDS__.slice(-90);
-                        }
-                        localStorage.setItem('__fc_boot_seen_v1__', JSON.stringify(window.__FC_PERSIST_IDS__));
-                    } catch (_) {}
                     window.__FC_QUEUE__.push([desc, author, cover, playUrl]);
                 }
             }
@@ -2050,7 +2126,7 @@ fn ensure_douyin_scraper(
             JSON.parse = function(text, reviver) {
                 const res = origJsonParse.call(this, text, reviver);
                 try {
-                    if (typeof text === 'string' && (text.includes('play_addr') || text.includes('aweme_list') || text.includes('bit_rate') || text.includes('aweme_info'))) {
+                    if (typeof text === 'string' && (text.includes('play_addr') || text.includes('aweme_list') || text.includes('bit_rate') || text.includes('aweme_info') || text.includes('cards'))) {
                         deepScan(res, 0);
                     }
                 } catch(e) {}
@@ -2064,9 +2140,71 @@ fn ensure_douyin_scraper(
                 return data;
             };
 
+            // 任务 1 & 7 (Round 16)：同时拦截 XMLHttpRequest 与 window.fetch，并主动扫描 SSR 初始渲染数据，确保冷启动首包 100% 捕获
+            try {
+                const origXhrOpen = XMLHttpRequest.prototype.open;
+                const origXhrSend = XMLHttpRequest.prototype.send;
+                XMLHttpRequest.prototype.open = function(method, url) {
+                    this.__fc_url = String(url || '');
+                    return origXhrOpen.apply(this, arguments);
+                };
+                XMLHttpRequest.prototype.send = function() {
+                    this.addEventListener('load', function() {
+                        try {
+                            if (this.responseType === '' || this.responseType === 'text') {
+                                const txt = this.responseText;
+                                if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate'))) {
+                                    deepScan(origJsonParse(txt), 0);
+                                }
+                            } else if (this.responseType === 'json' && this.response) {
+                                deepScan(this.response, 0);
+                            }
+                        } catch (_) {}
+                    });
+                    return origXhrSend.apply(this, arguments);
+                };
+            } catch (_) {}
+
+            try {
+                if (window.fetch) {
+                    const origFetch = window.fetch;
+                    window.fetch = async function() {
+                        const resp = await origFetch.apply(this, arguments);
+                        try {
+                            const cloned = resp.clone();
+                            cloned.text().then(txt => {
+                                if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate'))) {
+                                    try { deepScan(origJsonParse(txt), 0); } catch (_) {}
+                                }
+                            }).catch(() => {});
+                        } catch (_) {}
+                        return resp;
+                    };
+                }
+            } catch (_) {}
+
+            function scanSsrAndGlobals() {
+                try {
+                    if (window._SSR_DATA) deepScan(window._SSR_DATA, 0);
+                    if (window.__INIT_PROPS__) deepScan(window.__INIT_PROPS__, 0);
+                    const renderEl = document.getElementById('RENDER_DATA');
+                    if (renderEl && renderEl.textContent) {
+                        const decoded = decodeURIComponent(renderEl.textContent);
+                        deepScan(origJsonParse(decoded), 0);
+                    }
+                    if (Array.isArray(self.__pace_f)) {
+                        for (let i = 0; i < self.__pace_f.length; i++) {
+                            deepScan(self.__pace_f[i], 0);
+                        }
+                    }
+                } catch (_) {}
+            }
+            setTimeout(scanSsrAndGlobals, 350);
+            setTimeout(scanSsrAndGlobals, 1200);
+
             window.__FC_EMPTY_LOAD_COUNT__ = 0;
-            // 任务 13 & 14 (Round 5)：全容器智能无限滚动触发 + 枯竭自动续流，确保焦点靠近末尾与全屏连播时始终能预加载新视频流
             window.__FC_LOAD_MORE__ = function() {
+                scanSsrAndGlobals();
                 const beforeSeen = window.__FC_SEEN__.size;
                 for (let step = 0; step < 4; step++) {
                     setTimeout(() => {
@@ -2085,24 +2223,23 @@ fn ensure_douyin_scraper(
                                 }
                             }
                         } catch(e) {}
-                    }, step * 200);
+                    }, step * 180);
                 }
                 setTimeout(() => {
                     if (window.__FC_SEEN__.size === beforeSeen && window.__FC_QUEUE__.length === 0 && !document.getElementById('fc-login-bar')) {
                         window.__FC_EMPTY_LOAD_COUNT__ = (window.__FC_EMPTY_LOAD_COUNT__ || 0) + 1;
-                        if (window.__FC_EMPTY_LOAD_COUNT__ >= 2) {
+                        if (window.__FC_EMPTY_LOAD_COUNT__ >= 3) {
                             window.__FC_EMPTY_LOAD_COUNT__ = 0;
                             window.location.reload();
                         }
                     } else {
                         window.__FC_EMPTY_LOAD_COUNT__ = 0;
                     }
-                }, 1400);
+                }, 1600);
             };
 
-            // 任务 1 (Round 10)：页面首次载入后自动触发动态下拉请求，确保每次重启无需手动刷新即可拉取全新推荐流
-            setTimeout(() => { if (window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 950);
-            setTimeout(() => { if (window.__FC_QUEUE__.length < 6 && window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 2200);
+            setTimeout(() => { if (window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 650);
+            setTimeout(() => { if (window.__FC_QUEUE__.length < 6 && window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 1800);
 
             window.__FC_SHOW_LOGIN_BAR__ = function() {
                 if (document.getElementById('fc-login-bar')) return;
@@ -2143,7 +2280,7 @@ fn ensure_douyin_scraper(
                         .then(res => { if (res && res.detail) recordAweme(res.detail); })
                         .catch(() => {});
                 }
-            }, 350);
+            }, 300);
         })();
     "#;
 
@@ -2163,9 +2300,9 @@ fn ensure_douyin_scraper(
             if title == "__FC_LOGIN_DONE__" {
                 let _ = win.set_always_on_top(false);
                 let _ = win.hide();
-                feed_arc.lock().unwrap().clear();
+                feed_arc.lock().unwrap().retain(|k, _| k.starts_with("bili_"));
                 probing_arc.lock().unwrap().clear();
-                let _ = win.eval("window.__FC_QUEUE__ = []; window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
+                let _ = win.eval("window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
                 if let Some(main_win) = win.app_handle().get_webview_window("main") {
                     let _ = main_win.set_focus();
                 }
@@ -2188,8 +2325,17 @@ fn ensure_douyin_scraper(
                         p_set.insert(primary_url.clone());
                     }
 
+                    // 任务 1 & 7 (Round 16)：pickBestPlayUrl 已过滤 ByteVC2，收到视频条目后立即入列呈现卡片，避免阻塞在 ffprobe 网络连接导致冷启动长时间空白
+                    let active_cat = cat_arc.lock().unwrap().clone();
+                    {
+                        let mut feed_map = feed_arc.lock().unwrap();
+                        let cat_list = feed_map.entry(active_cat.clone()).or_insert_with(Vec::new);
+                        if !cat_list.iter().any(|x| x.3.contains(&primary_url)) {
+                            cat_list.push((desc.clone(), author.clone(), cover.clone(), play_url.clone()));
+                        }
+                    }
+
                     let feed_clone = feed_arc.clone();
-                    let cat_clone = cat_arc.clone();
                     tauri::async_runtime::spawn_blocking(move || {
                         if let Some((verified_url, codec)) = probe_douyin_candidates(&play_url) {
                             let tagged_url = if codec == "h264" {
@@ -2197,11 +2343,11 @@ fn ensure_douyin_scraper(
                             } else {
                                 verified_url.clone()
                             };
-                            let active_cat = cat_clone.lock().unwrap().clone();
                             let mut feed_map = feed_clone.lock().unwrap();
-                            let cat_list = feed_map.entry(active_cat).or_insert_with(Vec::new);
-                            if !cat_list.iter().any(|x| x.3.ends_with(&verified_url)) {
-                                cat_list.push((desc, author, cover, tagged_url));
+                            if let Some(cat_list) = feed_map.get_mut(&active_cat) {
+                                if let Some(existing_entry) = cat_list.iter_mut().find(|x| x.3.contains(&primary_url)) {
+                                    existing_entry.3 = tagged_url;
+                                }
                             }
                         }
                     });
@@ -2561,6 +2707,10 @@ async fn get_douyin_feed(
             let mut feed_map = state.douyin_feed.lock().unwrap();
             feed_map.remove(&req_cat);
         }
+        {
+            let mut p_set = state.douyin_probing.lock().unwrap();
+            p_set.clear();
+        }
         let base_url = category_to_douyin_url(&req_cat);
         let ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -2570,7 +2720,7 @@ async fn get_douyin_feed(
         let target_url = format!("{}{}_fc_t={}", base_url, sep, ts);
         if let Some(win) = app.get_webview_window("douyin_scraper") {
             let js = format!(
-                "window.__FC_QUEUE__ = []; window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
+                "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
                 target_url
             );
             let _ = win.eval(&js);
@@ -2603,15 +2753,13 @@ async fn get_douyin_feed(
             let target_url = format!("{}{}_fc_t={}", base_url, sep, ts);
             if let Some(win) = app.get_webview_window("douyin_scraper") {
                 let js = format!(
-                    "window.__FC_QUEUE__ = []; window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
+                    "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
                     target_url
                 );
                 let _ = win.eval(&js);
             }
-        } else if want_more {
-            if let Some(win) = app.get_webview_window("douyin_scraper") {
-                let _ = win.eval("if(window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__();");
-            }
+        } else if let Some(win) = app.get_webview_window("douyin_scraper") {
+            let _ = win.eval("if(window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__();");
         }
     }
 
@@ -2682,7 +2830,7 @@ async fn hide_bilibili_login(app: AppHandle, state: State<'_, AppState>) -> Resu
     Ok(())
 }
 
-// 任务 12 (Round 5)：电源管理——彻底清理子进程并安全关闭退出或重启应用
+// 任务 12 (Round 5) & 任务 4 (Round 16)：电源管理——彻底清理子进程并安全关闭退出或无白屏热重启应用
 #[tauri::command]
 async fn quit_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     if let Ok(mut guard) = state.ffmpeg_process.lock() {
@@ -2698,6 +2846,7 @@ async fn quit_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), Stri
 
 #[tauri::command]
 async fn restart_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    state.ffmpeg_generation.fetch_add(1, Ordering::SeqCst);
     if let Ok(mut guard) = state.ffmpeg_process.lock() {
         if let Some((_, mut child)) = guard.take() {
             let _ = child.kill();
@@ -2705,7 +2854,41 @@ async fn restart_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), S
         }
     }
     cleanup_orphan_hls_ffmpeg();
-    app.restart();
+    if let Ok(entries) = fs::read_dir("/tmp/cooltv_hls") {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_file() {
+                let _ = fs::remove_file(p);
+            }
+        }
+    }
+    if let Ok(mut fmap) = state.douyin_feed.lock() {
+        fmap.clear();
+    }
+    if let Ok(mut pset) = state.douyin_probing.lock() {
+        pset.clear();
+    }
+    if let Ok(mut cat) = state.douyin_category.lock() {
+        *cat = "discover".to_string();
+    }
+    if let Some(dy_win) = app.get_webview_window("douyin_scraper") {
+        let _ = dy_win.set_always_on_top(false);
+        let _ = dy_win.hide();
+        let ts = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(1);
+        let _ = dy_win.eval(&format!(
+            "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.href = 'https://www.douyin.com/discover?_fc_boot={}';",
+            ts
+        ));
+    }
+    if let Some(bili_win) = app.get_webview_window("bilibili_scraper") {
+        let _ = bili_win.set_always_on_top(false);
+        let _ = bili_win.hide();
+    }
+    if let Some(main_win) = app.get_webview_window("main") {
+        let _ = main_win.eval("window.location.reload();");
+        let _ = main_win.set_focus();
+    }
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
