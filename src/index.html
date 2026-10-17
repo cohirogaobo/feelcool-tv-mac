@@ -551,7 +551,7 @@
             margin-top: 36px;
         }
         .fs-password-page {
-            width: min(640px, 84vw);
+            width: min(980px, 92vw);
             margin: auto;
             padding: 48px 24px;
             box-sizing: border-box;
@@ -559,7 +559,99 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             text-align: center;
+        }
+        /* 任务 4 (Round 17)：长按密码输入框唤出右侧大九键屏幕数字键盘，左侧原文字、密码框和按钮整体平滑左移 */
+        .pwd-split-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 0px;
+            transition: gap 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .fs-password-page.keypad-open .pwd-split-layout {
+            gap: 56px;
+        }
+        .pwd-left-panel {
+            width: min(520px, 82vw);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .pwd-numpad-panel {
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transform: translate3d(28px, 0, 0) scale(0.94);
+            transition: max-width 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), padding 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+            flex-shrink: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .fs-password-page.keypad-open .pwd-numpad-panel {
+            max-width: 380px;
+            opacity: 1;
+            overflow: visible;
+            pointer-events: auto;
+            transform: translate3d(0, 0, 0) scale(1);
+            padding: 12px;
+        }
+        .pwd-numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 92px);
+            grid-auto-rows: 72px;
+            gap: 14px;
+            align-items: stretch;
+            justify-content: center;
+        }
+        .pwd-key-btn {
+            border-radius: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.10);
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+            box-sizing: border-box;
+            transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .pwd-key-btn.key-zero {
+            grid-column: span 2;
+        }
+        .pwd-key-btn svg {
+            width: 28px;
+            height: 22px;
+            display: block;
+            flex-shrink: 0;
+        }
+        .pwd-key-btn:focus,
+        .pwd-key-btn.modal-focused {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border-color: #ffffff !important;
+            transform: scale(1.06);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.52);
+            z-index: 2;
+        }
+        .pwd-key-btn:active,
+        .pwd-key-btn.pressing {
+            transform: scale(0.94) !important;
+        }
+        .pwd-input-wrap .form-input.pressing {
+            transform: scale(0.97) !important;
+            background: rgba(255, 255, 255, 0.18) !important;
         }
         .fs-power-page {
             width: min(560px, 84vw);
@@ -1042,26 +1134,50 @@
                 <button type="button" class="btn btn-cancel" id="btnCloseSettings">取消</button>
                 <button type="button" class="btn btn-primary" id="btnSaveSettings" title="长按显示限制级内容设置">保存并扫描</button>
             </div>
-            <div class="settings-version-footer" id="settingsVersionText">0.1.0</div>
+            <div class="settings-version-footer" id="settingsVersionText">0.1.1</div>
         </div>
     </div>
 
-    <!-- 任务 10 (Round 11) & 任务 7 (Round 12)：全屏沉浸式密码解锁页面（居中显示，颜色条从左到右出现并在填满后从左到右消失） -->
+    <!-- 任务 10 (Round 11) & 任务 7 (Round 12) & 任务 4 (Round 17)：全屏沉浸式密码解锁页面（支持长按密码输入框唤出右侧大九键数字键盘与 Apple 规范 Backspace 键） -->
     <div class="fs-overlay-mask" id="passwordModal">
         <div class="fs-password-page" id="passwordPageContent">
-            <div class="fs-page-header" style="margin-bottom: 34px;">
-                <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">限制级内容</h2>
-                <p class="fs-page-desc" style="font-size: 16px;">我们实施年龄验证，以遵守适用的联邦和州法律，<br>请输入密码以验证身份。</p>
-            </div>
-            <div class="form-group" style="max-width: 520px; margin: 0 auto;">
-                <div class="pwd-input-wrap" id="pwdInputWrap">
-                    <div class="pwd-fill-bar" id="pwdFillBar"></div>
-                    <input type="password" class="form-input" id="inputUnlockPwd" placeholder="" style="height: 74px; text-align: center; font-size: 32px; letter-spacing: 10px; border-radius: 20px;">
+            <div class="pwd-split-layout" id="pwdSplitLayout">
+                <div class="pwd-left-panel" id="pwdLeftPanel">
+                    <div class="fs-page-header" style="margin-bottom: 34px;">
+                        <h2 class="fs-page-title" style="font-size: 38px; margin-bottom: 12px;">限制级内容</h2>
+                        <p class="fs-page-desc" style="font-size: 16px;">我们实施年龄验证，以遵守适用的联邦和州法律，<br>请输入密码以验证身份。</p>
+                    </div>
+                    <div class="form-group" style="max-width: 520px; width: 100%; margin: 0 auto;">
+                        <div class="pwd-input-wrap" id="pwdInputWrap">
+                            <div class="pwd-fill-bar" id="pwdFillBar"></div>
+                            <input type="password" class="form-input" id="inputUnlockPwd" placeholder="" title="长按或按 F17 唤出/关闭屏幕数字键盘" style="height: 74px; text-align: center; font-size: 32px; letter-spacing: 10px; border-radius: 20px;">
+                        </div>
+                    </div>
+                    <div class="modal-actions" style="max-width: 520px; width: 100%; margin: 36px auto 0 auto; justify-content: space-between; gap: 20px;">
+                        <button type="button" class="btn btn-cancel" id="btnCancelPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">取消</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">验证</button>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-actions" style="max-width: 520px; margin: 36px auto 0 auto; justify-content: space-between; gap: 20px;">
-                <button type="button" class="btn btn-cancel" id="btnCancelPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">取消</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmPwd" style="flex: 1; height: 58px; font-size: 18px; border-radius: 16px;">验证</button>
+                <div class="pwd-numpad-panel" id="pwdNumpadPanel" aria-hidden="true">
+                    <div class="pwd-numpad-grid" id="pwdNumpadGrid">
+                        <button type="button" class="pwd-key-btn" id="pwdKey1" data-numpad-key="1" data-krow="0" data-kcol="0" tabindex="-1">1</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="2" data-krow="0" data-kcol="1" tabindex="-1">2</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="3" data-krow="0" data-kcol="2" tabindex="-1">3</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="4" data-krow="1" data-kcol="0" tabindex="-1">4</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="5" data-krow="1" data-kcol="1" tabindex="-1">5</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="6" data-krow="1" data-kcol="2" tabindex="-1">6</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="7" data-krow="2" data-kcol="0" tabindex="-1">7</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="8" data-krow="2" data-kcol="1" tabindex="-1">8</button>
+                        <button type="button" class="pwd-key-btn" data-numpad-key="9" data-krow="2" data-kcol="2" tabindex="-1">9</button>
+                        <button type="button" class="pwd-key-btn key-zero" data-numpad-key="0" data-krow="3" data-kcol="0" tabindex="-1">0</button>
+                        <button type="button" class="pwd-key-btn" id="pwdKeyBackspace" data-numpad-key="backspace" data-krow="3" data-kcol="2" tabindex="-1" aria-label="退格">
+                            <svg viewBox="0 0 28 20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9.6 2.2H23.6a2.2 2.2 0 0 1 2.2 2.2v11.2a2.2 2.2 0 0 1-2.2 2.2H9.6a2.2 2.2 0 0 1-1.72-.83L2.4 10l5.48-6.97A2.2 2.2 0 0 1 9.6 2.2z"/>
+                                <path d="M13.6 7.2l5.2 5.6M18.8 7.2l-5.2 5.6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2983,11 +3099,38 @@
             return mm + ':' + ss;
         }
 
+        function extractInlineDuration(url) {
+            if (!url || typeof url !== 'string') return 0;
+            var durIdx = url.indexOf('@@dur=');
+            if (durIdx !== -1) {
+                var dPart = url.substring(durIdx + 6).split('@@')[0];
+                var dVal = parseFloat(dPart);
+                if (isFinite(dVal) && dVal > 0.5) return dVal;
+            }
+            if (url.indexOf('bili:') !== -1 || url.indexOf('bilibili:') !== -1) {
+                var clean = url.replace(/^douyin:/, '').replace(/^bilibili:/, '').replace(/^bili:/, '');
+                var parts = clean.split('@@');
+                if (parts.length >= 3) {
+                    var bDur = parseFloat(parts[2]);
+                    if (isFinite(bDur) && bDur > 0.5) return bDur;
+                }
+            }
+            return 0;
+        }
+
         function getEffectiveDuration() {
+            if (trueMediaDuration && isFinite(trueMediaDuration) && trueMediaDuration > 0) {
+                return trueMediaDuration;
+            }
             var vDur = (macVideo && macVideo.duration && isFinite(macVideo.duration) && macVideo.duration > 0)
                 ? (streamSeekBaseSec + macVideo.duration)
                 : 0;
-            return Math.max(trueMediaDuration || 0, vDur);
+            // 任务 2 (Round 17)：严禁在流媒体尚未完成真实时长解析且未播放结束前，将 HLS 初始几秒分片缓存当成总时长（根除进入流媒体先出现几秒假进度条走完才进入正片的问题）
+            var curUrl = String(currentBgUrl || currentPlayingStream || '');
+            if (curUrl.indexOf('douyin:') === 0 && macVideo && !macVideo.ended && vDur < 15) {
+                return 0;
+            }
+            return vDur;
         }
 
         // 任务 2 (Round 10)：进度条移动与跳转期间锁定目标时间戳，杜绝异步解码或连续按键期间读回旧 currentTime 导致进度条回弹
@@ -2995,6 +3138,9 @@
             if (isScrubbing) return Math.max(0, scrubTargetSec);
             if (lockedSeekTargetSec !== null && performance.now() < lockedSeekExpireTs) {
                 return Math.max(0, lockedSeekTargetSec);
+            }
+            if (!isVideoReady && !isScrubbing) {
+                return Math.max(0, streamSeekBaseSec || 0);
             }
             return Math.max(0, (streamSeekBaseSec || 0) + (macVideo ? (macVideo.currentTime || 0) : 0));
         }
@@ -3032,11 +3178,11 @@
             var thumbEl = document.getElementById('fsProgressThumb');
             var timeEl = document.getElementById('fsTimeLabel');
             if (!fillEl || !thumbEl || !timeEl) return;
-            var safeDur = (durSec && isFinite(durSec) && durSec > 0) ? durSec : Math.max(curSec, 1);
-            var pct = Math.max(0, Math.min(100, (curSec / safeDur) * 100));
+            var hasValidDur = Boolean(durSec && isFinite(durSec) && durSec > 0);
+            var pct = hasValidDur ? Math.max(0, Math.min(100, (curSec / durSec) * 100)) : 0;
             fillEl.style.width = pct.toFixed(2) + '%';
             thumbEl.style.left = pct.toFixed(2) + '%';
-            timeEl.textContent = formatMediaTime(curSec) + ' / ' + formatMediaTime(durSec > 0 ? durSec : curSec);
+            timeEl.textContent = formatMediaTime(curSec) + ' / ' + (hasValidDur ? formatMediaTime(durSec) : '--:--');
             updateFsPlayPauseIcon();
         }
 
@@ -3085,9 +3231,8 @@
             if (ROW_DATA[3] && fullScreenCol >= Math.max(1, ROW_DATA[3].length - 6)) {
                 requestMoreDouyinStreams();
             }
-            var effDur = getEffectiveDuration();
             var effCur = getEffectiveCurrentTime();
-            if (effDur > 1.5 && effCur >= effDur - 0.18) {
+            if (isVideoReady && trueMediaDuration > 2.5 && effCur >= trueMediaDuration - 0.18) {
                 triggerDouyinAutoNextIfNeeded();
             }
         });
@@ -3169,7 +3314,8 @@
                     var liveUrl = currentBgUrl;
                     var mySeq = ++streamReqSeq;
                     showIptvFullscreenHud(currentHudTitle, currentHudSub, false);
-                    invoke('start_ffmpeg', { url: liveUrl }).then(function(localM3u8Url) {
+                    var iptvSpec = (activePreviewMeta && activePreviewMeta.title) ? (liveUrl + '@@title=' + activePreviewMeta.title) : liveUrl;
+                    invoke('start_ffmpeg', { url: iptvSpec }).then(function(localM3u8Url) {
                         if (mySeq !== streamReqSeq || currentBgUrl !== liveUrl) return;
                         loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), false, mySeq, true);
                     }).catch(function() {});
@@ -3351,6 +3497,9 @@
                     }
                     setVideoLayerVisible(true);
                     updateNowPlayingNavVisibility(true);
+                    if (isFullScreen && !isCurrentStreamIptv()) {
+                        updateFsProgressUI();
+                    }
                     onBackgroundVideoStarted();
                 }
             };
@@ -3385,8 +3534,10 @@
         }
 
         function probeStreamDuration(url, reqSeq) {
-            trueMediaDuration = 0;
-            if (!url || (isFullScreen && isCurrentStreamIptv())) return;
+            var inlineDur = extractInlineDuration(url);
+            trueMediaDuration = inlineDur > 0 ? inlineDur : 0;
+            if (isFullScreen && !isCurrentStreamIptv()) updateFsProgressUI();
+            if (!url || (isFullScreen && isCurrentStreamIptv()) || inlineDur > 0) return;
             if (url.indexOf('/') === 0 || url.indexOf('douyin:') === 0) {
                 invoke('get_media_duration', { url: url }).then(function(dur) {
                     if (reqSeq !== streamReqSeq) return;
@@ -3396,6 +3547,17 @@
                     }
                 }).catch(function() {});
             }
+        }
+
+        function destroyActiveHlsAndResetVideo() {
+            if (hlsInstance) {
+                try { hlsInstance.stopLoad(); } catch (_) {}
+                try { hlsInstance.destroy(); } catch (_) {}
+                hlsInstance = null;
+            }
+            macVideo.onloadedmetadata = null;
+            macVideo.oncanplay = null;
+            try { macVideo.pause(); } catch (_) {}
         }
 
         // 任务 6 (Round 16)：采用分段流式加载缓冲策略（小窗口渐进缓冲，避免长视频一次性拉取），并确保首个分片就绪或进入正式播放时若非用户主动暂停则立即触发播放
@@ -3487,13 +3649,13 @@
 
         var forceStoppedBgByUser = false;
         var navLongPressTriggered = false;
-        var inFlightFfmpegReq = null;
 
         function startPreviewStream(url) {
             if (isFullScreen) return;
             forceStoppedBgByUser = false;
             var previewMuted = !appSettings.previewSound;
-            if (currentBgUrl !== url || !isVideoReady || (macVideo.paused && isCurrentStreamIptv())) {
+            if (currentBgUrl !== url || (!isVideoReady && !hlsInstance && !inFlightFfmpegReq) || (macVideo.paused && isCurrentStreamIptv())) {
+                destroyActiveHlsAndResetVideo();
                 currentBgUrl = url;
                 lockedSeekTargetSec = null;
                 lockedSeekExpireTs = 0;
@@ -3502,7 +3664,10 @@
                 probeStreamDuration(url, mySeq);
                 recordWatchHistoryItem(activePreviewMeta);
                 updateNowPlayingNavVisibility(true);
-                var p = invoke('start_ffmpeg', { url: url });
+                var ffmpegSpec = (isCurrentStreamIptv() && activePreviewMeta && activePreviewMeta.title)
+                    ? (url + '@@title=' + activePreviewMeta.title)
+                    : url;
+                var p = invoke('start_ffmpeg', { url: ffmpegSpec });
                 inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
                 p.then((localM3u8Url) => {
                     if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
@@ -3544,14 +3709,7 @@
                 currentPlayingStream = null;
                 updateNowPlayingNavVisibility(false);
             }
-            if (hlsInstance) {
-                hlsInstance.stopLoad();
-                hlsInstance.destroy();
-                hlsInstance = null;
-            }
-            macVideo.onloadedmetadata = null;
-            macVideo.oncanplay = null;
-            macVideo.pause();
+            destroyActiveHlsAndResetVideo();
         }
 
         // 任务 5 (Round 9) & 任务 10 & 11 (Round 10)：触发“正在观看 / 现在观看”或其中正在播放卡片，无缝进入正式全屏播放画面
@@ -3680,54 +3838,56 @@
                     requestMoreDouyinStreams();
                 }
 
-                // 任务 6 (Round 16)：若预览流正在请求同一 URL 的 FFmpeg 分片，直接复用其请求并切换为有声正式播放，避免重启 FFmpeg 或卡在暂停状态
-                if (inFlightFfmpegReq && inFlightFfmpegReq.url === url && inFlightFfmpegReq.seq === streamReqSeq) {
-                    macVideo.style.objectFit = targetFit;
-                    currentPlayingStream = url;
-                    applyPreviewOrFullscreenAudio();
-                    updateNowPlayingNavVisibility(true);
-                    updateFsProgressUI();
-                    return;
-                }
-
-                // 任务 1 (Round 9) & 任务 2 (Round 11)：若当前预览流已在播放则无缝切入全屏；若有线电视此前处于暂停状态，恢复播放时自动重新加载实时直播视频流
                 var isPausedIptv = Boolean(macVideo.paused && (action.startsWith('iptv:') || isCurrentStreamIptv()));
-                if (currentBgUrl !== url || !isVideoReady || macVideo.readyState < 2 || macVideo.videoWidth === 0 || isPausedIptv) {
-                    setVideoLayerVisible(isPausedIptv);
-                    macVideo.style.objectFit = targetFit;
-                    lastVideoGeometryChangeTs = performance.now();
-                    currentBgUrl = url;
-                    currentPlayingStream = url;
-                    lockedSeekTargetSec = null;
-                    lockedSeekExpireTs = 0;
-                    streamSeekBaseSec = (url && url.indexOf('/') === 0) ? 2 : 0;
-                    var mySeq = ++streamReqSeq;
-                    probeStreamDuration(url, mySeq);
-                    updateNowPlayingNavVisibility(true);
-                    var p = invoke('start_ffmpeg', { url: url });
-                    inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
-                    p.then((localM3u8Url) => {
-                        if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
-                        if (mySeq !== streamReqSeq || currentBgUrl !== url) return;
-                        loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), false, mySeq, isPausedIptv);
-                    }).catch(() => {
-                        if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
-                    });
-                } else {
+
+                // 任务 2 (Round 17)：若预览流已对同一 URL 发起 FFmpeg 或已挂载 hlsInstance（即使尚在 380ms 显影等待期内），直接复用该流，严禁二次重启 FFmpeg 导致前序分片变成几秒黑屏假视频
+                if (currentBgUrl === url && !isPausedIptv && ((inFlightFfmpegReq && inFlightFfmpegReq.url === url && inFlightFfmpegReq.seq === streamReqSeq) || hlsInstance)) {
                     if (objectFitTransitionTimer) {
                         clearTimeout(objectFitTransitionTimer);
                         objectFitTransitionTimer = null;
                     }
                     macVideo.style.objectFit = targetFit;
-                    macVideo.style.opacity = '1';
+                    currentPlayingStream = url;
                     applyPreviewOrFullscreenAudio();
                     if (!trueMediaDuration && !isCurrentStreamIptv()) {
                         probeStreamDuration(url, streamReqSeq);
                     }
-                    startVideoPlaybackWithFallback(streamReqSeq);
+                    if (hlsInstance) {
+                        if (isVideoReady && macVideo.videoWidth > 0 && macVideo.readyState >= 2) {
+                            macVideo.style.opacity = '1';
+                        }
+                        startVideoPlaybackWithFallback(streamReqSeq);
+                    }
                     updateNowPlayingNavVisibility(true);
                     updateFsProgressUI();
+                    return;
                 }
+
+                // 切换全新视频流时，先彻底销毁旧 hlsInstance 并暂停重置 macVideo，防止等待新 FFmpeg 期间旧流在黑屏下继续走进度条
+                destroyActiveHlsAndResetVideo();
+                setVideoLayerVisible(isPausedIptv);
+                macVideo.style.objectFit = targetFit;
+                lastVideoGeometryChangeTs = performance.now();
+                currentBgUrl = url;
+                currentPlayingStream = url;
+                lockedSeekTargetSec = null;
+                lockedSeekExpireTs = 0;
+                streamSeekBaseSec = (url && url.indexOf('/') === 0) ? 2 : 0;
+                var mySeq = ++streamReqSeq;
+                probeStreamDuration(url, mySeq);
+                updateNowPlayingNavVisibility(true);
+                var ffmpegSpec = ((action.startsWith('iptv:') || isCurrentStreamIptv()) && hudTitle)
+                    ? (url + '@@title=' + hudTitle)
+                    : url;
+                var p = invoke('start_ffmpeg', { url: ffmpegSpec });
+                inFlightFfmpegReq = { url: url, seq: mySeq, promise: p };
+                p.then((localM3u8Url) => {
+                    if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
+                    if (mySeq !== streamReqSeq || currentBgUrl !== url) return;
+                    loadAndPlayVideo(localM3u8Url + "?t=" + new Date().getTime(), false, mySeq, isPausedIptv);
+                }).catch(() => {
+                    if (inFlightFfmpegReq && inFlightFfmpegReq.seq === mySeq) inFlightFfmpegReq = null;
+                });
             }
         }
 
@@ -3945,6 +4105,10 @@
         }
 
         var pwdAnimUnlocking = false;
+        var pwdKeypadOpen = false;
+        var pwdInputHoldTimer = null;
+        var pwdInputPointerTimer = null;
+
         function updateConfirmPwdBtnState() {
             var input = document.getElementById('inputUnlockPwd');
             var confirmBtn = document.getElementById('btnConfirmPwd');
@@ -3956,6 +4120,92 @@
         }
         document.getElementById('inputUnlockPwd').addEventListener('input', updateConfirmPwdBtnState);
 
+        function buildPasswordModalFocusList() {
+            var list = [
+                document.getElementById('inputUnlockPwd'),
+                document.getElementById('btnCancelPwd'),
+                document.getElementById('btnConfirmPwd')
+            ];
+            if (pwdKeypadOpen) {
+                var keyBtns = Array.from(document.querySelectorAll('#pwdNumpadGrid .pwd-key-btn'));
+                list = list.concat(keyBtns);
+            }
+            modalFocusList = list.filter(Boolean);
+        }
+
+        // 任务 4 (Round 17)：长按密码页输入框唤出/关闭右侧大九键屏幕数字键盘，唤出时自动将焦点移至第一个数字键 (1)
+        function togglePwdKeypad(forceState) {
+            var pageEl = document.getElementById('passwordPageContent');
+            var numpadPanel = document.getElementById('pwdNumpadPanel');
+            var inputEl = document.getElementById('inputUnlockPwd');
+            if (inputEl) inputEl.classList.remove('pressing');
+            if (pwdInputHoldTimer) {
+                clearTimeout(pwdInputHoldTimer);
+                pwdInputHoldTimer = null;
+            }
+            if (pwdInputPointerTimer) {
+                clearTimeout(pwdInputPointerTimer);
+                pwdInputPointerTimer = null;
+            }
+            pwdKeypadOpen = (typeof forceState === 'boolean') ? forceState : !pwdKeypadOpen;
+            if (pageEl) pageEl.classList.toggle('keypad-open', pwdKeypadOpen);
+            if (numpadPanel) numpadPanel.setAttribute('aria-hidden', pwdKeypadOpen ? 'false' : 'true');
+            buildPasswordModalFocusList();
+            if (!isModalOpen || !document.getElementById('passwordModal').classList.contains('active')) return;
+            if (pwdKeypadOpen) {
+                var firstKey = document.getElementById('pwdKey1');
+                var kIdx = modalFocusList.indexOf(firstKey);
+                if (kIdx !== -1) setModalFocus(kIdx);
+            } else {
+                var inIdx = modalFocusList.indexOf(inputEl);
+                if (inIdx !== -1) setModalFocus(inIdx);
+            }
+        }
+
+        (function bindPasswordKeypadEvents() {
+            var inputEl = document.getElementById('inputUnlockPwd');
+            if (inputEl) {
+                inputEl.addEventListener('pointerdown', function(e) {
+                    if (e.button !== 0) return;
+                    var idx = modalFocusList.indexOf(inputEl);
+                    if (idx !== -1) setModalFocus(idx);
+                    inputEl.classList.add('pressing');
+                    if (pwdInputPointerTimer) clearTimeout(pwdInputPointerTimer);
+                    pwdInputPointerTimer = setTimeout(function() {
+                        pwdInputPointerTimer = null;
+                        togglePwdKeypad();
+                    }, 550);
+                });
+                ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(evtName) {
+                    inputEl.addEventListener(evtName, function() {
+                        inputEl.classList.remove('pressing');
+                        if (pwdInputPointerTimer) {
+                            clearTimeout(pwdInputPointerTimer);
+                            pwdInputPointerTimer = null;
+                        }
+                    });
+                });
+            }
+
+            var keyBtns = Array.from(document.querySelectorAll('#pwdNumpadGrid .pwd-key-btn'));
+            keyBtns.forEach(function(btn) {
+                btn.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    var kIdx = modalFocusList.indexOf(btn);
+                    if (kIdx !== -1) setModalFocus(kIdx);
+                    var inp = document.getElementById('inputUnlockPwd');
+                    if (!inp || pwdAnimUnlocking) return;
+                    var keyType = btn.getAttribute('data-numpad-key');
+                    if (keyType === 'backspace') {
+                        inp.value = String(inp.value || '').slice(0, -1);
+                    } else if (keyType !== null) {
+                        inp.value = String(inp.value || '') + String(keyType);
+                    }
+                    updateConfirmPwdBtnState();
+                });
+            });
+        })();
+
         function openPasswordModal() {
             isModalOpen = true;
             pwdAnimUnlocking = false;
@@ -3965,19 +4215,26 @@
             if (fillBar) fillBar.className = 'pwd-fill-bar';
             input.value = '';
             input.style.borderColor = 'rgba(255,255,255,0.15)';
+            togglePwdKeypad(false);
             updateConfirmPwdBtnState();
             modal.classList.add('active');
-            modalFocusList = [
-                document.getElementById('inputUnlockPwd'),
-                document.getElementById('btnCancelPwd'),
-                document.getElementById('btnConfirmPwd')
-            ];
+            buildPasswordModalFocusList();
             setTimeout(() => setModalFocus(0), 50);
         }
 
         function closePasswordModal(keepFillBarAnimating) {
             isModalOpen = false;
             pwdAnimUnlocking = false;
+            if (pwdInputHoldTimer) {
+                clearTimeout(pwdInputHoldTimer);
+                pwdInputHoldTimer = null;
+            }
+            if (pwdInputPointerTimer) {
+                clearTimeout(pwdInputPointerTimer);
+                pwdInputPointerTimer = null;
+            }
+            var inputEl = document.getElementById('inputUnlockPwd');
+            if (inputEl) inputEl.classList.remove('pressing');
             var fillBar = document.getElementById('pwdFillBar');
             if (!keepFillBarAnimating && fillBar) {
                 fillBar.className = 'pwd-fill-bar';
@@ -3986,13 +4243,21 @@
                     if (!isModalOpen && fillBar) fillBar.className = 'pwd-fill-bar';
                 }, 400);
             }
+            togglePwdKeypad(false);
             modalFocusList.forEach(el => el.classList.remove('modal-focused'));
             document.getElementById('passwordModal').classList.remove('active');
             if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
         }
 
-        // 任务 12 (Round 5)：电源管理弹窗打开、关闭与执行逻辑
+        // 任务 12 (Round 5) & 任务 6 (Round 17)：电源管理弹窗打开、关闭与执行逻辑（支持任何情况下直接唤出覆盖当前画面）
         function openPowerModal() {
+            if (document.getElementById('settingsModal').classList.contains('active')) {
+                document.getElementById('settingsModal').classList.remove('active');
+            }
+            if (document.getElementById('passwordModal').classList.contains('active')) {
+                togglePwdKeypad(false);
+                document.getElementById('passwordModal').classList.remove('active');
+            }
             isModalOpen = true;
             syncOverlayThemeTint();
             var modal = document.getElementById('powerModal');
@@ -4010,7 +4275,7 @@
             modalFocusList.forEach(el => el.classList.remove('modal-focused'));
             var modal = document.getElementById('powerModal');
             if (modal) modal.classList.remove('active');
-            if (currentFocusEl) currentFocusEl.focus({ preventScroll: true });
+            if (!isFullScreen && currentFocusEl) currentFocusEl.focus({ preventScroll: true });
         }
 
         document.getElementById('btnPowerQuit').onclick = function() {
@@ -5029,59 +5294,194 @@
 
         var enterHoldTimer = null, enterHoldRow = null, lastKeyTime = 0;
 
+        function exitFullscreenToMainView(restoreFocusToCurrentCard) {
+            if (!isFullScreen) return;
+            isFullScreen = false;
+            isScrubbing = false;
+            scrubStepCount = 0;
+            if (seekDebounceTimer) {
+                clearTimeout(seekDebounceTimer);
+                seekDebounceTimer = null;
+            }
+            var progWrap = document.getElementById('fsProgressWrap');
+            if (progWrap) progWrap.classList.remove('scrubbing');
+            pendingAutoAdvanceDouyin = false;
+            hideIptvFullscreenHud();
+            updateClock();
+            applyPreviewOrFullscreenAudio();
+            if (objectFitTransitionTimer) {
+                clearTimeout(objectFitTransitionTimer);
+                objectFitTransitionTimer = null;
+            }
+            macVideo.style.objectFit = 'cover';
+            macVideo.style.opacity = '1';
+            updateNowPlayingNavVisibility(true);
+            syncNowWatchingRowData(false);
+            document.getElementById('sidebar').style.opacity = '1';
+            document.getElementById('mainContent').style.opacity = '1';
+            document.getElementById('heroOverlay').style.opacity = '1';
+            var bl = document.getElementById('baseLayer');
+            if (bl) bl.style.opacity = '1';
+            if (restoreFocusToCurrentCard && currentFocusEl) {
+                setFocus(currentFocusEl);
+            }
+        }
+
+        // 任务 7 (Round 17)：按 F18 键在任何情况下都返回到主页面，并将焦点放置在正在播放/现在观看导航项上
+        function returnToMainAndFocusNowPlaying() {
+            if (isModalOpen) {
+                closeSettingsModal();
+                closePasswordModal(false);
+                closePowerModal();
+            }
+            if (isFullScreen) {
+                exitFullscreenToMainView(false);
+            }
+            if (activeSeriesView) {
+                activeSeriesView = null;
+                var sb = document.getElementById('seasonBar');
+                if (sb) {
+                    sb.classList.remove('active');
+                    sb.innerHTML = '';
+                }
+                currentTrackRow = -1;
+            }
+            var npEl = document.getElementById('navNowPlayingItem') || findTargetFocusable(7, 0);
+            if (npEl) {
+                setFocus(npEl);
+            }
+        }
+
+        // 任务 8 (Round 17)：按 F17 键一键触发当前焦点元素的长按动作
+        function triggerCurrentFocusLongPressAction() {
+            if (isModalOpen) {
+                var activeModalEl = modalFocusList[modalFocusIdx];
+                if (document.getElementById('passwordModal').classList.contains('active')) {
+                    if (activeModalEl && (activeModalEl.id === 'inputUnlockPwd' || activeModalEl.classList.contains('pwd-key-btn'))) {
+                        togglePwdKeypad();
+                        return true;
+                    }
+                }
+                if (document.getElementById('settingsModal').classList.contains('active')) {
+                    if (activeModalEl && activeModalEl.id === 'btnSaveSettings') {
+                        revealRestrictedSettingsInModal();
+                        return true;
+                    }
+                }
+                return false;
+            }
+            if (!isFullScreen && currentFocusEl) {
+                var fRow = parseInt(currentFocusEl.getAttribute('data-row'));
+                var fCol = parseInt(currentFocusEl.getAttribute('data-col'));
+                if (fCol === 0 && fRow === -1) {
+                    triggerAvatarLongPress();
+                    return true;
+                } else if (fCol === 0 && fRow === 7) {
+                    triggerNowPlayingLongPress();
+                    return true;
+                } else if (fCol === 0 && fRow === 3) {
+                    triggerDouyinNavLongPress();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 任务 4 (Round 17)：密码页面开启大九键屏幕数字键盘时的二维方向键导航
+        function handlePasswordModalDirectionKey(key) {
+            var activeEl = modalFocusList[modalFocusIdx];
+            if (!activeEl) return false;
+            if (!pwdKeypadOpen) {
+                if (key === 'ArrowDown' || key === 'ArrowRight') {
+                    setModalFocus(modalFocusIdx + 1);
+                    return true;
+                }
+                if (key === 'ArrowUp' || key === 'ArrowLeft') {
+                    setModalFocus(modalFocusIdx - 1);
+                    return true;
+                }
+                return false;
+            }
+
+            var inputEl = document.getElementById('inputUnlockPwd');
+            var cancelBtn = document.getElementById('btnCancelPwd');
+            var confirmBtn = document.getElementById('btnConfirmPwd');
+            var findKeyAt = function(r, c) {
+                if (r === 3 && (c === 0 || c === 1)) {
+                    return document.querySelector('#pwdNumpadGrid .pwd-key-btn[data-krow="3"][data-kcol="0"]');
+                }
+                return document.querySelector('#pwdNumpadGrid .pwd-key-btn[data-krow="' + r + '"][data-kcol="' + c + '"]');
+            };
+            var focusTarget = null;
+
+            if (activeEl === inputEl) {
+                if (key === 'ArrowDown') focusTarget = cancelBtn;
+                else if (key === 'ArrowUp') focusTarget = confirmBtn;
+                else if (key === 'ArrowRight') focusTarget = findKeyAt(0, 0);
+            } else if (activeEl === cancelBtn) {
+                if (key === 'ArrowUp') focusTarget = inputEl;
+                else if (key === 'ArrowRight' || key === 'ArrowDown') focusTarget = confirmBtn;
+            } else if (activeEl === confirmBtn) {
+                if (key === 'ArrowUp') focusTarget = inputEl;
+                else if (key === 'ArrowLeft') focusTarget = cancelBtn;
+                else if (key === 'ArrowRight' || key === 'ArrowDown') focusTarget = findKeyAt(2, 0) || findKeyAt(0, 0);
+            } else if (activeEl.classList.contains('pwd-key-btn')) {
+                var kr = parseInt(activeEl.getAttribute('data-krow') || '0');
+                var kc = parseInt(activeEl.getAttribute('data-kcol') || '0');
+                if (key === 'ArrowRight') {
+                    if (kr === 3 && kc === 0) focusTarget = findKeyAt(3, 2);
+                    else if (kc < 2) focusTarget = findKeyAt(kr, kc + 1);
+                } else if (key === 'ArrowLeft') {
+                    if (kr === 3 && kc === 2) focusTarget = findKeyAt(3, 0);
+                    else if (kc > 0) focusTarget = findKeyAt(kr, kc - 1);
+                    else focusTarget = (kr >= 2) ? confirmBtn : inputEl;
+                } else if (key === 'ArrowDown') {
+                    if (kr < 3) focusTarget = findKeyAt(kr + 1, kc);
+                    else focusTarget = findKeyAt(0, kc);
+                } else if (key === 'ArrowUp') {
+                    if (kr > 0) focusTarget = findKeyAt(kr - 1, kc);
+                    else focusTarget = findKeyAt(3, kc);
+                }
+            }
+
+            if (focusTarget) {
+                var idx = modalFocusList.indexOf(focusTarget);
+                if (idx !== -1) setModalFocus(idx);
+                return true;
+            }
+            return false;
+        }
+
         document.addEventListener('keydown', function(e) {
             markUiMotion();
             applyPreviewOrFullscreenAudio();
 
-            if (isFullScreen) {
+            // 任务 6 (Round 17)：按 F19 键在任何情况下直接唤出全屏电源选项覆盖当前画面
+            if (e.key === 'F19' || e.code === 'F19' || e.keyCode === 130) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (e.key === 'Escape' || e.key === 'Backspace') {
-                    isFullScreen = false;
-                    isScrubbing = false;
-                    scrubStepCount = 0;
-                    if (seekDebounceTimer) {
-                        clearTimeout(seekDebounceTimer);
-                        seekDebounceTimer = null;
-                    }
-                    var progWrap = document.getElementById('fsProgressWrap');
-                    if (progWrap) progWrap.classList.remove('scrubbing');
-                    pendingAutoAdvanceDouyin = false;
-                    hideIptvFullscreenHud();
-                    updateClock();
-                    applyPreviewOrFullscreenAudio();
-                    // 任务 1 (Round 9) & 任务 2 (Round 11)：从正式播放画面返回卡片视图时复用同一个 macVideo；若正式播放页处于暂停状态，返回预览画面也同步保持暂停，且“正在观看”恢复为“现在观看”与静态 SVG
-                    if (objectFitTransitionTimer) {
-                        clearTimeout(objectFitTransitionTimer);
-                        objectFitTransitionTimer = null;
-                    }
-                    macVideo.style.objectFit = 'cover';
-                    macVideo.style.opacity = '1';
-                    updateNowPlayingNavVisibility(true);
-                    syncNowWatchingRowData(false);
-                    document.getElementById('sidebar').style.opacity = '1';
-                    document.getElementById('mainContent').style.opacity = '1';
-                    document.getElementById('heroOverlay').style.opacity = '1';
-                    if (currentFocusEl) setFocus(currentFocusEl);
-                } else if (e.key === 'ArrowDown') {
-                    switchFullScreenVideo(1);
-                } else if (e.key === 'ArrowUp') {
-                    switchFullScreenVideo(-1);
-                } else if (e.key === 'ArrowRight') {
-                    // 任务 8 (Round 10)：全屏禁止左右键切换视频（含直播有线电视），左右键仅用于非有线电视移动进度与快进
-                    if (!isCurrentStreamIptv()) {
-                        stepFullscreenSeek(1);
-                    }
-                } else if (e.key === 'ArrowLeft') {
-                    // 任务 8 (Round 10)：全屏禁止左右键切换视频（含直播有线电视），左右键仅用于非有线电视移动进度与快退
-                    if (!isCurrentStreamIptv()) {
-                        stepFullscreenSeek(-1);
-                    }
-                } else if (e.key === ' ' || e.key === 'Enter') {
-                    // 任务 2 (Round 11)：支持所有全屏视频（含有线电视）暂停与继续播放
-                    if (!e.repeat) {
-                        toggleFullscreenPlayPause();
-                    }
+                if (!e.repeat) {
+                    openPowerModal();
+                }
+                return;
+            }
+
+            // 任务 7 (Round 17)：按 F18 键在任何情况下返回到主页面，并将焦点放置在正在播放/现在观看导航项上
+            if (e.key === 'F18' || e.code === 'F18' || e.keyCode === 129) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.repeat) {
+                    returnToMainAndFocusNowPlaying();
+                }
+                return;
+            }
+
+            // 任务 8 (Round 17)：按 F17 键代替长按动作
+            if (e.key === 'F17' || e.code === 'F17' || e.keyCode === 128) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.repeat) {
+                    triggerCurrentFocusLongPressAction();
                 }
                 return;
             }
@@ -5090,9 +5490,56 @@
                 var activeModalEl = modalFocusList[modalFocusIdx];
                 if (e.key === 'Escape') {
                     e.preventDefault();
-                    closeSettingsModal();
-                    closePasswordModal();
-                    closePowerModal();
+                    e.stopPropagation();
+                    if (document.getElementById('powerModal').classList.contains('active')) {
+                        closePowerModal();
+                    } else if (document.getElementById('passwordModal').classList.contains('active')) {
+                        closePasswordModal(false);
+                    } else if (document.getElementById('settingsModal').classList.contains('active')) {
+                        closeSettingsModal();
+                    }
+                    return;
+                }
+                if (document.getElementById('passwordModal').classList.contains('active')) {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePasswordModalDirectionKey(e.key);
+                        return;
+                    }
+                    if (e.key === 'Backspace' && activeModalEl && activeModalEl.classList.contains('pwd-key-btn')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var bsBtn = document.getElementById('pwdKeyBackspace');
+                        if (bsBtn) bsBtn.click();
+                        return;
+                    }
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (e.repeat) return;
+                        if (activeModalEl && activeModalEl.id === 'inputUnlockPwd') {
+                            if (!pwdInputHoldTimer) {
+                                activeModalEl.classList.add('pressing');
+                                pwdInputHoldTimer = setTimeout(function() {
+                                    pwdInputHoldTimer = null;
+                                    togglePwdKeypad();
+                                }, 550);
+                            }
+                            return;
+                        }
+                        if (activeModalEl && activeModalEl.classList.contains('pwd-key-btn')) {
+                            activeModalEl.click();
+                            return;
+                        }
+                        if (activeModalEl && activeModalEl.id === 'btnCancelPwd') {
+                            closePasswordModal(false);
+                        } else {
+                            var pwdVal = (document.getElementById('inputUnlockPwd').value || '').trim();
+                            if (pwdVal.length > 0) verifyAndUnlockPorn();
+                        }
+                        return;
+                    }
                     return;
                 }
                 if (e.key === 'ArrowDown') {
@@ -5128,15 +5575,6 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     if (e.repeat) return;
-                    if (document.getElementById('passwordModal').classList.contains('active')) {
-                        if (activeModalEl && activeModalEl.id === 'btnCancelPwd') {
-                            closePasswordModal(false);
-                        } else {
-                            var pwdVal = (document.getElementById('inputUnlockPwd').value || '').trim();
-                            if (pwdVal.length > 0) verifyAndUnlockPorn();
-                        }
-                        return;
-                    }
                     if (document.getElementById('settingsModal').classList.contains('active') && activeModalEl && activeModalEl.id === 'btnSaveSettings') {
                         if (!saveBtnLongPressTimer) {
                             saveBtnLongPressTriggered = false;
@@ -5162,7 +5600,35 @@
                 return;
             }
 
-            if (activeSeriesView && (e.key === 'Escape' || e.key === 'Backspace')) {
+            if (isFullScreen) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.key === 'Escape' || e.key === 'Backspace') {
+                    exitFullscreenToMainView(true);
+                } else if (e.key === 'ArrowDown') {
+                    switchFullScreenVideo(1);
+                } else if (e.key === 'ArrowUp') {
+                    switchFullScreenVideo(-1);
+                } else if (e.key === 'ArrowRight') {
+                    // 任务 8 (Round 10)：全屏禁止左右键切换视频（含直播有线电视），左右键仅用于非有线电视移动进度与快进
+                    if (!isCurrentStreamIptv()) {
+                        stepFullscreenSeek(1);
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    // 任务 8 (Round 10)：全屏禁止左右键切换视频（含直播有线电视），左右键仅用于非有线电视移动进度与快退
+                    if (!isCurrentStreamIptv()) {
+                        stepFullscreenSeek(-1);
+                    }
+                } else if (e.key === ' ' || e.key === 'Enter') {
+                    // 任务 2 (Round 11)：支持所有全屏视频（含有线电视）暂停与继续播放
+                    if (!e.repeat) {
+                        toggleFullscreenPlayPause();
+                    }
+                }
+                return;
+            }
+
+            if (activeSeriesView && e.key === 'Backspace') {
                 e.preventDefault();
                 exitSeriesEpisodes();
                 return;
@@ -5220,8 +5686,16 @@
                         nextEl = findTargetFocusable(row, 0);
                     }
                     break;
+                // 任务 5 (Round 17)：所有通过上键 (ArrowUp) 实现返回的操作（如从卡片返回丸形菜单、从丸形菜单返回二级/一级/左侧边栏），同步支持使用 ESC 键实现返回
+                case 'Escape':
                 case 'ArrowUp':
                     e.preventDefault();
+                    if (e.key === 'Escape' && col === 0 && row !== 0) {
+                        if (activeSeriesView) {
+                            exitSeriesEpisodes();
+                        }
+                        return;
+                    }
                     if (row === 0) {
                         if (activeSeriesView) {
                             var prevSeriesKey = activeSeriesView;
@@ -5244,7 +5718,7 @@
                             if (collapsedPill) setFocus(collapsedPill);
                             return;
                         }
-                        // 任务 4 (Round 6)：限制级处于二级子文件夹菜单时，按上键直接丝滑折叠回一级菜单（“厂牌”与“其他”）
+                        // 任务 4 (Round 6)：限制级处于二级子文件夹菜单时，按上键或 ESC 直接丝滑折叠回一级菜单（“厂牌”与“其他”）
                         if (currentTrackRow === 4 && pornMenuLevel === 2) {
                             pornMenuLevel = 1;
                             pornBarAnimType = 'collapse';
@@ -5390,6 +5864,17 @@
                 if (navNowPlayingEl) navNowPlayingEl.classList.remove('pressing');
                 if (navDouyinEl) navDouyinEl.classList.remove('pressing');
                 if (btnSaveSettingsEl) btnSaveSettingsEl.classList.remove('pressing');
+                var pwdInp = document.getElementById('inputUnlockPwd');
+                if (pwdInp) pwdInp.classList.remove('pressing');
+                if (pwdInputHoldTimer) {
+                    clearTimeout(pwdInputHoldTimer);
+                    pwdInputHoldTimer = null;
+                    if (isModalOpen && document.getElementById('passwordModal').classList.contains('active')) {
+                        var pwdVal = (pwdInp ? pwdInp.value : '').trim();
+                        if (pwdVal.length > 0) verifyAndUnlockPorn();
+                    }
+                    return;
+                }
                 if (saveBtnLongPressTimer) {
                     clearTimeout(saveBtnLongPressTimer);
                     saveBtnLongPressTimer = null;
@@ -5709,10 +6194,10 @@
         function initApp() {
             syncNowWatchingRowData(false);
             scrapeLocalMediaFolder(appSettings.mediaPath, 1, false);
-            // 任务 1 (Round 10)：启动时直接拉取全新抖音推荐流并开启持续轮询，无需手动刷新
-            loadDouyinNativeFeed(false, true);
+            // 任务 1 (Round 10 & Round 17)：启动时直接拉取全新抖音推荐流并开启高频轮询，不提前触发滚动打断首屏请求
+            loadDouyinNativeFeed(false, false);
             if (!douyinPollTimer) {
-                douyinPollTimer = setInterval(() => loadDouyinNativeFeed(false, false), 650);
+                douyinPollTimer = setInterval(() => loadDouyinNativeFeed(false, false), 450);
             }
 
             // 1. 先读取本地缓存的 GitHub 配置以确保离线秒开

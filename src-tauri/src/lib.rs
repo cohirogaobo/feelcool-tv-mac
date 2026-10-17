@@ -59,13 +59,46 @@ async fn start_drag(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+fn apply_no_proxy_env(cmd: &mut Command) {
+    cmd.env("no_proxy", "*")
+        .env("NO_PROXY", "*")
+        .env_remove("http_proxy")
+        .env_remove("https_proxy")
+        .env_remove("all_proxy")
+        .env_remove("HTTP_PROXY")
+        .env_remove("HTTPS_PROXY")
+        .env_remove("ALL_PROXY");
+}
+
+fn strip_stream_meta_suffix(raw: &str) -> (&str, Option<f64>, Option<&str>) {
+    let mut base = raw.trim();
+    let mut dur_opt: Option<f64> = None;
+    let mut title_opt: Option<&str> = None;
+    if let Some(idx) = base.find("@@title=") {
+        let t = &base[idx + 8..];
+        title_opt = Some(t.split("@@").next().unwrap_or(t));
+        base = &base[..idx];
+    }
+    if let Some(idx) = base.find("@@dur=") {
+        let d_str = &base[idx + 6..];
+        let d_clean = d_str.split("@@").next().unwrap_or(d_str);
+        if let Ok(d) = d_clean.parse::<f64>() {
+            if d.is_finite() && d > 0.0 {
+                dur_opt = Some(d);
+            }
+        }
+        base = &base[..idx];
+    }
+    (base.trim(), dur_opt, title_opt)
+}
+
 fn build_ffmpeg_args(
     actual_url: &str,
     is_local_file: bool,
     is_douyin: bool,
     is_bilibili: bool,
-    can_stream_copy_h264: bool,
     use_sw_fallback: bool,
+    skip_audio_filter: bool,
     seek_sec: Option<f64>,
     ts_pattern: &str,
     m3u8_path: &str,
@@ -103,7 +136,11 @@ fn build_ffmpeg_args(
         args.extend(vec![
             "-g".to_string(), "30".to_string(),
             "-b:v".to_string(), "8M".to_string(),
-            "-af".to_string(), audio_norm_std.to_string(),
+        ]);
+        if !skip_audio_filter {
+            args.extend(vec!["-af".to_string(), audio_norm_std.to_string()]);
+        }
+        args.extend(vec![
             "-c:a".to_string(), "aac".to_string(),
             "-b:a".to_string(), "192k".to_string(),
             "-ar".to_string(), "44100".to_string(),
@@ -112,6 +149,7 @@ fn build_ffmpeg_args(
             "-hls_time".to_string(), "1".to_string(),
             "-hls_list_size".to_string(), "0".to_string(),
             "-hls_playlist_type".to_string(), "event".to_string(),
+            "-hls_flags".to_string(), "independent_segments".to_string(),
             "-hls_segment_filename".to_string(), ts_pattern.to_string(),
             m3u8_path.to_string()
         ]);
@@ -140,67 +178,12 @@ fn build_ffmpeg_args(
                 args.extend(vec!["-ss".to_string(), format!("{:.2}", s)]);
             }
         }
+        // 任务 2 (Round 17)：流媒体统一使用 VideoToolbox / libx264 重整 GOP（-g 30 -hls_time 1 -hls_flags independent_segments），彻底消除 -c:v copy 因源视频 7s 长 GOP / MP4 EditList 偏移导致的开头数秒黑屏假分片
         args.extend(vec![
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
-        ]);
-        if can_stream_copy_h264 && seek_sec.unwrap_or(0.0) <= 0.05 {
-            args.extend(vec![
-                "-c:v".to_string(), "copy".to_string(),
-                "-af".to_string(), audio_norm_douyin.to_string(),
-                "-c:a".to_string(), "aac".to_string(),
-                "-b:a".to_string(), "160k".to_string(),
-                "-ar".to_string(), "44100".to_string(),
-                "-ac".to_string(), "2".to_string(),
-                "-f".to_string(), "hls".to_string(),
-                "-hls_time".to_string(), "1".to_string(),
-                "-hls_list_size".to_string(), "0".to_string(),
-                "-hls_playlist_type".to_string(), "event".to_string(),
-                "-hls_segment_filename".to_string(), ts_pattern.to_string(),
-                m3u8_path.to_string()
-            ]);
-        } else {
-            // 任务 10 (Round 5)：大屏连接下流媒体高帧率流畅度优化（保持原始高帧率 passthrough + 10M 高码率硬件加速）
-            args.extend(vec![
-                "-fps_mode".to_string(), "passthrough".to_string(),
-                "-vf".to_string(), "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
-                "-c:v".to_string(), v_codec.to_string(),
-            ]);
-            if use_sw_fallback {
-                args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
-            } else {
-                args.extend(vec![
-                    "-realtime".to_string(), "1".to_string(),
-                    "-allow_sw".to_string(), "1".to_string(),
-                ]);
-            }
-            args.extend(vec![
-                "-g".to_string(), "30".to_string(),
-                "-b:v".to_string(), "10M".to_string(),
-                "-maxrate".to_string(), "14M".to_string(),
-                "-bufsize".to_string(), "20M".to_string(),
-                "-af".to_string(), audio_norm_douyin.to_string(),
-                "-c:a".to_string(), "aac".to_string(),
-                "-b:a".to_string(), "160k".to_string(),
-                "-ar".to_string(), "44100".to_string(),
-                "-ac".to_string(), "2".to_string(),
-                "-f".to_string(), "hls".to_string(),
-                "-hls_time".to_string(), "1".to_string(),
-                "-hls_list_size".to_string(), "0".to_string(),
-                "-hls_playlist_type".to_string(), "event".to_string(),
-                "-hls_segment_filename".to_string(), ts_pattern.to_string(),
-                m3u8_path.to_string()
-            ]);
-        }
-    } else {
-        args.extend(vec![
-            "-reconnect".to_string(), "1".to_string(),
-            "-reconnect_streamed".to_string(), "1".to_string(),
-            "-reconnect_delay_max".to_string(), "2".to_string(),
-            "-rw_timeout".to_string(), "8000000".to_string(),
-            "-fflags".to_string(), "+genpts+discardcorrupt".to_string(),
-            "-i".to_string(), actual_url.to_string(),
+            "-fps_mode".to_string(), "passthrough".to_string(),
             "-vf".to_string(), "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
             "-c:v".to_string(), v_codec.to_string(),
         ]);
@@ -213,17 +196,68 @@ fn build_ffmpeg_args(
             ]);
         }
         args.extend(vec![
+            "-g".to_string(), "30".to_string(),
+            "-b:v".to_string(), "10M".to_string(),
+            "-maxrate".to_string(), "14M".to_string(),
+            "-bufsize".to_string(), "20M".to_string(),
+        ]);
+        if !skip_audio_filter {
+            args.extend(vec!["-af".to_string(), audio_norm_douyin.to_string()]);
+        }
+        args.extend(vec![
+            "-c:a".to_string(), "aac".to_string(),
+            "-b:a".to_string(), "160k".to_string(),
+            "-ar".to_string(), "44100".to_string(),
+            "-ac".to_string(), "2".to_string(),
+            "-f".to_string(), "hls".to_string(),
+            "-hls_time".to_string(), "1".to_string(),
+            "-hls_list_size".to_string(), "0".to_string(),
+            "-hls_playlist_type".to_string(), "event".to_string(),
+            "-hls_flags".to_string(), "independent_segments".to_string(),
+            "-hls_segment_filename".to_string(), ts_pattern.to_string(),
+            m3u8_path.to_string()
+        ]);
+    } else {
+        // 任务 3 (Round 17)：修复国内 IPTV 直播源黑屏（注入标准浏览器 User-Agent、移除导致 HLS 302/切片刷挂起的 -reconnect_streamed、支持 1080i 隔行扫描自动反交错 yadif 与可选音轨映射）
+        let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+        args.extend(vec![
+            "-user_agent".to_string(), ua.to_string(),
+            "-reconnect".to_string(), "1".to_string(),
+            "-reconnect_delay_max".to_string(), "2".to_string(),
+            "-rw_timeout".to_string(), "8000000".to_string(),
+            "-analyzeduration".to_string(), "2200000".to_string(),
+            "-probesize".to_string(), "2200000".to_string(),
+            "-fflags".to_string(), "+genpts+igndts+discardcorrupt".to_string(),
+            "-i".to_string(), actual_url.to_string(),
+            "-map".to_string(), "0:v:0".to_string(),
+            "-map".to_string(), "0:a:0?".to_string(),
+            "-vf".to_string(), "yadif=0:-1:1,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
+            "-c:v".to_string(), v_codec.to_string(),
+        ]);
+        if use_sw_fallback {
+            args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
+        } else {
+            args.extend(vec![
+                "-realtime".to_string(), "1".to_string(),
+                "-allow_sw".to_string(), "1".to_string(),
+            ]);
+        }
+        args.extend(vec![
             "-b:v".to_string(), "6M".to_string(),
-            "-g".to_string(), "50".to_string(),
-            "-af".to_string(), audio_norm_std.to_string(),
+            "-g".to_string(), "30".to_string(),
+        ]);
+        if !skip_audio_filter {
+            args.extend(vec!["-af".to_string(), audio_norm_std.to_string()]);
+        }
+        args.extend(vec![
             "-c:a".to_string(), "aac".to_string(),
             "-b:a".to_string(), "128k".to_string(),
             "-ar".to_string(), "44100".to_string(),
             "-ac".to_string(), "2".to_string(),
             "-f".to_string(), "hls".to_string(),
-            "-hls_time".to_string(), "2".to_string(),
-            "-hls_list_size".to_string(), "8".to_string(),
-            "-hls_flags".to_string(), "delete_segments".to_string(),
+            "-hls_time".to_string(), "1".to_string(),
+            "-hls_list_size".to_string(), "10".to_string(),
+            "-hls_flags".to_string(), "delete_segments+independent_segments".to_string(),
             "-hls_segment_filename".to_string(), ts_pattern.to_string(),
             m3u8_path.to_string()
         ]);
@@ -232,35 +266,59 @@ fn build_ffmpeg_args(
     args
 }
 
-fn probe_douyin_candidates(raw_candidates: &str) -> Option<(String, String)> {
+fn probe_douyin_candidates(raw_candidates: &str) -> Option<(String, String, Option<f64>)> {
+    let (clean_candidates, hint_dur, _) = strip_stream_meta_suffix(raw_candidates);
     let ffprobe_bin = get_ffprobe_bin();
     let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
     let headers = "Referer: https://www.douyin.com/\r\nOrigin: https://www.douyin.com\r\n";
 
-    for cand in raw_candidates.split("@@") {
+    for cand in clean_candidates.split("@@") {
         let u = cand.trim();
         if !u.starts_with("https://") {
             continue;
         }
-        if let Ok(out) = Command::new(ffprobe_bin)
+        let mut cmd = Command::new(ffprobe_bin);
+        apply_no_proxy_env(&mut cmd);
+        if let Ok(out) = cmd
             .args(&[
                 "-v", "error",
                 "-user_agent", ua,
                 "-headers", headers,
-                "-rw_timeout", "4500000",
-                "-analyzeduration", "1500000",
-                "-probesize", "1500000",
+                "-rw_timeout", "3200000",
+                "-analyzeduration", "500000",
+                "-probesize", "500000",
                 "-select_streams", "v:0",
-                "-show_entries", "stream=codec_name",
-                "-of", "default=noprint_wrappers=1:nokey=1",
+                "-show_entries", "stream=codec_name:format=duration",
+                "-of", "default=noprint_wrappers=1",
                 u,
             ])
             .output()
         {
             if out.status.success() {
-                let codec = String::from_utf8_lossy(&out.stdout).trim().to_lowercase();
-                if !codec.is_empty() && codec != "none" && !codec.contains("bvc2") && !codec.contains("bytevc2") {
-                    return Some((u.to_string(), codec));
+                let text = String::from_utf8_lossy(&out.stdout);
+                let mut codec = String::new();
+                let mut probed_dur: Option<f64> = hint_dur;
+                for line in text.lines() {
+                    let l = line.trim();
+                    if let Some(c) = l.strip_prefix("codec_name=") {
+                        codec = c.trim().to_lowercase();
+                    } else if let Some(d) = l.strip_prefix("duration=") {
+                        if probed_dur.is_none() {
+                            if let Ok(val) = d.trim().parse::<f64>() {
+                                if val.is_finite() && val > 0.0 {
+                                    probed_dur = Some(val);
+                                }
+                            }
+                        }
+                    }
+                }
+                if !codec.is_empty()
+                    && codec != "none"
+                    && !codec.contains("bvc2")
+                    && !codec.contains("bytevc2")
+                    && !codec.contains("av01")
+                {
+                    return Some((u.to_string(), codec, probed_dur));
                 }
             }
         }
@@ -268,8 +326,75 @@ fn probe_douyin_candidates(raw_candidates: &str) -> Option<(String, String)> {
     None
 }
 
+fn resolve_iptv_stream_candidates(raw_input: &str) -> Vec<(String, bool)> {
+    let (primary_url, _, title_opt) = strip_stream_meta_suffix(raw_input);
+    let title = title_opt.unwrap_or("").trim();
+    let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+
+    let is_overseas_channel = title.contains("CNA")
+        || title.contains("亚洲新闻")
+        || title.contains("NTV")
+        || primary_url.contains("mediacorp")
+        || primary_url.contains("cloudfront.net")
+        || primary_url.contains("akamaized.net")
+        || primary_url.contains("ntv.co.jp");
+
+    let mut out: Vec<(String, bool)> = Vec::new();
+    let mut push_unique = |u: String, direct_no_proxy: bool| {
+        let s = u.trim().to_string();
+        if !s.is_empty() && !out.iter().any(|(x, np)| x == &s && *np == direct_no_proxy) {
+            out.push((s, direct_no_proxy));
+        }
+    };
+
+    // 针对中国国内 IPTV 源：先用 curl --noproxy "*" 解析 HTTP 302 跳转后的真实地址（解决中移动 PLTV / 广电 302 相对路径丢失问题）
+    if !is_overseas_channel && primary_url.starts_with("http") && !primary_url.contains("://[") {
+        let mut cmd = Command::new("/usr/bin/curl");
+        apply_no_proxy_env(&mut cmd);
+        cmd.args(&[
+            "-sL",
+            "--noproxy",
+            "*",
+            "-k",
+            "--connect-timeout",
+            "2",
+            "--max-time",
+            "3",
+            "-A",
+            ua,
+            "-r",
+            "0-1024",
+            "-o",
+            "/dev/null",
+            "-w",
+            "%{http_code}|||%{url_effective}",
+            primary_url,
+        ]);
+        if let Ok(res) = cmd.output() {
+            let txt = String::from_utf8_lossy(&res.stdout);
+            let parts: Vec<&str> = txt.trim().split("|||").collect();
+            let code = parts.first().and_then(|c| c.parse::<u16>().ok()).unwrap_or(0);
+            let eff = parts.get(1).copied().unwrap_or("").trim();
+            if (200..400).contains(&code) && eff.starts_with("http") {
+                push_unique(eff.to_string(), true);
+            }
+        }
+    }
+
+    if !is_overseas_channel {
+        push_unique(primary_url.to_string(), true);
+        push_unique(primary_url.to_string(), false);
+    } else {
+        push_unique(primary_url.to_string(), false);
+        push_unique(primary_url.to_string(), true);
+    }
+
+    out
+}
+
 fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<String>, Option<f64>) {
-    let clean = raw_spec
+    let (clean_spec, suffix_dur, _) = strip_stream_meta_suffix(raw_spec);
+    let clean = clean_spec
         .trim()
         .trim_start_matches("bilibili:")
         .trim_start_matches("douyin:")
@@ -277,7 +402,7 @@ fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<Stri
     let parts: Vec<&str> = clean.split("@@").collect();
     let bvid = parts.first().copied().unwrap_or("").trim();
     if bvid.is_empty() {
-        return (Vec::new(), None);
+        return (Vec::new(), suffix_dur);
     }
     let mut cid: u64 = parts
         .get(1)
@@ -286,11 +411,13 @@ fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<Stri
     let mut duration_opt: Option<f64> = parts
         .get(2)
         .and_then(|s| s.trim().parse::<f64>().ok())
-        .filter(|d| *d > 0.0);
+        .filter(|d| *d > 0.0)
+        .or(suffix_dur);
 
     let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
     let curl_bili_json = |api_url: &str| -> Option<serde_json::Value> {
         let mut cmd = Command::new("/usr/bin/curl");
+        apply_no_proxy_env(&mut cmd);
         cmd.args(&[
             "-sL",
             "--noproxy",
@@ -393,9 +520,26 @@ fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<Stri
 
 #[tauri::command]
 async fn get_media_duration(url: String, state: State<'_, AppState>) -> Result<f64, String> {
+    if let (_, Some(d), _) = strip_stream_meta_suffix(&url) {
+        if d > 0.0 {
+            return Ok(d);
+        }
+    }
     let bili_cookie = state.bili_cookie.lock().unwrap().clone();
     tauri::async_runtime::spawn_blocking(move || {
         if url.starts_with("bilibili:") || url.starts_with("douyin:bili:") || url.starts_with("bili:") {
+            let (clean_spec, _, _) = strip_stream_meta_suffix(&url);
+            let clean = clean_spec
+                .trim()
+                .trim_start_matches("bilibili:")
+                .trim_start_matches("douyin:")
+                .trim_start_matches("bili:");
+            let parts: Vec<&str> = clean.split("@@").collect();
+            if let Some(inline_dur) = parts.get(2).and_then(|s| s.trim().parse::<f64>().ok()) {
+                if inline_dur.is_finite() && inline_dur > 0.0 {
+                    return Ok(inline_dur);
+                }
+            }
             let (cands, api_dur) = resolve_bilibili_stream_candidates(&url, &bili_cookie);
             if let Some(d) = api_dur {
                 if d.is_finite() && d > 0.0 {
@@ -406,7 +550,9 @@ async fn get_media_duration(url: String, state: State<'_, AppState>) -> Result<f
                 let ffprobe_bin = get_ffprobe_bin();
                 let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
                 let headers = "Referer: https://www.bilibili.com/\r\nOrigin: https://www.bilibili.com\r\n";
-                if let Ok(out) = Command::new(ffprobe_bin)
+                let mut cmd = Command::new(ffprobe_bin);
+                apply_no_proxy_env(&mut cmd);
+                if let Ok(out) = cmd
                     .args(&[
                         "-v", "error",
                         "-user_agent", ua,
@@ -430,15 +576,17 @@ async fn get_media_duration(url: String, state: State<'_, AppState>) -> Result<f
             return Err("无法获取 bilibili 视频时长".into());
         }
 
-        let raw_url = if let Some(s) = url.strip_prefix("douyin:h264:") {
+        let (clean_url, _, _) = strip_stream_meta_suffix(&url);
+        let raw_url = if let Some(s) = clean_url.strip_prefix("douyin:h264:") {
             s.split("@@").next().unwrap_or(s).to_string()
-        } else if let Some(s) = url.strip_prefix("douyin:") {
+        } else if let Some(s) = clean_url.strip_prefix("douyin:") {
             s.split("@@").next().unwrap_or(s).to_string()
         } else {
-            url
+            clean_url.to_string()
         };
         let ffprobe_bin = get_ffprobe_bin();
         let mut cmd = Command::new(ffprobe_bin);
+        apply_no_proxy_env(&mut cmd);
         cmd.args(&["-v", "error"]);
         if raw_url.starts_with("http") {
             let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
@@ -505,48 +653,72 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
             }
         }
 
-        let is_bili_input = url.starts_with("bilibili:") || url.starts_with("douyin:bili:") || url.starts_with("bili:") || url.contains("bilivideo.com");
-        let (candidates, is_douyin, is_bilibili, is_verified_h264) = if is_bili_input {
-            if url.starts_with("http://") || url.starts_with("https://") {
-                (vec![url], false, true, true)
-            } else {
-                let (cands, _) = resolve_bilibili_stream_candidates(&url, &bili_cookie);
-                (cands, false, true, true)
-            }
-        } else if let Some(stripped) = url.strip_prefix("douyin:h264:") {
-            let list = stripped.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect();
-            (list, true, false, true)
-        } else if let Some(stripped) = url.strip_prefix("douyin:") {
-            let list = stripped.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect();
-            (list, true, false, false)
-        } else {
-            let dy = url.contains("douyin") || url.contains("byte") || url.contains("amemv") || url.contains("zjcdn") || url.contains("snssdk");
-            let list = if dy {
-                url.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect()
-            } else {
-                vec![url]
-            };
-            (list, dy, false, false)
-        };
+        let (clean_url, _, _) = strip_stream_meta_suffix(&url);
+        let is_bili_input = clean_url.starts_with("bilibili:")
+            || clean_url.starts_with("douyin:bili:")
+            || clean_url.starts_with("bili:")
+            || clean_url.contains("bilivideo.com");
 
-        if candidates.is_empty() {
+        // (cand_url, use_sw_fallback, skip_audio_filter, force_no_proxy)
+        let mut attempts: Vec<(String, bool, bool, bool)> = Vec::new();
+        let mut is_douyin = false;
+        let mut is_bilibili = false;
+
+        if is_bili_input {
+            is_bilibili = true;
+            let cands = if clean_url.starts_with("http://") || clean_url.starts_with("https://") {
+                vec![clean_url.to_string()]
+            } else {
+                let (c, _) = resolve_bilibili_stream_candidates(clean_url, &bili_cookie);
+                c
+            };
+            for c in cands {
+                attempts.push((c.clone(), false, false, true));
+                attempts.push((c.clone(), true, false, true));
+            }
+        } else if let Some(stripped) = clean_url.strip_prefix("douyin:h264:").or_else(|| clean_url.strip_prefix("douyin:")) {
+            is_douyin = true;
+            let list: Vec<String> = stripped
+                .split("@@")
+                .filter(|s| !s.trim().is_empty() && !s.starts_with("dur=") && !s.starts_with("title="))
+                .map(|s| s.trim().to_string())
+                .collect();
+            for c in list {
+                attempts.push((c.clone(), false, false, true));
+                attempts.push((c.clone(), true, false, true));
+            }
+        } else if clean_url.starts_with('/') {
+            attempts.push((clean_url.to_string(), false, false, true));
+            attempts.push((clean_url.to_string(), true, false, true));
+        } else {
+            let dy = clean_url.contains("douyin")
+                || clean_url.contains("byte")
+                || clean_url.contains("amemv")
+                || clean_url.contains("zjcdn")
+                || clean_url.contains("snssdk");
+            if dy {
+                is_douyin = true;
+                for s in clean_url.split("@@").filter(|s| !s.trim().is_empty()) {
+                    let c = s.trim().to_string();
+                    attempts.push((c.clone(), false, false, true));
+                    attempts.push((c.clone(), true, false, true));
+                }
+            } else {
+                let iptv_cands = resolve_iptv_stream_candidates(&url);
+                for (c, no_proxy) in iptv_cands {
+                    attempts.push((c.clone(), false, false, no_proxy));
+                    attempts.push((c.clone(), true, true, no_proxy));
+                }
+            }
+        }
+
+        if attempts.is_empty() {
             return Err("无效的视频地址".into());
         }
 
         let ffmpeg_bin = get_ffmpeg_bin();
 
-        let mut attempts: Vec<(String, bool, bool)> = Vec::new();
-        for cand in &candidates {
-            if (is_douyin || is_bilibili) && is_verified_h264 {
-                attempts.push((cand.clone(), true, false));
-            }
-            attempts.push((cand.clone(), false, false));
-            if is_douyin || is_bilibili {
-                attempts.push((cand.clone(), false, true));
-            }
-        }
-
-        for (attempt_idx, (cand_url, copy_h264, use_sw)) in attempts.iter().enumerate() {
+        for (attempt_idx, (cand_url, use_sw, skip_af, force_no_proxy)) in attempts.iter().enumerate() {
             if gen_arc.load(Ordering::SeqCst) != my_gen {
                 return Err("已切换新视频".into());
             }
@@ -562,8 +734,8 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                 is_local_file,
                 is_douyin,
                 is_bilibili,
-                *copy_h264,
                 *use_sw,
+                *skip_af,
                 seek_sec,
                 &ts_pattern,
                 &m3u8_path,
@@ -579,7 +751,11 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                     let _ = old_c.kill();
                     let _ = old_c.wait();
                 }
-                match Command::new(ffmpeg_bin).args(&args).spawn() {
+                let mut cmd = Command::new(ffmpeg_bin);
+                if *force_no_proxy {
+                    apply_no_proxy_env(&mut cmd);
+                }
+                match cmd.args(&args).spawn() {
                     Ok(c) => {
                         *process_guard = Some((my_gen, c));
                         Ok(())
@@ -595,26 +771,23 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                 continue;
             }
 
-            let max_ticks = if is_douyin && attempt_idx + 1 < attempts.len() { 38 } else { 78 };
+            let max_ticks = if attempt_idx + 1 < attempts.len() { 48 } else { 88 };
             let mut exited_early = false;
 
             for _ in 0..max_ticks {
                 if gen_arc.load(Ordering::SeqCst) != my_gen {
                     return Err("已切换新视频".into());
                 }
-                if let Ok(content) = fs::read_to_string(&m3u8_path) {
-                    if content.contains(".ts") {
-                        return Ok(format!("http://127.0.0.1:8765/{}", m3u8_filename));
-                    }
-                }
                 {
                     let mut process_guard = proc_arc.lock().unwrap();
                     if let Some((g, c)) = process_guard.as_mut() {
                         if *g == my_gen {
-                            if let Ok(Some(_status)) = c.try_wait() {
-                                if let Ok(content) = fs::read_to_string(&m3u8_path) {
-                                    if content.contains(".ts") {
-                                        return Ok(format!("http://127.0.0.1:8765/{}", m3u8_filename));
+                            if let Ok(Some(status)) = c.try_wait() {
+                                if status.success() {
+                                    if let Ok(content) = fs::read_to_string(&m3u8_path) {
+                                        if content.contains(".ts") {
+                                            return Ok(format!("http://127.0.0.1:8765/{}", m3u8_filename));
+                                        }
                                     }
                                 }
                                 exited_early = true;
@@ -626,6 +799,11 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                 }
                 if exited_early {
                     break;
+                }
+                if let Ok(content) = fs::read_to_string(&m3u8_path) {
+                    if content.contains(".ts") {
+                        return Ok(format!("http://127.0.0.1:8765/{}", m3u8_filename));
+                    }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(85));
             }
@@ -641,6 +819,7 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                     }
                 }
             }
+            let _ = fs::remove_file(&m3u8_path);
         }
 
         Err("转码等待超时".into())
@@ -1934,9 +2113,27 @@ fn ensure_douyin_scraper(
 
     let hook_script = r#"
         (function() {
+            // 任务 1 (Round 17)：突破 macOS 隐藏 WKWebView (visible: false) 后台休眠节流与尺寸检测
+            // 在隐藏窗口中原生 requestAnimationFrame 会被 WebKit 挂起导致抖音 React/Pace 首屏长久卡死，改用 16ms 定时器驱动
             try {
+                Object.defineProperty(window, 'innerWidth', { get: () => 1920, configurable: true });
+                Object.defineProperty(window, 'innerHeight', { get: () => 1080, configurable: true });
+                Object.defineProperty(window, 'outerWidth', { get: () => 1920, configurable: true });
+                Object.defineProperty(window, 'outerHeight', { get: () => 1080, configurable: true });
                 Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
                 Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+                const origRaf = window.requestAnimationFrame;
+                window.requestAnimationFrame = function(cb) {
+                    if (document.getElementById('fc-login-bar') && origRaf) {
+                        return origRaf.call(window, cb);
+                    }
+                    return setTimeout(() => {
+                        try { cb(performance.now()); } catch (_) {}
+                    }, 16);
+                };
+                window.cancelAnimationFrame = function(id) {
+                    clearTimeout(id);
+                };
             } catch(e) {}
 
             try {
@@ -1956,26 +2153,25 @@ fn ensure_douyin_scraper(
                 }
             } catch(e) {}
 
-            // 任务 1 & 7 (Round 16)：移除跨会话 __fc_boot_seen_v1__ 过滤（避免冷启动首屏推荐流被误判为已读而丢弃导致空白），仅在当前会话内去重
+            window.__FC_PAGE_START_TS__ = Date.now();
+            window.__FC_LAST_LOAD_MORE_TS__ = 0;
             window.__FC_QUEUE__ = [];
             window.__FC_SEEN__ = new Set();
-            try {
-                localStorage.removeItem('__fc_boot_seen_v1__');
-                if (!window.__FC_SESSION_CLEANED__) {
-                    window.__FC_SESSION_CLEANED__ = true;
+
+            function purgeDouyinFeedStorage() {
+                try {
+                    localStorage.removeItem('__fc_boot_seen_v1__');
                     try { sessionStorage.clear(); } catch (_) {}
-                    try {
-                        for (let ki = localStorage.length - 1; ki >= 0; ki--) {
-                            const k = localStorage.key(ki) || '';
-                            if (/jingxuan|discover_feed|feed_cache|aweme_list|prefetch|recommend_cache/i.test(k)) {
-                                localStorage.removeItem(k);
-                            }
+                    for (let ki = localStorage.length - 1; ki >= 0; ki--) {
+                        const k = localStorage.key(ki) || '';
+                        if (/jingxuan|discover_feed|feed_cache|aweme_list|prefetch|recommend_cache|preload|water_fall/i.test(k)) {
+                            localStorage.removeItem(k);
                         }
-                    } catch (_) {}
-                }
-            } catch (e) {}
-            window.__FC_FETCH_QUEUE__ = [];
-            window.__FC_FETCHED_IDS__ = new Set();
+                    }
+                } catch (_) {}
+            }
+            purgeDouyinFeedStorage();
+            window.__FC_PURGE_STORAGE__ = purgeDouyinFeedStorage;
 
             setInterval(() => {
                 if (window.__FC_QUEUE__.length > 0) {
@@ -1985,7 +2181,7 @@ fn ensure_douyin_scraper(
                         document.title = '__FC_ITEM__:' + payload + '|||' + Date.now();
                     } catch(e) {}
                 }
-            }, 65);
+            }, 35);
 
             function normalizeHttps(u) {
                 if (!u || typeof u !== 'string') return '';
@@ -2008,7 +2204,7 @@ fn ensure_douyin_scraper(
                 if (!br) return false;
                 if (br.is_bytevc1 === 2 || br.is_h265 === 2) return true;
                 const g = String(br.gear_name || '') + ' ' + String(br.codec_type || '') + ' ' + String(br.VideoExtra || '');
-                if (/bytevc2|bvc2/i.test(g)) return true;
+                if (/bytevc2|bvc2|av01/i.test(g)) return true;
                 if (br.play_addr && String(br.play_addr.url_key || '').toLowerCase().includes('bytevc2')) return true;
                 return false;
             }
@@ -2074,7 +2270,7 @@ fn ensure_douyin_scraper(
                     }
                 }
 
-                return candidates.slice(0, 2).join('@@');
+                return candidates.slice(0, 3).join('@@');
             }
 
             function recordAweme(aweme) {
@@ -2084,8 +2280,14 @@ fn ensure_douyin_scraper(
                 if (aweme.cell_room || aweme.live_reason || aweme.is_ads || aweme.raw_ad_data) return;
 
                 const v = aweme.video;
-                const playUrl = pickBestPlayUrl(v);
+                let playUrl = pickBestPlayUrl(v);
                 if (!playUrl) return;
+
+                const rawDurMs = Number(v.duration || aweme.duration || 0);
+                if (rawDurMs > 500) {
+                    const durSec = (rawDurMs > 1000 ? (rawDurMs / 1000.0) : rawDurMs).toFixed(2);
+                    playUrl = playUrl + '@@dur=' + durSec;
+                }
 
                 const idKey = String(aweme.aweme_id || (v.play_addr && v.play_addr.uri) || playUrl.split('@@')[0] || '').trim();
                 if (!idKey || window.__FC_SEEN__.has(idKey)) return;
@@ -2105,6 +2307,7 @@ fn ensure_douyin_scraper(
                 }
             }
 
+            // 任务 10 (Round 17)：仅扫描实时网络推荐流返回的数据结构，严禁扫描 DOM 静态预构建卡片 ([data-aweme-id] / jingxuan_pre_build_util) 与 SSR 静态快照，彻底根除推荐流尾部每次出现相同固定内容的问题
             function deepScan(obj, depth) {
                 if (!obj || typeof obj !== 'object' || depth > 9) return;
                 if (obj.video && (obj.video.play_addr || obj.video.bit_rate)) {
@@ -2115,6 +2318,7 @@ fn ensure_douyin_scraper(
                     for (let i = 0; i < obj.length; i++) deepScan(obj[i], depth + 1);
                 } else {
                     for (const k in obj) {
+                        if (k === '_SSR_DATA' || k === 'renderData' || k === 'initialState') continue;
                         if (Object.prototype.hasOwnProperty.call(obj, k)) {
                             deepScan(obj[k], depth + 1);
                         }
@@ -2123,24 +2327,31 @@ fn ensure_douyin_scraper(
             }
 
             const origJsonParse = JSON.parse;
-            JSON.parse = function(text, reviver) {
+            const hookedJsonParse = function(text, reviver) {
                 const res = origJsonParse.call(this, text, reviver);
                 try {
-                    if (typeof text === 'string' && (text.includes('play_addr') || text.includes('aweme_list') || text.includes('bit_rate') || text.includes('aweme_info') || text.includes('cards'))) {
-                        deepScan(res, 0);
+                    if (typeof text === 'string' && text.length < 900000 && (text.includes('"aweme_list"') || text.includes('"cards"') || text.includes('"aweme_info"'))) {
+                        const renderEl = document.getElementById('RENDER_DATA');
+                        if (!renderEl || renderEl.textContent !== text) {
+                            setTimeout(() => deepScan(res, 0), 0);
+                        }
                     }
                 } catch(e) {}
                 return res;
             };
+            hookedJsonParse.toString = () => 'function parse() { [native code] }';
+            Object.defineProperty(JSON, 'parse', { value: hookedJsonParse, configurable: true, writable: true });
 
             const origResJson = Response.prototype.json;
-            Response.prototype.json = async function() {
-                const data = await origResJson.apply(this, arguments);
-                try { deepScan(data, 0); } catch(e) {}
-                return data;
+            const hookedResJson = function() {
+                return origResJson.apply(this, arguments).then(data => {
+                    try { setTimeout(() => deepScan(data, 0), 0); } catch(e) {}
+                    return data;
+                });
             };
+            hookedResJson.toString = () => 'function json() { [native code] }';
+            Object.defineProperty(Response.prototype, 'json', { value: hookedResJson, configurable: true, writable: true });
 
-            // 任务 1 & 7 (Round 16)：同时拦截 XMLHttpRequest 与 window.fetch，并主动扫描 SSR 初始渲染数据，确保冷启动首包 100% 捕获
             try {
                 const origXhrOpen = XMLHttpRequest.prototype.open;
                 const origXhrSend = XMLHttpRequest.prototype.send;
@@ -2151,13 +2362,16 @@ fn ensure_douyin_scraper(
                 XMLHttpRequest.prototype.send = function() {
                     this.addEventListener('load', function() {
                         try {
-                            if (this.responseType === '' || this.responseType === 'text') {
-                                const txt = this.responseText;
-                                if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate'))) {
-                                    deepScan(origJsonParse(txt), 0);
+                            const u = this.__fc_url || '';
+                            if (/aweme|feed|tab|channel|discover|recommend/i.test(u)) {
+                                if (this.responseType === '' || this.responseType === 'text') {
+                                    const txt = this.responseText;
+                                    if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate') || txt.includes('cards'))) {
+                                        deepScan(origJsonParse(txt), 0);
+                                    }
+                                } else if (this.responseType === 'json' && this.response) {
+                                    deepScan(this.response, 0);
                                 }
-                            } else if (this.responseType === 'json' && this.response) {
-                                deepScan(this.response, 0);
                             }
                         } catch (_) {}
                     });
@@ -2168,47 +2382,45 @@ fn ensure_douyin_scraper(
             try {
                 if (window.fetch) {
                     const origFetch = window.fetch;
-                    window.fetch = async function() {
+                    const hookedFetch = async function(input, init) {
                         const resp = await origFetch.apply(this, arguments);
                         try {
-                            const cloned = resp.clone();
-                            cloned.text().then(txt => {
-                                if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate'))) {
-                                    try { deepScan(origJsonParse(txt), 0); } catch (_) {}
-                                }
-                            }).catch(() => {});
+                            const reqUrl = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+                            if (!reqUrl || /aweme|feed|tab|channel|discover|recommend/i.test(reqUrl)) {
+                                const cloned = resp.clone();
+                                cloned.text().then(txt => {
+                                    if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate') || txt.includes('cards'))) {
+                                        try { deepScan(origJsonParse(txt), 0); } catch (_) {}
+                                    }
+                                }).catch(() => {});
+                            }
                         } catch (_) {}
                         return resp;
                     };
+                    hookedFetch.toString = () => 'function fetch() { [native code] }';
+                    window.fetch = hookedFetch;
                 }
             } catch (_) {}
 
-            function scanSsrAndGlobals() {
-                try {
-                    if (window._SSR_DATA) deepScan(window._SSR_DATA, 0);
-                    if (window.__INIT_PROPS__) deepScan(window.__INIT_PROPS__, 0);
-                    const renderEl = document.getElementById('RENDER_DATA');
-                    if (renderEl && renderEl.textContent) {
-                        const decoded = decodeURIComponent(renderEl.textContent);
-                        deepScan(origJsonParse(decoded), 0);
-                    }
-                    if (Array.isArray(self.__pace_f)) {
-                        for (let i = 0; i < self.__pace_f.length; i++) {
-                            deepScan(self.__pace_f[i], 0);
-                        }
-                    }
-                } catch (_) {}
-            }
-            setTimeout(scanSsrAndGlobals, 350);
-            setTimeout(scanSsrAndGlobals, 1200);
+            // 任务 1 (Round 17)：移除首屏加载期间 1.6s 误触发 window.location.reload() 的自杀式循环，仅在页面初始化完成后节流触发下拉续流
+            window.__FC_LOAD_MORE__ = function(forceScroll) {
+                const now = Date.now();
+                if (!forceScroll && (now - window.__FC_PAGE_START_TS__ < 2600)) {
+                    return;
+                }
+                if (!forceScroll && (now - (window.__FC_LAST_LOAD_MORE_TS__ || 0) < 1600)) {
+                    return;
+                }
+                window.__FC_LAST_LOAD_MORE_TS__ = now;
 
-            window.__FC_EMPTY_LOAD_COUNT__ = 0;
-            window.__FC_LOAD_MORE__ = function() {
-                scanSsrAndGlobals();
-                const beforeSeen = window.__FC_SEEN__.size;
-                for (let step = 0; step < 4; step++) {
+                for (let step = 0; step < 3; step++) {
                     setTimeout(() => {
                         try {
+                            if (window.__pc_pace_load_deferred_scripts) {
+                                try { window.__pc_pace_load_deferred_scripts(); } catch(_) {}
+                            } else if (window.__pace_load_deferred_scripts) {
+                                try { window.__pace_load_deferred_scripts(); } catch(_) {}
+                            }
                             const nextBtn = document.querySelector('[data-e2e="video-switch-next-arrow"], .xgplayer-playswitch-next, [class*="playswitch-next"]');
                             if (nextBtn) nextBtn.click();
                             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40, bubbles: true }));
@@ -2223,23 +2435,11 @@ fn ensure_douyin_scraper(
                                 }
                             }
                         } catch(e) {}
-                    }, step * 180);
+                    }, step * 220);
                 }
-                setTimeout(() => {
-                    if (window.__FC_SEEN__.size === beforeSeen && window.__FC_QUEUE__.length === 0 && !document.getElementById('fc-login-bar')) {
-                        window.__FC_EMPTY_LOAD_COUNT__ = (window.__FC_EMPTY_LOAD_COUNT__ || 0) + 1;
-                        if (window.__FC_EMPTY_LOAD_COUNT__ >= 3) {
-                            window.__FC_EMPTY_LOAD_COUNT__ = 0;
-                            window.location.reload();
-                        }
-                    } else {
-                        window.__FC_EMPTY_LOAD_COUNT__ = 0;
-                    }
-                }, 1600);
             };
 
-            setTimeout(() => { if (window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 650);
-            setTimeout(() => { if (window.__FC_QUEUE__.length < 6 && window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(); }, 1800);
+            setTimeout(() => { if (window.__FC_SEEN__.size < 6 && window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__(true); }, 2800);
 
             window.__FC_SHOW_LOGIN_BAR__ = function() {
                 if (document.getElementById('fc-login-bar')) return;
@@ -2265,22 +2465,12 @@ fn ensure_douyin_scraper(
                 if (!document.getElementById('fc-login-bar')) {
                     document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.volume = 0; });
                 }
-                const cards = document.querySelectorAll('[data-aweme-id]');
-                cards.forEach(card => {
-                    const id = card.getAttribute('data-aweme-id');
-                    if (id && !window.__FC_FETCHED_IDS__.has(id) && !window.__FC_SEEN__.has(id)) {
-                        window.__FC_FETCHED_IDS__.add(id);
-                        window.__FC_FETCH_QUEUE__.push(id);
-                    }
-                });
-
-                if (window.__FC_FETCH_QUEUE__.length > 0 && window.jingxuan_pre_build_util && window.jingxuan_pre_build_util.fetchAwemeInfo) {
-                    const nextId = window.__FC_FETCH_QUEUE__.shift();
-                    window.jingxuan_pre_build_util.fetchAwemeInfo({ awemeId: nextId, originType: 'quick_player' })
-                        .then(res => { if (res && res.detail) recordAweme(res.detail); })
-                        .catch(() => {});
+                if (window.__pc_pace_load_deferred_scripts) {
+                    try { window.__pc_pace_load_deferred_scripts(); } catch(_) {}
+                } else if (window.__pace_load_deferred_scripts) {
+                    try { window.__pace_load_deferred_scripts(); } catch(_) {}
                 }
-            }, 300);
+            }, 450);
         })();
     "#;
 
@@ -2302,7 +2492,7 @@ fn ensure_douyin_scraper(
                 let _ = win.hide();
                 feed_arc.lock().unwrap().retain(|k, _| k.starts_with("bili_"));
                 probing_arc.lock().unwrap().clear();
-                let _ = win.eval("window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
+                let _ = win.eval("if(window.__FC_PURGE_STORAGE__) window.__FC_PURGE_STORAGE__(); window.__FC_PAGE_START_TS__ = Date.now(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.location.reload();");
                 if let Some(main_win) = win.app_handle().get_webview_window("main") {
                     let _ = main_win.set_focus();
                 }
@@ -2313,7 +2503,8 @@ fn ensure_douyin_scraper(
                     let author = url_decode(parts[1]);
                     let cover = url_decode(parts[2]);
                     let play_url = url_decode(parts[3]);
-                    let primary_url = play_url.split("@@").next().unwrap_or(&play_url).to_string();
+                    let (clean_candidates, _, _) = strip_stream_meta_suffix(&play_url);
+                    let primary_url = clean_candidates.split("@@").next().unwrap_or(clean_candidates).to_string();
                     if !primary_url.starts_with("https://") {
                         return;
                     }
@@ -2325,29 +2516,25 @@ fn ensure_douyin_scraper(
                         p_set.insert(primary_url.clone());
                     }
 
-                    // 任务 1 & 7 (Round 16)：pickBestPlayUrl 已过滤 ByteVC2，收到视频条目后立即入列呈现卡片，避免阻塞在 ffprobe 网络连接导致冷启动长时间空白
+                    // 任务 9 (Round 17)：恢复严格的 ffprobe 编码预检门禁，仅当确认候选地址可解码且非 ByteVC2 (bvc2) 时才推入推荐流，彻底杜绝不可播放卡片混入列表
                     let active_cat = cat_arc.lock().unwrap().clone();
-                    {
-                        let mut feed_map = feed_arc.lock().unwrap();
-                        let cat_list = feed_map.entry(active_cat.clone()).or_insert_with(Vec::new);
-                        if !cat_list.iter().any(|x| x.3.contains(&primary_url)) {
-                            cat_list.push((desc.clone(), author.clone(), cover.clone(), play_url.clone()));
-                        }
-                    }
-
                     let feed_clone = feed_arc.clone();
                     tauri::async_runtime::spawn_blocking(move || {
-                        if let Some((verified_url, codec)) = probe_douyin_candidates(&play_url) {
-                            let tagged_url = if codec == "h264" {
+                        if let Some((verified_url, codec, dur_opt)) = probe_douyin_candidates(&play_url) {
+                            let mut tagged_url = if codec == "h264" {
                                 format!("h264:{}", verified_url)
                             } else {
                                 verified_url.clone()
                             };
-                            let mut feed_map = feed_clone.lock().unwrap();
-                            if let Some(cat_list) = feed_map.get_mut(&active_cat) {
-                                if let Some(existing_entry) = cat_list.iter_mut().find(|x| x.3.contains(&primary_url)) {
-                                    existing_entry.3 = tagged_url;
+                            if let Some(d) = dur_opt {
+                                if d > 0.5 {
+                                    tagged_url = format!("{}@@dur={:.2}", tagged_url, d);
                                 }
+                            }
+                            let mut feed_map = feed_clone.lock().unwrap();
+                            let cat_list = feed_map.entry(active_cat).or_insert_with(Vec::new);
+                            if !cat_list.iter().any(|x| x.3.contains(&verified_url)) {
+                                cat_list.push((desc, author, cover, tagged_url));
                             }
                         }
                     });
@@ -2720,7 +2907,7 @@ async fn get_douyin_feed(
         let target_url = format!("{}{}_fc_t={}", base_url, sep, ts);
         if let Some(win) = app.get_webview_window("douyin_scraper") {
             let js = format!(
-                "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
+                "if(window.__FC_PURGE_STORAGE__) window.__FC_PURGE_STORAGE__(); window.__FC_PAGE_START_TS__ = Date.now(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.location.href = '{}';",
                 target_url
             );
             let _ = win.eval(&js);
@@ -2753,13 +2940,14 @@ async fn get_douyin_feed(
             let target_url = format!("{}{}_fc_t={}", base_url, sep, ts);
             if let Some(win) = app.get_webview_window("douyin_scraper") {
                 let js = format!(
-                    "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.href = '{}';",
+                    "if(window.__FC_PURGE_STORAGE__) window.__FC_PURGE_STORAGE__(); window.__FC_PAGE_START_TS__ = Date.now(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.location.href = '{}';",
                     target_url
                 );
                 let _ = win.eval(&js);
             }
         } else if let Some(win) = app.get_webview_window("douyin_scraper") {
-            let _ = win.eval("if(window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__();");
+            let force_arg = if want_more && !existing.is_empty() { "true" } else { "false" };
+            let _ = win.eval(&format!("if(window.__FC_LOAD_MORE__) window.__FC_LOAD_MORE__({});", force_arg));
         }
     }
 
@@ -2791,7 +2979,7 @@ async fn hide_douyin_login(app: AppHandle, state: State<'_, AppState>) -> Result
         let _ = win.hide();
         state.douyin_feed.lock().unwrap().retain(|k, _| k.starts_with("bili_"));
         state.douyin_probing.lock().unwrap().clear();
-        let _ = win.eval("const b = document.getElementById('fc-login-bar'); if(b) b.remove(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
+        let _ = win.eval("const b = document.getElementById('fc-login-bar'); if(b) b.remove(); if(window.__FC_PURGE_STORAGE__) window.__FC_PURGE_STORAGE__(); window.__FC_PAGE_START_TS__ = Date.now(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.location.reload();");
     }
     if let Some(main_win) = app.get_webview_window("main") {
         let _ = main_win.set_focus();
@@ -2876,7 +3064,7 @@ async fn restart_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), S
         let _ = dy_win.hide();
         let ts = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(1);
         let _ = dy_win.eval(&format!(
-            "window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.href = 'https://www.douyin.com/discover?_fc_boot={}';",
+            "if(window.__FC_PURGE_STORAGE__) window.__FC_PURGE_STORAGE__(); window.__FC_PAGE_START_TS__ = Date.now(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.location.href = 'https://www.douyin.com/discover?_fc_boot={}';",
             ts
         ));
     }
