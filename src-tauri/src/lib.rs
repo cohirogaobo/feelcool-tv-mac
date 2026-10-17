@@ -2273,11 +2273,26 @@ fn ensure_douyin_scraper(
                 return candidates.slice(0, 3).join('@@');
             }
 
+            function isExcludedDouyinUrl(u) {
+                if (!u) return false;
+                return /favorite|digg|like|collection|collect|history|visited|familiar|following|user\/post|aweme\/post|follow\/feed/i.test(String(u));
+            }
+
             function recordAweme(aweme) {
                 if (!aweme || !aweme.video) return;
                 if (aweme.aweme_type === 68 || aweme.aweme_type === 101 || aweme.aweme_type === 2) return;
                 if (aweme.images && Array.isArray(aweme.images) && aweme.images.length > 0) return;
                 if (aweme.cell_room || aweme.live_reason || aweme.is_ads || aweme.raw_ad_data) return;
+                // 任务 3 (Round 18)：排除用户曾经点过赞 / 收藏过的视频项，防止抖音网页端个人点赞区或收藏区视频混入推荐流造成重复内容
+                if (
+                    aweme.user_digged === 1 ||
+                    aweme.user_digged === true ||
+                    aweme.is_digged === 1 ||
+                    aweme.is_digged === true ||
+                    aweme.collect_stat === 1 ||
+                    aweme.user_favorited === 1 ||
+                    (aweme.status && (aweme.status.is_digged === 1 || aweme.status.is_digged === true))
+                ) return;
 
                 const v = aweme.video;
                 let playUrl = pickBestPlayUrl(v);
@@ -2307,7 +2322,7 @@ fn ensure_douyin_scraper(
                 }
             }
 
-            // 任务 10 (Round 17)：仅扫描实时网络推荐流返回的数据结构，严禁扫描 DOM 静态预构建卡片 ([data-aweme-id] / jingxuan_pre_build_util) 与 SSR 静态快照，彻底根除推荐流尾部每次出现相同固定内容的问题
+            // 任务 10 (Round 17) & 任务 3 (Round 18)：仅扫描实时网络推荐流返回的数据结构，严禁扫描 DOM 静态预构建卡片、SSR 静态快照以及个人点赞/收藏/历史列表
             function deepScan(obj, depth) {
                 if (!obj || typeof obj !== 'object' || depth > 9) return;
                 if (obj.video && (obj.video.play_addr || obj.video.bit_rate)) {
@@ -2318,7 +2333,16 @@ fn ensure_douyin_scraper(
                     for (let i = 0; i < obj.length; i++) deepScan(obj[i], depth + 1);
                 } else {
                     for (const k in obj) {
-                        if (k === '_SSR_DATA' || k === 'renderData' || k === 'initialState') continue;
+                        if (
+                            k === '_SSR_DATA' ||
+                            k === 'renderData' ||
+                            k === 'initialState' ||
+                            k === 'favorite_list' ||
+                            k === 'digg_list' ||
+                            k === 'like_list' ||
+                            k === 'collect_list' ||
+                            k === 'history_list'
+                        ) continue;
                         if (Object.prototype.hasOwnProperty.call(obj, k)) {
                             deepScan(obj[k], depth + 1);
                         }
@@ -2344,8 +2368,13 @@ fn ensure_douyin_scraper(
 
             const origResJson = Response.prototype.json;
             const hookedResJson = function() {
+                const respUrl = (this && this.url) ? String(this.url) : '';
                 return origResJson.apply(this, arguments).then(data => {
-                    try { setTimeout(() => deepScan(data, 0), 0); } catch(e) {}
+                    try {
+                        if (!isExcludedDouyinUrl(respUrl)) {
+                            setTimeout(() => deepScan(data, 0), 0);
+                        }
+                    } catch(e) {}
                     return data;
                 });
             };
@@ -2363,7 +2392,7 @@ fn ensure_douyin_scraper(
                     this.addEventListener('load', function() {
                         try {
                             const u = this.__fc_url || '';
-                            if (/aweme|feed|tab|channel|discover|recommend/i.test(u)) {
+                            if (!isExcludedDouyinUrl(u) && /aweme|feed|tab|channel|discover|recommend/i.test(u)) {
                                 if (this.responseType === '' || this.responseType === 'text') {
                                     const txt = this.responseText;
                                     if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate') || txt.includes('cards'))) {
@@ -2386,7 +2415,7 @@ fn ensure_douyin_scraper(
                         const resp = await origFetch.apply(this, arguments);
                         try {
                             const reqUrl = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
-                            if (!reqUrl || /aweme|feed|tab|channel|discover|recommend/i.test(reqUrl)) {
+                            if (!isExcludedDouyinUrl(reqUrl) && (!reqUrl || /aweme|feed|tab|channel|discover|recommend/i.test(reqUrl))) {
                                 const cloned = resp.clone();
                                 cloned.text().then(txt => {
                                     if (txt && (txt.includes('play_addr') || txt.includes('aweme_list') || txt.includes('bit_rate') || txt.includes('cards'))) {
@@ -2454,6 +2483,12 @@ fn ensure_douyin_scraper(
                 if (document.body) document.body.appendChild(bar);
             };
 
+            window.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }, true);
+
             window.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && document.getElementById('fc-login-bar')) {
                     document.getElementById('fc-login-bar').remove();
@@ -2480,8 +2515,10 @@ fn ensure_douyin_scraper(
         .unwrap_or(1);
     let init_url_str = format!("https://www.douyin.com/discover?_fc_boot={}", boot_ts);
     let parsed_url: tauri::Url = init_url_str.parse().unwrap();
+    let modern_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
     let _ = WebviewWindowBuilder::new(app, "douyin_scraper", WebviewUrl::External(parsed_url))
         .title("抖音账号登录")
+        .user_agent(modern_ua)
         .inner_size(1180.0, 760.0)
         .visible(false)
         .focused(false)
@@ -2718,8 +2755,33 @@ fn ensure_bilibili_scraper(
         return;
     }
 
+    // 任务 2 (Round 18)：注入桌面版现代 Chrome 128 User-Agent 与版本特征伪装，拦截 fe-activity-low-version 低版本提示页并自动引导至标准登录页
     let bili_hook_script = r#"
         (function() {
+            try {
+                const modernUa = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+                Object.defineProperty(navigator, 'userAgent', { get: () => modernUa, configurable: true });
+                Object.defineProperty(navigator, 'appVersion', { get: () => '5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36', configurable: true });
+                Object.defineProperty(navigator, 'vendor', { get: () => 'Google Inc.', configurable: true });
+                if (!window.chrome) {
+                    window.chrome = { runtime: {} };
+                }
+            } catch (e) {}
+
+            function checkLowVersionRedirect() {
+                try {
+                    const href = String(window.location.href || '');
+                    const bodyTxt = (document.body && document.body.innerText) ? document.body.innerText : '';
+                    if (href.includes('low-version') || href.includes('unsupport') || bodyTxt.includes('浏览器版本过低')) {
+                        window.location.replace('https://passport.bilibili.com/login');
+                        return true;
+                    }
+                } catch (e) {}
+                return false;
+            }
+
+            checkLowVersionRedirect();
+
             window.__FC_SYNC_BILI_COOKIE__ = function() {
                 try {
                     const ck = document.cookie || '';
@@ -2730,6 +2792,7 @@ fn ensure_bilibili_scraper(
             };
 
             setInterval(() => {
+                if (checkLowVersionRedirect()) return;
                 if (!document.getElementById('fc-login-bar')) {
                     document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.volume = 0; });
                 }
@@ -2737,6 +2800,7 @@ fn ensure_bilibili_scraper(
             }, 1200);
 
             window.__FC_SHOW_LOGIN_BAR__ = function() {
+                if (checkLowVersionRedirect()) return;
                 if (document.getElementById('fc-login-bar')) return;
                 const bar = document.createElement('div');
                 bar.id = 'fc-login-bar';
@@ -2753,6 +2817,12 @@ fn ensure_bilibili_scraper(
                 if (document.body) document.body.appendChild(bar);
             };
 
+            window.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }, true);
+
             window.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && document.getElementById('fc-login-bar')) {
                     document.getElementById('fc-login-bar').remove();
@@ -2766,9 +2836,11 @@ fn ensure_bilibili_scraper(
         })();
     "#;
 
-    let parsed_url: tauri::Url = "https://www.bilibili.com".parse().unwrap();
+    let parsed_url: tauri::Url = "https://passport.bilibili.com/login".parse().unwrap();
+    let modern_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
     let _ = WebviewWindowBuilder::new(app, "bilibili_scraper", WebviewUrl::External(parsed_url))
         .title("bilibili 账号登录")
+        .user_agent(modern_ua)
         .inner_size(1180.0, 760.0)
         .visible(false)
         .focused(false)
@@ -2999,7 +3071,7 @@ async fn open_bilibili_login(app: AppHandle, state: State<'_, AppState>) -> Resu
         let _ = win.center();
         let _ = win.set_always_on_top(true);
         let _ = win.set_focus();
-        let _ = win.eval("if(window.__FC_SHOW_LOGIN_BAR__) window.__FC_SHOW_LOGIN_BAR__();");
+        let _ = win.eval("if (String(window.location.href || '').includes('low-version') || (document.body && document.body.innerText && document.body.innerText.includes('浏览器版本过低'))) { window.location.replace('https://passport.bilibili.com/login'); } setTimeout(() => { if(window.__FC_SHOW_LOGIN_BAR__) window.__FC_SHOW_LOGIN_BAR__(); }, 200);");
     }
     Ok(())
 }

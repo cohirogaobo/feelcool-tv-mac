@@ -1,9 +1,9 @@
-# Feel Cool TV 技术规范与架构维护手册 (v0.1.1 持续演进版)
+# Feel Cool TV 技术规范与架构维护手册 (v0.1.2 持续演进版)
 
 本文档面向参与 **Feel Cool TV (`cooltv-mac`)** 后续迭代的开发人员，系统梳理产品的核心调性、视觉与交互设计规范、界面文案措辞准则、全局快捷键与遥控映射体系，并重点复盘前端（WebKit / HTML5 / CSS3 / HLS.js）与后端（Tauri v2 / Rust / FFmpeg / Rouille）在历次迭代中遇到的疑难问题、底层成因及最终工程解决方案。
 
-> **版本同步强制规范**：每次完成迭代任务后，必须同步更新产品版本号（当前版本：**`0.1.1`**），涉及位置包括：
-> 1. `src/index.html` -> `#settingsVersionText`（仅显示纯数字版本号如 `0.1.1`）；
+> **版本同步强制规范**：每次完成迭代任务后，必须同步更新产品版本号（当前版本：**`0.1.2`**），涉及位置包括：
+> 1. `src/index.html` -> `#settingsVersionText`（仅显示纯数字版本号如 `0.1.2`）；
 > 2. `src-tauri/tauri.conf.json` -> `"version"`；
 > 3. `src-tauri/Cargo.toml` -> `[package] version`；
 > 4. `package.json` -> `"version"`；
@@ -16,79 +16,71 @@
 1. **10-Foot 客厅大屏沉浸体验（tvOS × PSP XMB 融合美学）**
    - 产品定位于 macOS 全屏客厅媒体中心，融合 **Apple TV (tvOS)** 的毛玻璃层级、呼吸感字重与 **Sony PlayStation / PSP XMB（交叉媒体栏）** 的丝带流光背景及十字轴焦点导航体验。
    - **背景即正式播放舞台**：任何触发了后台视频流预览的画面均视为正在进行的正式播放。只要用户未聚焦到另一个可播放媒体卡片或主动长按停止，焦点在导航栏、丸形菜单或设置项之间移动时**绝不打断当前背景播放**。
-2. **全键盘/遥控器优先，兼顾鼠标/触控板直觉操作**
-   - 所有界面元素均可通过方向键（`ArrowUp` / `ArrowDown` / `ArrowLeft` / `ArrowRight`）、确认键（`Enter`）、返回键（`Escape` / `Backspace`）及全局功能键（`F17` / `F18` / `F19`）完成闭环导航。
-   - **上键（`ArrowUp`）与 `ESC` 键等价返回规范（Round 17 新增）**：在主界面中，所有通过按 `ArrowUp` 实现返回层级的操作，必须同步支持按 `Escape` 键实现返回：
-     - 从媒体卡片（`col >= 1`）按 `Escape`：若当前顶部丸形菜单（`#seasonBar`）处于激活状态，则返回焦点至丸形菜单当前选中项；若丸形菜单未激活，则返回焦点至左侧边栏对应导航项（`col = 0`）；
-     - 从二级丸形菜单（如展开的抖音子分类、bilibili 子分类或限制级“其他”子文件夹）按 `Escape`：丝滑折叠回一级丸形菜单并聚焦对应平台/分组入口；
-     - 从一级丸形菜单（或剧集分季栏）按 `Escape`：返回左侧边栏对应导航项（若处于剧集分集视图则同步退出分集视图返回剧集海报墙）。
-   - **全局功能快捷键规范（Round 17 新增）**：
-     - **`F19`（全局电源键）**：在任何情况下（包括全屏视频播放中、设置页、密码验证页或主页面），按 `F19` 直接唤出全屏电源选项页（`#powerModal`）覆盖当前画面。
-     - **`F18`（全局主页/正在观看键）**：在任何情况下（包括全屏播放、各类全屏遮罩弹窗、剧集二级视图或任意卡片位置），按 `F18` 立即关闭弹窗/退出全屏返回主页面，并将焦点精准放置在左侧边栏 **“正在观看 / 现在观看”**（`#navNowPlayingItem`）导航项上。
-     - **`F17`（全局长按替代键）**：当用户不便长按回车键时，单击一次 `F17` 即可立即触发当前焦点元素的长按动作（包括：聚焦头像 `#avatarHeader` 时解锁/锁定限制级空间、聚焦 `#navNowPlayingItem` 时停止后台播放、聚焦 `#navDouyinItem` 时强制刷新当前流媒体推荐流、聚焦设置页 `#btnSaveSettings` 时展开隐藏的限制级设置、聚焦密码页输入框 `#inputUnlockPwd` 时唤出/关闭屏幕数字键盘）。
+   - **全局彻底隐藏鼠标指针（Round 18 新增）**：在应用程序窗口内部（含主页、全屏设置/密码/电源页及全屏播放画面），鼠标指针始终彻底不可见（全局 `cursor: none !important`）；仅当用户将鼠标指针移出 App 窗口边界时，系统鼠标指针才恢复可见。
+2. **全键盘/遥控器优先，二维十字轴精准方向键导航**
+   - 所有界面元素均可通过方向键（`ArrowUp` / `ArrowDown` / `ArrowLeft` / `ArrowRight`）、确认键（`Enter`）、返回键（`Escape` / `Backspace`）及全局功能键（`F16` / `F17` / `F18` / `F19`）完成闭环导航。
+   - **多行丸形菜单（`#seasonBar`）自动行检测与上下键跨行直达（Round 18 新增）**：
+     - 当丸形菜单项目较多自动换行（`flex-wrap: wrap`）形成多行时，`findSeasonPillInAdjacentRow()` 自动按各按钮的视觉纵坐标（`rect.top`）聚类识别多行结构：
+       - 按 `ArrowDown`：若当前丸形按钮下方仍有下一行丸形按钮，则直接移动到下一行水平中心（`centerX`）最接近的丸形按钮，无需一直按右键遍历完第一行；仅当已处于最后一行丸形按钮时，按 `ArrowDown` 才进入下方卡片轨道。
+       - 按 `ArrowUp`：若当前丸形按钮上方仍有上一行丸形按钮，则直接移动到上一行水平中心最接近的丸形按钮；仅当已处于第一行丸形按钮时，按 `ArrowUp` 才折叠二级丸形菜单或返回左侧边栏。
+   - **设置页与弹窗严格的“上下键跨行、左右键同行”二维导航规范（Round 18 新增）**：
+     - 在设置页（`#settingsModal`）与密码页（`#passwordModal`）中，**`ArrowUp` / `ArrowDown` 只能用于在不同行之间上下移动，绝不横向切换同行元素；`ArrowLeft` / `ArrowRight` 只能用于在同一行内的并排控件（如 `[登录 抖音, 登录 bilibili]`、`[城市, 区, 街道]`、`[取消, 保存并扫描]`）或分段控制器（`.seg-control`）选项之间左右移动，绝不跨行跳转**。
+   - **上键（`ArrowUp`）与 `ESC` 键等价返回规范（Round 17 新增）**：在主界面中，所有通过按 `ArrowUp` 实现返回层级的操作，必须同步支持按 `Escape` 键实现返回。
+   - **全局功能快捷键规范（Round 17 & Round 18 演进）**：
+     - **`F19`（全局电源键）**：在任何情况下直接唤出全屏电源选项页（`#powerModal`）覆盖当前画面。
+     - **`F18`（主页与正式播放页双向切换键，Round 18 升级）**：
+       - 若当前**未进入过正式播放页**（仅在主页浏览或仅触发了背景预览），按 `F18` 只能用于回到主页面并将焦点放置在左侧边栏 **“正在观看 / 现在观看”**（`#navNowPlayingItem`）导航项上；
+       - 若当前**位于正式播放页**，按 `F18` 可回到主页面并将焦点放置在 `#navNowPlayingItem`；此后只要未切换其他视频流，在主页面 `#navNowPlayingItem` 再次按 `F18` 可直接返回正式播放页（`enterNowPlayingFullscreen()`）。
+     - **`F17`（全局长按替代键）**：当用户不便长按回车键时，单击一次 `F17` 即可立即触发当前焦点元素的长按动作。
+     - **`F16`（全局上下文菜单键 & 本地剧集选集呼出键，Round 18 新增）**：
+       - 全局拦截并禁用 macOS WebKit 底层原生右键菜单（`contextmenu` 事件 `e.preventDefault(); e.stopPropagation();`，彻底屏蔽 `Reload`、`Play All Animations`、`Inspect Element`）；
+       - 本地剧集在正式全屏播放期间，按 `F16` 键在画面底部唤出/收起选集列表遮罩（`#fsEpisodePickerHud`），支持左右键选集及通过左右两端 SVG `<` / `>` 箭头切换当前季。
 3. **双空间隐私架构与屏幕数字键盘（常规空间 + 隐藏限制级空间）**
-   - 默认界面与设置页对限制级功能实现**零视觉暴露**：
-     - 主界面通过长按左上角用户头像（`#avatarHeader`，`550ms`）或聚焦头像按 `F17` 唤起全屏密码验证页，验证通过后动态解锁左侧边栏“限制级”入口；再次触发即刻隐藏并锁定。
-     - 设置页默认隐藏“限制级内容设置”分组，仅在设置页内长按底部“保存并扫描”按钮（`#btnSaveSettings`，`550ms`）或聚焦该按钮按 `F17` 时动态展开。
-   - **密码页大九键屏幕数字键盘（Round 17 新增）**：
-     - 在密码验证页（`#passwordModal`）长按密码输入框（`#inputUnlockPwd`，或聚焦输入框按 `F17`），左侧原有的标题、密码框和按钮面板（`#pwdLeftPanel`）整体平滑左移，右侧滑出大九键屏幕数字键盘（`#pwdNumpadPanel`：含 `1`~`9`、`0` 及符合 Apple SF Symbols `delete.left` 设计规范的退格键 `#pwdKeyBackspace`），并自动将焦点移至数字键盘第一个键（`1`，`#pwdKey1`）。
-     - 再次长按密码输入框（或在密码页按 `F17`）即可平滑收起右侧屏幕数字键盘并将焦点归还至密码输入框。
+   - 默认界面与设置页对限制级功能实现**零视觉暴露**。
+   - 在密码验证页长按密码输入框（或按 `F17`）可唤出/收起右侧大九键屏幕数字键盘（`#pwdNumpadPanel`，含 Apple 规范 `delete.left` 退格键）。
 
 ---
 
 ## 二、视觉与设计规范
 
-### 1. 空间布局与全局自适应缩放体系 (`autoScaleUI`)
-- **基准视口与双栏结构**：
-  - 基准分辨率为 `1920 × 1080`，左侧边栏（`#sidebar`）固定定位于 `left: 20px; top: 20px; bottom: 20px;`，展开宽度 `205px`；当焦点进入右侧内容区（`col >= 1`）时，边栏收缩为 `68px` 胶囊态（`.sidebar.collapsed`），主内容区（`#mainContent`）由 `transform: translateX(137px)` 平滑归位至 `translateX(0)`。
+### 1. 空间布局、侧边栏折叠方案与全局自适应缩放体系 (`autoScaleUI`)
+- **基准视口与左侧边栏折叠方案（Round 18 新增）**：
+  - 左侧边栏（`#sidebar`）固定定位于 `left: 20px; top: 20px; bottom: 20px;`，展开宽度 `205px`，折叠宽度 `68px`（`.sidebar.collapsed`）。
+  - 在偏好设置页新增 **“左侧边栏折叠方案”**（`#btnToggleSidebarMode`，持久化于 `localStorage.fc_sidebar_mode`，默认 **`自动折叠`**）：
+    - **`自动折叠` (`auto`)**：100% 保留现有逻辑，焦点在左侧边栏（`col === 0`）时展开，焦点移入右侧内容区（`col >= 1`）时自动折叠为胶囊态。
+    - **`始终折叠` (`always`)**：左侧边栏始终保持 `.collapsed` 紧凑图标胶囊样式（主内容区始终 `.expanded`），同时用户依然可以 100% 正常移动焦点至左侧边栏各图标项进行导航、单击或长按操作。
 - **全局缩放预设 (`UI_SCALE_PRESETS`)**：
-  - 提供 `100%` ~ `200%` 六档缩放。
-  - **缩放隔离原则**：仅对 `#sidebar`、`#mainContent` 及全屏遮罩页内容容器（`#settingsPageContent`、`#passwordPageContent`、`#powerPageContent`）应用 CSS `zoom`，**严禁对 `body`、`#macVideo` 或 `#pspWaveCanvas` 应用 `zoom`**，确保底层视频与 Canvas 始终严格保持 `100vw × 100vh` 满屏渲染。
+  - 提供 `100%` ~ `200%` 六档缩放，严禁对 `body`、`#macVideo` 或 `#pspWaveCanvas` 应用 `zoom`。
 
-### 2. 色彩系统、动态流光背景与全屏遮罩色调联动
-- **PSP XMB 动态丝带背景 (`PSP_BG_THEMES`)**：
-  - 内置 6 套低饱和度深色主题（`深海幽蓝 ocean`、`暮光星云 twilight`、`竹韵青灰 jade`、`暖珀流沙 amber`、`曜石银灰 graphite`、`绯樱夜雾 sakura`）以及默认开启的 `随机 random` 模式（每次应用启动时随机抽取一套主题存入 `sessionRandomTheme`）。
-  - 仅在非全屏且无活跃背景视频播放时运行 Canvas 渲染循环，避免后台空耗 GPU。
-- **全屏遮罩页面色调微调联动 (`syncOverlayThemeTint`)**：
-  - 设置页（`#settingsModal`）、密码验证页（`#passwordModal`）与电源选项页（`#powerModal`）统一采用 `.fs-overlay-mask` 全屏毛玻璃遮罩设计（`backdrop-filter: blur(42px) saturate(135%)`）。
-  - 遮罩背景通过 CSS 变量 `--overlay-bg-inner`（透明度 `0.76`）与 `--overlay-bg-outer`（透明度 `0.88`）读取当前激活配色的 `overlayInner` / `overlayOuter` 属性，在保持深邃暗调的基础上叠加微妙色相偏移。
-- **设置页与密码/电源页对齐及弹性布局隔离规范**：
-  - 设置页（`.fs-settings-page`）采用大屏居左排版（`margin: auto auto auto 0; text-align: left;`），左侧为固定宽度标题（`.setting-row-label`），右侧为水平弹性容器（`.setting-row-right`），单行多选统一采用横向分段长条形控制器（`.seg-control`）。
-  - 密码页（`.fs-password-page`）与电源页保持居中聚焦排版（`margin: auto; text-align: center;`）。
-  - **严禁在全局 `.btn-full` 上直接声明 `flex: 1`**：因为 `flex: 1` 等价于 `flex: 1 1 0%`，在电源页纵向 Flex 容器（`flex-direction: column`）中会将按钮主轴基准高度（`flex-basis`）强制归零，从而覆盖 `height: 58px` 导致电源页 3 个按钮高度严重塌陷。必须将横向等分样式严格限定在 `.setting-row-right .btn-full, .setting-row-right .form-input { flex: 1; min-width: 0; }`。
+### 2. 色彩系统、柔化底部黑色渐变遮罩与全屏遮罩色调联动
+- **PSP XMB 动态丝带背景 (`PSP_BG_THEMES`)**：内置 6 套低饱和度深色主题及 `随机 random` 模式。
+- **全屏播放进度条与选集列表柔化黑色透明渐变遮罩（Round 18 升级）**：
+  - 全屏播放底部信息与进度条遮罩（`.iptv-fullscreen-hud`）以及本地剧集底部选集遮罩（`.fs-episode-picker-hud`）统一采用柔化透明度的黑色渐变遮罩：
+    `background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.42) 54%, rgba(0, 0, 0, 0) 100%);`
+    最底部黑色部分增加适度透明度，避免生硬死黑，柔化大屏视觉体验。
+  - **本地剧集底部选集列表（`#fsEpisodePickerHud`，Round 18 新增）**：横向排布集数丸形按钮（`.fs-ep-item-btn`），左右两端配备圆形毛玻璃季切换按钮（`#fsEpPrevSeasonBtn` / `#fsEpNextSeasonBtn`），**严格使用 SVG 矢量折线图标表示 `<` 与 `>`**（严禁直接使用纯文本字符 `<` 和 `>`）。
 
-### 3. 字体规范与抖音品牌字体内嵌空格规范 (`formatDouyinBrandTextHtml`)
+### 3. 字体规范与气象信息字体/字号规范 (Round 18 更新)
 - **系统主字体栈**：`-apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif`。
-- **抖音美好体 (`DouyinMeihaoti` / `.douyin-font`)**：
-  - 字体资源位于 `src/assets/DouyinMeihaoti.otf`。
-  - **单独出现 vs. 嵌入文字中的空格规范（Round 16 强制规范）**：
-    1. **单独出现时不加空格**：当 `抖音` 二字或抖音产品/分类字样（`抖音精选`、`抖音推荐`、`抖音知识`、`抖音二次元`、`抖音游戏`、`抖音美食`、`抖音体育`、`抖音时尚`、`抖音音乐`）作为独立文本出现时（例如英雄区主标题 `抖音`、丸形菜单按钮 `抖音精选`、卡片独立副标题 `抖音`），直接包裹 `<span class="douyin-font">...</span>`，**两侧严禁添加多余空格**。
-    2. **插入其他文字中时两侧必须加空格**：当 `抖音` 二字或抖音产品字样嵌入在其他文字中间或一侧与非空白字符相邻时，必须通过 `formatDouyinBrandTextHtml()` 自动在其与相邻非空白字符之间插入半角空格（例如：`正在刷新 抖音 推荐视频流`、`正在刷新 抖音精选 视频流...`、`正在加载 抖音推荐 视频流...`、`登录 抖音`、`@李子柒· 抖音`）。
-- **气象速报专用圆体 (`#jpWeatherTelop`)**：
-  - 采用 `"STYuanti-SC-Bold", "Yuanti SC", "YouYuan", "Hiragino Maru Gothic ProN", sans-serif`，还原日式电视气象速报字幕质感。
+- **抖音美好体 (`DouyinMeihaoti` / `.douyin-font`)**：单独出现时不加空格，嵌入其他文字中时通过 `formatDouyinBrandTextHtml()` 在两侧自动加空格。
+- **气象速报字体与字号规范 (`#jpWeatherTelop`，Round 18 更新)**：
+  - **取消圆体，恢复之前的标准系统无衬线字体栈**：`-apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif`。
+  - **轻微调大字号**：主行字号由 `30px` 微调至 `33px`，次行发布机构字号由 `25px` 微调至 `27px`，并在 `autoScaleUI()` 中将 `--telop-scale` 基准微调至 `0.77 ~ 1.10`，清晰醒目且不夸张。
 
 ---
 
 ## 三、用户交互内容的文字措辞规范
 
-本项目对 UI 文案遵循 **“极简、克制、去机械感、原生 Apple TV 语感”** 的措辞准则，后续迭代新增或修改文案时必须严格遵守：
-
 1. **严禁出现按键括号提示或机械操作说明**
-   - 电源页标题：**`电源选项`**，副标题：**`选取选项以关闭或重新启动应用程序。`**
-   - 电源页按钮：**`关闭并退出`**、**`重新启动`**、**`取消`**
-   - 密码页标题：**`限制级内容`**，副标题：**`我们实施年龄验证，以遵守适用的联邦和州法律，请输入密码以验证身份。`**
 2. **设置页文案与层级命名规范**
    - 页面主标题：**`偏好设置`**，副标题：**`影视库资源，流媒体账户，显示和个性化设置。`**
    - 分区小标题：**`媒体与账户设置`**、**`个性化设置`**、**`限制级内容设置`**（默认隐藏）
    - 设置项名称：
-     - `数据同步`：**时间戳严禁显示在文本框内**（`.sync-time-box` 必须保持 `background: transparent; border: none; text-align: right;`），直接靠右无边框显示在圆形刷新按钮（`#btnRefreshAllData`）左侧。
-     - `影视库资源位置`、`EPG 电子节目单来源`
-     - `流媒体账号连接`（右侧并排按钮：**`登录 抖音`**、**`登录 bilibili`**）
-     - `气象信息定位`（横向分段控制器：`自动定位` / `手动输入`）
-     - `所在地位置`（右侧并排开放三个文本输入框，占位提示分别为 **`城市`** `#inputLocCity`、**`区`** `#inputLocDistrict`、**`街道`** `#inputLocStreet`）
-     - `影片评分来源`、`配色`、`显示大小`、`预览声效`、`音量均衡`
+     - `数据同步`、`影视库资源位置`、`EPG 电子节目单来源`、`流媒体账号连接`（`登录 抖音`、`登录 bilibili`）
+     - `气象信息定位`（`自动定位` / `手动输入`）、`所在地位置`（`城市`、`区`、`街道`）
+     - `影片评分来源`、`背景配色方案`、`用户界面显示比例`、**`左侧边栏折叠方案`（`自动折叠` / `始终折叠`）**、`预览时开启声音`、`音量均衡`
      - `限制级媒体资源位置`、`限制级内容密码`
-   - 页面最底部版本号：**只显示纯版本号数字**（如 `0.1.1`），严禁拼接产品名称或 `v` 前缀。
+   - 页面最底部版本号：**只显示纯版本号数字**（当前为 `0.1.2`）。
 
 ---
 
@@ -176,3 +168,29 @@
 ### 7. 电源选项“重新启动”白屏问题复盘与进程内热重启方案
 - **最终解决方案 (`src-tauri/src/lib.rs` -> `restart_app` & `src-tauri/tauri.conf.json`)**：
   - 在 `tauri.conf.json` 中显式声明 `"backgroundColor": "#000000"`；`restart_app` 采用进程内原子化热重启（递增 `ffmpeg_generation`、终止 FFmpeg、清理 `/tmp/cooltv_hls`、清空推荐流缓存并重载主窗口），彻底消除端口冲突与白屏。
+
+### 8. bilibili 登录提示“浏览器版本过低”与抖音推荐流混入用户“曾经点过赞”重复视频问题（Round 18 重点复盘）
+- **历史异常表现**：
+  1. **bilibili 登录入口提示“浏览器版本过低”**：在偏好设置页点击“登录 bilibili”后，打开的窗口跳转到 `/blackboard/fe-activity-low-version.html`（提示“浏览器版本过低，建议升级浏览器或下载哔哩哔哩桌面端”），无法正常扫码或输入账号登录。
+  2. **抖音推荐流反复混入用户曾经点过赞的视频**：登录后，抖音推荐流中经常出现一批重复视频，经排查全部是当前账号曾经点过赞（或收藏）的内容。
+- **底层根因**：
+  1. **Tauri `WKWebView` 默认 User-Agent 缺少现代浏览器版本标识**：`WebviewWindowBuilder::new(app, "bilibili_scraper", ...)` 未显式设置 `.user_agent(...)`，macOS `WKWebView` 默认发送不含 `Version/17.x Safari/605.1.15` 或 `Chrome/128.0.0.0` 的精简 `AppleWebKit/605.1.15` UA，触发了 bilibili 前端路由的低版本浏览器拦截重定向。
+  2. **抖音网页端后台拉取个人点赞/收藏接口且 `deepScan` 无差别递归**：用户登录抖音后，网页端会在后台自动请求 `/aweme/v1/web/aweme/favorite/`、`/listcollection/`、`/history/` 等接口或返回包含 `user_digged === 1`（或 `status.is_digged === true`）的数据块，此前 `XMLHttpRequest` / `fetch` / `Response.prototype.json` 钩子未过滤上述个人列表接口且 `recordAweme` 未排除已点赞项。
+- **最终解决方案 (`src-tauri/src/lib.rs` -> `ensure_bilibili_scraper` / `ensure_douyin_scraper`)**：
+  1. **显式注入现代桌面 Chrome 128 User-Agent + 登录直达路由与低版本页自动纠偏**：
+     - 在 `bilibili_scraper` 与 `douyin_scraper` 的 `WebviewWindowBuilder` 上统一调用 `.user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")`；
+     - `bilibili_scraper` 初始地址直达 `https://passport.bilibili.com/login`，并在 `bili_hook_script` 中同步伪装 `navigator.userAgent` / `window.chrome` 且实时检测 `low-version` URL 自动重定向至标准登录页。
+  2. **URL 接口级 + 对象属性级 + 字段级三层过滤排除已点赞/收藏视频**：
+     - 新增 `isExcludedDouyinUrl(u)` 拦截所有匹配 `/favorite|digg|like|collection|collect|history|visited|familiar|following|user\/post|aweme\/post|follow\/feed/i` 的请求；
+     - 在 `deepScan` 中跳过 `favorite_list`、`digg_list`、`like_list`、`collect_list`、`history_list` 键；
+     - 在 `recordAweme(aweme)` 中严格校验 `aweme.user_digged === 1 || aweme.is_digged === 1 || aweme.collect_stat === 1 || aweme.user_favorited === 1 || (aweme.status && aweme.status.is_digged)`，命中即直接丢弃，彻底杜绝已点赞内容混入推荐流。
+
+### 9. 正在观看/现在观看持久化记忆（上限 20 条）、卡片底部贴边白线进度条与“预览不入库、正式播放才入库”机制（Round 18 重点复盘）
+- **核心设计规范 (`src/index.html`)**：
+  1. **未进入正式播放的预览内容绝不计入历史记录 (`startPreviewStream` vs `executeItemAction`)**：
+     - 焦点停留在卡片上触发的背景预览（`startPreviewStream`）仅调用 `syncNowWatchingRowData(false)`，使当前正在预览的内容临时作为“正在观看”页的第一张卡片展示；一旦用户预览其他内容或停止预览，该未进入正式播放的临时记录自动消失；
+     - 只有当用户按回车/点击真正进入**正式全屏播放页面**（`isFullScreen = true`）时，才调用 `recordWatchHistoryItem(activePreviewMeta)` 将记录写入 `watchHistoryList` 并持久化至 `localStorage.fc_watch_history_v1`。
+  2. **跨会话记忆保存、最多 20 条上限与观看进度自动保存**：
+     - 应用退出重开后从 `localStorage.fc_watch_history_v1` 自动恢复历史观看列表，严格限制最多保存 **20 条**记录（超出自动截断最旧记录）；
+     - 播放期间通过 `timeupdate`、`seeked`、`pause`、`exitFullscreenToMainView` 与 `beforeunload` 自动计算并持久化 `progressSec`、`durationSec` 与 `progressPct`，并在“正在观看 / 现在观看”卡片（`rowId === 7`）底部渲染贴边白色进度线条（`.card-watch-progress-track` / `.card-watch-progress-fill`），再次从历史记录进入正式播放时自动从上次观看进度续播。
+
