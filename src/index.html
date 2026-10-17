@@ -6,7 +6,34 @@
     <meta name="referrer" content="no-referrer">
     <title>Feel Cool TV</title>
     <style>
-        :root { --glass-bg: rgba(28, 28, 30, 0.55); --glass-border: rgba(255, 255, 255, 0.08); --animation-speed: 0.3s; }
+        @font-face {
+            font-family: 'DouyinMeihaoti';
+            src: url('./assets/DouyinMeihaoti.otf') format('opentype'),
+                 url('assets/DouyinMeihaoti.otf') format('opentype'),
+                 local('抖音美好体'),
+                 local('Douyin Sans Bold'),
+                 local('Douyin Sans');
+            font-weight: normal;
+            font-style: normal;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'DouyinMeihaoti';
+            src: url('./assets/DouyinMeihaoti.otf') format('opentype'),
+                 url('assets/DouyinMeihaoti.otf') format('opentype'),
+                 local('抖音美好体'),
+                 local('Douyin Sans Bold'),
+                 local('Douyin Sans');
+            font-weight: bold;
+            font-style: normal;
+            font-display: block;
+        }
+        .douyin-font {
+            font-family: 'DouyinMeihaoti', '抖音美好体', 'Douyin Sans Bold', 'Douyin Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        :root { --glass-bg: rgba(28, 28, 30, 0.55); --glass-border: rgba(255, 255, 255, 0.08); --animation-speed: 0.3s; --overlay-bg-inner: rgba(16, 20, 28, 0.76); --overlay-bg-outer: rgba(6, 8, 12, 0.88); }
         html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; background-color: #000 !important; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif; overflow: hidden !important; user-select: none; position: fixed; -webkit-font-smoothing: antialiased; }
         * { scrollbar-width: none !important; -webkit-user-drag: none; }
         ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
@@ -131,7 +158,7 @@
             max-width: 76vw;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
         }
-        /* 任务 1 (Round 14)：文字滚动时左侧也增加渐变透明效果，通过 margin-left: -26px; padding-left: 26px 使左侧渐变遮罩（0px~26px）严格位于静止时第一个字的左侧，避免遮挡静止时的文字 */
+        /* 任务 1 (Round 14) & 任务 2 (Round 15)：文字滚动时左侧也增加渐变透明效果，通过 margin-left: -26px; padding-left: 26px 使左侧渐变遮罩严格位于静止时第一个字的左侧；同时锁定 GPU 合成层消除循环归位时的闪烁 */
         .iptv-hud-title.single-line-marquee {
             display: block;
             white-space: nowrap;
@@ -140,6 +167,9 @@
             max-width: 76vw;
             margin-left: -26px;
             padding-left: 26px;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             -webkit-mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
             mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
         }
@@ -343,13 +373,42 @@
         #heroBrandText { line-height: 20px; display: inline-flex; align-items: center; }
 
         .main-title { font-size: 42px; font-weight: 800; margin: 0 0 4px 0; letter-spacing: -0.5px; line-height: 1.15; max-width: 75%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        /* 任务 1 (Round 14)：文字滚动时左侧也增加渐变透明效果，通过 margin-left: -26px; padding-left: 26px 使左侧渐变遮罩（0px~26px）严格位于静止时第一个字的左侧，避免遮挡静止时的文字 */
-        .main-title.single-line-marquee { display: block; white-space: nowrap; overflow: hidden; max-width: 68%; margin-left: -26px; padding-left: 26px; -webkit-mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%); mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%); }
-        .marquee-track { display: inline-block; white-space: nowrap; will-change: transform; animation: smoothMarquee var(--marquee-dur, 14s) linear infinite; }
-        .marquee-track span { display: inline-block; padding-right: 72px; }
+        /* 任务 1 (Round 14) & 任务 2 (Round 15)：文字滚动时左侧也增加渐变透明效果，遮罩严格位于静止时第一个字的左侧；采用 inline-flex + 独立 GPU 合成层 + 双副本精确 50% 等宽对齐，彻底消除标题滚动结束归位时的闪烁 */
+        .main-title.single-line-marquee {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 68%;
+            margin-left: -26px;
+            padding-left: 26px;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -webkit-mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0px, black 26px, black 93%, transparent 100%);
+        }
+        .marquee-track {
+            display: inline-flex;
+            align-items: center;
+            width: max-content;
+            white-space: nowrap;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            animation: smoothMarquee var(--marquee-dur, 14s) linear infinite;
+        }
+        .marquee-track > span {
+            flex: 0 0 auto;
+            display: inline-block;
+            padding-right: 72px;
+            box-sizing: border-box;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
         @keyframes smoothMarquee {
             0%, 15% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-50%, 0, 0); }
+            99.99%, 100% { transform: translate3d(-50%, 0, 0); }
         }
 
         /* 修复 8：TMDB 剧集 Logo 正方形/横向自适应放置容器 */
@@ -451,13 +510,13 @@
         .glass-modal-mask.active { display: flex; opacity: 1; }
         .glass-modal { width: 560px; max-height: 90vh; overflow-y: auto; background: rgba(32, 32, 36, 0.92); border: 1px solid rgba(255,255,255,0.14); border-radius: 28px; padding: 30px 36px; box-shadow: 0 28px 70px rgba(0,0,0,0.75); color: #fff; box-sizing: border-box; }
 
-        /* 任务 9 & 10 (Round 11)：全屏重绘设置页面与密码页面——取消独立浮窗卡片设计，直接在背景视频上叠加全屏模糊变暗遮罩，自适应全部缩放等级并支持上下焦点滚动 */
+        /* 任务 9 & 10 (Round 11) & 任务 5 (Round 15)：全屏重绘设置页面、密码页面与电源页面——在原深色毛玻璃基础上微调背景色调匹配当前配色方案 */
         .fs-overlay-mask {
             position: fixed;
             inset: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at 50% 24%, rgba(16, 20, 28, 0.76) 0%, rgba(6, 8, 12, 0.88) 100%);
+            background: radial-gradient(circle at 50% 24%, var(--overlay-bg-inner, rgba(16, 20, 28, 0.76)) 0%, var(--overlay-bg-outer, rgba(6, 8, 12, 0.88)) 100%);
             backdrop-filter: blur(42px) saturate(135%);
             -webkit-backdrop-filter: blur(42px) saturate(135%);
             z-index: 100;
@@ -465,7 +524,7 @@
             visibility: hidden;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: background 0.35s ease, opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.36s cubic-bezier(0.22, 1, 0.36, 1);
             overflow-y: auto;
             overflow-x: hidden;
             box-sizing: border-box;
@@ -750,7 +809,7 @@
         .btn-cancel { background: rgba(255,255,255,0.12); color: #fff; }
         .btn-primary { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.28); color: #fff; }
         .btn-danger { background: rgba(255, 69, 58, 0.22); border-color: rgba(255, 69, 58, 0.42); color: #ff6961; }
-        .btn-full { width: 100%; height: 54px; background: rgba(255,255,255,0.09); border: 2px solid rgba(255,255,255,0.16); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; font-size: 15px; border-radius: 14px; }
+        .btn-full { flex: 1; min-width: 0; width: 100%; height: 54px; background: rgba(255,255,255,0.09); border: 2px solid rgba(255,255,255,0.16); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; font-size: 15px; border-radius: 14px; }
         .btn:focus, .btn.modal-focused { border-color: #fff !important; transform: scale(1.03); box-shadow: 0 10px 28px rgba(0,0,0,0.5); background: #fff !important; color: #000 !important; }
         .btn.pressing { transform: scale(0.95) !important; }
     </style>
@@ -880,7 +939,10 @@
                 <span class="setting-row-label">流媒体账号连接</span>
                 <div class="setting-row-right">
                     <button type="button" class="btn btn-full" id="btnDouyinLogin">
-                        <span>登录抖音</span>
+                        <span>登录 <span class="douyin-font">抖音</span></span>
+                    </button>
+                    <button type="button" class="btn btn-full" id="btnBilibiliLogin">
+                        <span>登录 bilibili</span>
                     </button>
                 </div>
             </div>
@@ -1081,6 +1143,8 @@
                 bgMid: '#101b30',
                 bgBot: '#05080f',
                 glow: 'rgba(68, 108, 168, 0.22)',
+                overlayInner: 'rgba(15, 21, 31, 0.76)',
+                overlayOuter: 'rgba(6, 9, 14, 0.88)',
                 waveRgb: [[110, 155, 215], [85, 130, 195], [135, 175, 230], [70, 115, 175]]
             },
             {
@@ -1090,6 +1154,8 @@
                 bgMid: '#1d1530',
                 bgBot: '#08060e',
                 glow: 'rgba(130, 95, 175, 0.22)',
+                overlayInner: 'rgba(21, 17, 30, 0.76)',
+                overlayOuter: 'rgba(8, 6, 13, 0.88)',
                 waveRgb: [[165, 130, 210], [135, 100, 185], [185, 150, 225], [115, 85, 160]]
             },
             {
@@ -1099,6 +1165,8 @@
                 bgMid: '#0f2426',
                 bgBot: '#050b0c',
                 glow: 'rgba(72, 145, 140, 0.20)',
+                overlayInner: 'rgba(13, 23, 25, 0.76)',
+                overlayOuter: 'rgba(5, 10, 11, 0.88)',
                 waveRgb: [[105, 180, 172], [80, 150, 145], [130, 200, 192], [65, 130, 125]]
             },
             {
@@ -1108,6 +1176,8 @@
                 bgMid: '#241a12',
                 bgBot: '#0b0806',
                 glow: 'rgba(165, 120, 80, 0.20)',
+                overlayInner: 'rgba(24, 19, 15, 0.76)',
+                overlayOuter: 'rgba(10, 8, 6, 0.88)',
                 waveRgb: [[195, 150, 110], [165, 120, 85], [215, 172, 132], [140, 100, 70]]
             },
             {
@@ -1117,6 +1187,8 @@
                 bgMid: '#171a21',
                 bgBot: '#07080a',
                 glow: 'rgba(130, 140, 155, 0.19)',
+                overlayInner: 'rgba(18, 20, 24, 0.76)',
+                overlayOuter: 'rgba(7, 8, 10, 0.88)',
                 waveRgb: [[160, 170, 185], [130, 140, 155], [185, 195, 210], [110, 120, 135]]
             },
             {
@@ -1126,6 +1198,8 @@
                 bgMid: '#251621',
                 bgBot: '#0b060a',
                 glow: 'rgba(168, 105, 138, 0.20)',
+                overlayInner: 'rgba(24, 16, 22, 0.76)',
+                overlayOuter: 'rgba(10, 6, 9, 0.88)',
                 waveRgb: [[198, 135, 165], [168, 108, 138], [215, 158, 185], [142, 88, 115]]
             }
         ];
@@ -1153,6 +1227,15 @@
                 return sessionRandomTheme || PSP_BG_THEMES[0];
             }
             return PSP_BG_THEMES.find(t => t.id === id) || PSP_BG_THEMES[0];
+        }
+
+        // 任务 5 (Round 15)：设置页、电源页和密码页背景色调匹配当前配色色调，在原深色毛玻璃基础上微调颜色而不突兀
+        function syncOverlayThemeTint() {
+            var theme = getCurrentPspTheme();
+            var rootEl = document.documentElement;
+            if (!rootEl || !theme) return;
+            rootEl.style.setProperty('--overlay-bg-inner', theme.overlayInner || 'rgba(16, 20, 28, 0.76)');
+            rootEl.style.setProperty('--overlay-bg-outer', theme.overlayOuter || 'rgba(6, 8, 12, 0.88)');
         }
 
         function renderPspWaveFrame() {
@@ -1553,7 +1636,8 @@
             uiScale: localStorage.getItem('fc_ui_scale') || '1.40'
         };
 
-        // 启动 PSP 动态流光背景渲染循环
+        // 启动 PSP 动态流光背景渲染循环并同步全屏遮罩层主题色调
+        syncOverlayThemeTint();
         requestAnimationFrame(renderPspWaveFrame);
 
         var pornUnlocked = false, isModalOpen = false;
@@ -1578,22 +1662,54 @@
         ];
         var lastRowColMap = { 1: 1, 2: 1, 3: 1, 4: 1, 7: 1, series: 1 };
 
-        // 修复 8 (Round 4)：抖音自带分类支持，默认抖音精选，丸形菜单默认折叠只显示一个带 SVG 箭头的按钮
+        // 修复 8 (Round 4) & 任务 3 & 4 (Round 15)：流媒体丸形菜单支持抖音与 bilibili 双平台一级菜单及各自二级分类菜单
         const DOUYIN_CATEGORIES = [
-            { id: 'discover',  name: '抖音精选' },
-            { id: 'recommend', name: '抖音推荐' },
-            { id: 'knowledge', name: '抖音知识' },
-            { id: 'acg',       name: '抖音二次元' },
-            { id: 'game',      name: '抖音游戏' },
-            { id: 'food',      name: '抖音美食' },
-            { id: 'sports',    name: '抖音体育' },
-            { id: 'fashion',   name: '抖音时尚' },
-            { id: 'music',     name: '抖音音乐' }
+            { id: 'discover',  name: '抖音精选', platform: 'douyin' },
+            { id: 'recommend', name: '抖音推荐', platform: 'douyin' },
+            { id: 'knowledge', name: '抖音知识', platform: 'douyin' },
+            { id: 'acg',       name: '抖音二次元', platform: 'douyin' },
+            { id: 'game',      name: '抖音游戏', platform: 'douyin' },
+            { id: 'food',      name: '抖音美食', platform: 'douyin' },
+            { id: 'sports',    name: '抖音体育', platform: 'douyin' },
+            { id: 'fashion',   name: '抖音时尚', platform: 'douyin' },
+            { id: 'music',     name: '抖音音乐', platform: 'douyin' }
         ];
+        const BILI_CATEGORIES = [
+            { id: 'bili_popular',   name: 'bilibili热门', platform: 'bilibili' },
+            { id: 'bili_rcmd',      name: 'bilibili推荐', platform: 'bilibili' },
+            { id: 'bili_anime',     name: 'bilibili动画', platform: 'bilibili' },
+            { id: 'bili_bangumi',   name: 'bilibili番剧', platform: 'bilibili' },
+            { id: 'bili_cinephile', name: 'bilibili影视', platform: 'bilibili' },
+            { id: 'bili_game',      name: 'bilibili游戏', platform: 'bilibili' },
+            { id: 'bili_knowledge', name: 'bilibili知识', platform: 'bilibili' },
+            { id: 'bili_tech',      name: 'bilibili科技', platform: 'bilibili' },
+            { id: 'bili_music',     name: 'bilibili音乐', platform: 'bilibili' },
+            { id: 'bili_food',      name: 'bilibili美食', platform: 'bilibili' },
+            { id: 'bili_dance',     name: 'bilibili舞蹈', platform: 'bilibili' }
+        ];
+        const ALL_STREAM_CATEGORIES = DOUYIN_CATEGORIES.concat(BILI_CATEGORIES);
         var activeDouyinCategory = 'discover';
-        var douyinPillsExpanded = false;
+        var activeDouyinSubCategory = 'discover';
+        var activeBiliSubCategory = 'bili_popular';
+        var biliSubExplicitlyChosen = false;
+        var douyinPillsExpanded = false; // false | 'douyin' | 'bilibili'
         var douyinBarAnimType = '';
         var pendingAutoAdvanceDouyin = false;
+
+        function isBiliCategory(catId) {
+            return String(catId || activeDouyinCategory || '').indexOf('bili_') === 0;
+        }
+
+        function getStreamCategoryObj(catId) {
+            var id = catId || activeDouyinCategory;
+            return ALL_STREAM_CATEGORIES.find(c => c.id === id) || DOUYIN_CATEGORIES[0];
+        }
+
+        function syncStreamingNavTitle() {
+            var navDy = document.getElementById('navDouyinItem');
+            if (!navDy) return;
+            navDy.setAttribute('data-title', isBiliCategory(activeDouyinCategory) ? 'bilibili' : '抖音');
+        }
 
         var globalConfig = { user: { name: "高博", avatar_url: "" }, api: { tmdb_api_key: "f7762624a95e4c3823500736d40162cd", epg_url: DEFAULT_EPG_URL } };
         var currentFocusEl = null, currentTrackRow = -1, bgPreviewTimeout = null;
@@ -1689,11 +1805,14 @@
                 if (epgProg) subText = epgProg;
             }
 
-            // 任务 1 (Round 11)：正在播放/现在观看板块（rowId === 7）卡片下方副标题在结尾标注媒体来源，如“@李子柒·抖音”、“新闻联播·有线电视”
+            // 任务 1 (Round 11) & 任务 3 (Round 15)：正在播放/现在观看板块（rowId === 7）卡片下方副标题在结尾标注媒体来源，如“@李子柒·抖音”、“@何同学·bilibili”、“新闻联播·有线电视”
             if (rowId === 7 && item.action) {
                 var sourceLabel = '';
                 var actStr = String(item.action || '');
-                if (effectiveRow === 3 || actStr.indexOf('douyin:') === 0) {
+                var prevStr = String(item.previewUrl || item.url || '');
+                if (actStr.indexOf('douyin:bili:') === 0 || actStr.indexOf('bilibili:') === 0 || prevStr.indexOf('douyin:bili:') === 0 || prevStr.indexOf('bilibili:') === 0) {
+                    sourceLabel = 'bilibili';
+                } else if (effectiveRow === 3 || actStr.indexOf('douyin:') === 0) {
                     sourceLabel = '抖音';
                 } else if (effectiveRow === 2 || actStr.indexOf('iptv:') === 0) {
                     sourceLabel = '有线电视';
@@ -1730,7 +1849,8 @@
             if (!entry) return true;
             if (entry.loading) return true;
             if (!(entry.rawCount && entry.rawCount > 0)) return true;
-            if (entry.lastGrowthTs && (Date.now() - entry.lastGrowthTs < DOUYIN_BATCH_SETTLE_MS)) return true;
+            var settleMs = isBiliCategory(targetCat) ? 450 : DOUYIN_BATCH_SETTLE_MS;
+            if (entry.lastGrowthTs && (Date.now() - entry.lastGrowthTs < settleMs)) return true;
             return false;
         }
 
@@ -1775,9 +1895,20 @@
                 DOUYIN_CATEGORY_CACHE[activeDouyinCategory].lastCol = lastRowColMap[3] || 1;
             }
             activeDouyinCategory = newCatId;
-            var catObj = DOUYIN_CATEGORIES.find(c => c.id === newCatId) || DOUYIN_CATEGORIES[0];
+            if (isBiliCategory(newCatId)) {
+                activeBiliSubCategory = newCatId;
+            } else {
+                activeDouyinSubCategory = newCatId;
+            }
+            syncStreamingNavTitle();
+            var catObj = getStreamCategoryObj(newCatId);
             Array.from(document.querySelectorAll('#seasonBar .season-pill[data-douyin-cat]')).forEach(el => {
-                el.classList.toggle('current', el.getAttribute('data-douyin-cat') === newCatId);
+                if (el.getAttribute('data-stream-platform')) {
+                    var plat = el.getAttribute('data-stream-platform');
+                    el.classList.toggle('current', (plat === 'bilibili') === isBiliCategory(newCatId));
+                } else {
+                    el.classList.toggle('current', el.getAttribute('data-douyin-cat') === newCatId);
+                }
             });
 
             var cached = DOUYIN_CATEGORY_CACHE[newCatId];
@@ -1827,7 +1958,7 @@
 
         async function loadDouyinNativeFeed(forceRefresh, requestMore) {
             var reqCat = activeDouyinCategory;
-            var catObj = DOUYIN_CATEGORIES.find(c => c.id === reqCat) || DOUYIN_CATEGORIES[0];
+            var catObj = getStreamCategoryObj(reqCat);
             if (forceRefresh) {
                 if (douyinPollTimer) { clearInterval(douyinPollTimer); douyinPollTimer = null; }
                 isDouyinRefreshing = true;
@@ -1864,6 +1995,9 @@
                     }
                 }
                 await invoke('get_douyin_feed', { refresh: true, loadMore: false, category: reqCat }).catch(() => {});
+                if (isBiliCategory(reqCat)) {
+                    setTimeout(() => loadDouyinNativeFeed(false, false), 80);
+                }
                 douyinPollTimer = setInterval(() => loadDouyinNativeFeed(false, false), 600);
                 return;
             }
@@ -1878,7 +2012,8 @@
                     var growthTs = (cappedList.length > prevRawCount || !prevCache || !prevCache.lastGrowthTs)
                         ? nowMs
                         : prevCache.lastGrowthTs;
-                    var stillAddingCards = (nowMs - growthTs) < DOUYIN_BATCH_SETTLE_MS;
+                    var settleMs = isBiliCategory(reqCat) ? 450 : DOUYIN_BATCH_SETTLE_MS;
+                    var stillAddingCards = (nowMs - growthTs) < settleMs;
 
                     var cards = cappedList.map((item, idx) => ({
                         title: item[0] || (catObj.name + '视频 #' + (idx + 1)),
@@ -2927,9 +3062,14 @@
 
             if (displayTitle && displayTitle.length > 20) {
                 var dur = Math.max(10, Math.round(displayTitle.length * 0.42)) + 's';
-                tEl.className = 'iptv-hud-title single-line-marquee';
-                tEl.innerHTML = '<div class="marquee-track" style="--marquee-dur: ' + dur + ';"><span>' + safeHtmlTitle + '</span><span>' + safeHtmlTitle + '</span></div>';
+                var hudMarqueeKey = 'marquee:' + displayTitle;
+                if (tEl.getAttribute('data-marquee-key') !== hudMarqueeKey || !tEl.querySelector('.marquee-track')) {
+                    tEl.setAttribute('data-marquee-key', hudMarqueeKey);
+                    tEl.className = 'iptv-hud-title single-line-marquee';
+                    tEl.innerHTML = '<div class="marquee-track" style="--marquee-dur: ' + dur + ';"><span>' + safeHtmlTitle + '</span><span>' + safeHtmlTitle + '</span></div>';
+                }
             } else {
+                tEl.removeAttribute('data-marquee-key');
                 tEl.className = 'iptv-hud-title';
                 tEl.textContent = displayTitle;
             }
@@ -3714,6 +3854,7 @@
         function openPasswordModal() {
             isModalOpen = true;
             pwdAnimUnlocking = false;
+            syncOverlayThemeTint();
             var modal = document.getElementById('passwordModal'), input = document.getElementById('inputUnlockPwd');
             var fillBar = document.getElementById('pwdFillBar');
             if (fillBar) fillBar.className = 'pwd-fill-bar';
@@ -3748,6 +3889,7 @@
         // 任务 12 (Round 5)：电源管理弹窗打开、关闭与执行逻辑
         function openPowerModal() {
             isModalOpen = true;
+            syncOverlayThemeTint();
             var modal = document.getElementById('powerModal');
             modal.classList.add('active');
             modalFocusList = [
@@ -3858,6 +4000,7 @@
                     sessionRandomTheme = PSP_BG_THEMES[Math.floor(Math.random() * PSP_BG_THEMES.length)];
                 }
                 localStorage.setItem('fc_bg_theme', appSettings.bgTheme);
+                syncOverlayThemeTint();
                 updateSettingsToggleButtons();
             } else if (controlId === 'btnToggleUiScale') {
                 appSettings.uiScale = newVal;
@@ -3941,6 +4084,7 @@
                 document.getElementById('inputMediaPath'),
                 document.getElementById('inputEpgUrl'),
                 document.getElementById('btnDouyinLogin'),
+                document.getElementById('btnBilibiliLogin'),
                 document.getElementById('btnToggleRatingSource'),
                 document.getElementById('btnToggleBgTheme'),
                 document.getElementById('btnToggleUiScale'),
@@ -3979,6 +4123,7 @@
             isModalOpen = true;
             restrictedSettingsRevealed = false;
             saveBtnLongPressTriggered = false;
+            syncOverlayThemeTint();
             var sec = document.getElementById('restrictedSettingsSection');
             if (sec) sec.classList.remove('revealed');
             document.getElementById('inputMediaPath').value = appSettings.mediaPath;
@@ -4062,6 +4207,13 @@
             closeSettingsModal();
             invoke('open_douyin_login').catch(() => {});
         };
+        var btnBiliLoginEl = document.getElementById('btnBilibiliLogin');
+        if (btnBiliLoginEl) {
+            btnBiliLoginEl.onclick = function() {
+                closeSettingsModal();
+                invoke('open_bilibili_login').catch(() => {});
+            };
+        }
         if (window.__TAURI__ && window.__TAURI__.app && typeof window.__TAURI__.app.getVersion === 'function') {
             window.__TAURI__.app.getVersion().then(function(ver) {
                 var vEl = document.getElementById('settingsVersionText');
@@ -4069,7 +4221,7 @@
             }).catch(function() {});
         }
 
-        // 任务 2 (Round 5) & 任务 4 (Round 6) & 任务 3 (Round 8) & 任务 6 & 7 (Round 11)：流媒体丸形菜单左侧刷新按钮在加载/刷新时变形为丸形按钮（带旋转图标 + “正在加载..”且支持再次点击重新刷新），完成后恢复圆形静态按钮；切换分类不清空已加载推荐流
+        // 任务 2 (Round 5) & 任务 4 (Round 6) & 任务 3 (Round 8) & 任务 6 & 7 (Round 11) & 任务 3 & 4 (Round 15)：流媒体丸形菜单支持抖音与 bilibili 双平台一级菜单及各自二级菜单（抖音系分区全名使用抖音美好体）
         function triggerDouyinCategoryForceRefresh(btnEl) {
             if (btnEl) {
                 btnEl.classList.add('loading-pill');
@@ -4088,8 +4240,16 @@
             var refreshBtnHtml = '<div class="season-pill season-refresh-btn focusable' + stateCls + '" tabindex="0" data-row="0" data-col="1" data-douyin-refresh="1" data-no-bg-change="true" title="点击刷新当前分类推荐流">' + REFRESH_SVG_HTML + '<span class="refresh-btn-label">正在加载..</span></div>';
 
             if (!douyinPillsExpanded) {
-                var curCat = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinCategory) || DOUYIN_CATEGORIES[0];
-                seasonBar.innerHTML = refreshBtnHtml + '<div class="season-pill focusable current' + animCls + '" tabindex="0" data-row="0" data-col="2" data-douyin-collapsed="1" data-douyin-cat="' + curCat.id + '" data-no-bg-change="true"><span>' + curCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
+                var curDyCat = DOUYIN_CATEGORIES.find(c => c.id === activeDouyinSubCategory) || DOUYIN_CATEGORIES[0];
+                var curBiliCat = BILI_CATEGORIES.find(c => c.id === activeBiliSubCategory) || BILI_CATEGORIES[0];
+                var isBiliNow = isBiliCategory(activeDouyinCategory);
+                var dyCurCls = !isBiliNow ? ' current' : '';
+                var biliCurCls = isBiliNow ? ' current' : '';
+                var biliLabel = biliSubExplicitlyChosen ? curBiliCat.name : 'bilibili';
+                seasonBar.innerHTML =
+                    refreshBtnHtml +
+                    '<div class="season-pill focusable' + dyCurCls + animCls + '" tabindex="0" data-row="0" data-col="2" data-douyin-collapsed="1" data-stream-platform="douyin" data-douyin-cat="' + curDyCat.id + '" data-no-bg-change="true"><span class="douyin-font">' + curDyCat.name + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>' +
+                    '<div class="season-pill focusable' + biliCurCls + animCls + '"' + (animCls ? ' style="animation-delay:22ms;"' : '') + ' tabindex="0" data-row="0" data-col="3" data-bili-collapsed="1" data-stream-platform="bilibili" data-douyin-cat="' + curBiliCat.id + '" data-no-bg-change="true"><span>' + biliLabel + '</span>' + PILL_CHEVRON_RIGHT_SVG + '</div>';
                 seasonBar.classList.add('active');
                 var refBtn = seasonBar.querySelector('.season-refresh-btn');
                 if (refBtn) {
@@ -4099,11 +4259,14 @@
                         triggerDouyinCategoryForceRefresh(refBtn);
                     };
                 }
-                var singlePill = seasonBar.querySelector('.season-pill[data-douyin-collapsed="1"]');
-                if (singlePill) {
-                    singlePill.onclick = function(ev) {
+                var dyPill = seasonBar.querySelector('.season-pill[data-douyin-collapsed="1"]');
+                if (dyPill) {
+                    dyPill.onclick = function(ev) {
                         ev.stopPropagation();
-                        douyinPillsExpanded = true;
+                        if (isBiliCategory(activeDouyinCategory)) {
+                            switchDouyinCategoryWithoutClearing(activeDouyinSubCategory);
+                        }
+                        douyinPillsExpanded = 'douyin';
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
                         var activeCol = Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
@@ -4111,13 +4274,31 @@
                         if (targetPill) setFocus(targetPill);
                     };
                 }
+                var biliPill = seasonBar.querySelector('.season-pill[data-bili-collapsed="1"]');
+                if (biliPill) {
+                    biliPill.onclick = function(ev) {
+                        ev.stopPropagation();
+                        if (!isBiliCategory(activeDouyinCategory)) {
+                            switchDouyinCategoryWithoutClearing(activeBiliSubCategory);
+                        }
+                        douyinPillsExpanded = 'bilibili';
+                        douyinBarAnimType = 'expand';
+                        renderDouyinSeasonBar();
+                        var activeCol = Math.max(2, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
+                        var targetPill = seasonBar.querySelector('.season-pill[data-col="' + activeCol + '"]') || seasonBar.querySelector('.season-pill[data-col="2"]');
+                        if (targetPill) setFocus(targetPill);
+                    };
+                }
             } else {
+                var subList = (douyinPillsExpanded === 'bilibili') ? BILI_CATEGORIES : DOUYIN_CATEGORIES;
+                var isDySub = (douyinPillsExpanded !== 'bilibili');
                 var dHtml = refreshBtnHtml;
-                for (var d = 0; d < DOUYIN_CATEGORIES.length; d++) {
-                    var dc = DOUYIN_CATEGORIES[d];
+                for (var d = 0; d < subList.length; d++) {
+                    var dc = subList[d];
                     var curCls = (dc.id === activeDouyinCategory) ? ' current' : '';
                     var delayStyle = animCls ? (' style="animation-delay:' + (d * 18) + 'ms;"') : '';
-                    dHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 2) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span>' + dc.name + '</span></div>';
+                    var spanCls = isDySub ? ' class="douyin-font"' : '';
+                    dHtml += '<div class="season-pill focusable' + curCls + animCls + '"' + delayStyle + ' tabindex="0" data-row="0" data-col="' + (d + 2) + '" data-douyin-cat="' + dc.id + '" data-no-bg-change="true"><span' + spanCls + '>' + dc.name + '</span></div>';
                 }
                 seasonBar.innerHTML = dHtml;
                 seasonBar.classList.add('active');
@@ -4133,6 +4314,9 @@
                     pillEl.onclick = function(ev) {
                         ev.stopPropagation();
                         var catId = pillEl.getAttribute('data-douyin-cat');
+                        if (catId && isBiliCategory(catId)) {
+                            biliSubExplicitlyChosen = true;
+                        }
                         if (catId && catId !== activeDouyinCategory) {
                             switchDouyinCategoryWithoutClearing(catId);
                         }
@@ -4357,6 +4541,24 @@
             }
         }
 
+        function formatHeroTitleHtml(rawTitle) {
+            var s = String(rawTitle || '');
+            if (s === '抖音') {
+                return '<span class="douyin-font">抖音</span>';
+            }
+            var safe = s
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            for (var i = 0; i < DOUYIN_CATEGORIES.length; i++) {
+                var cname = DOUYIN_CATEGORIES[i].name;
+                if (safe.indexOf(cname) !== -1) {
+                    safe = safe.split(cname).join('<span class="douyin-font">' + cname + '</span>');
+                }
+            }
+            return safe;
+        }
+
         function updateHeroUI(title, sub, desc, brandName, svgIconHTML, isVerified, skipLogo, isSingleLineMarquee, explicitLogoUrl) {
             var heroTitleEl = document.getElementById('heroTitle');
             var subBadgeEl = document.getElementById('heroSubBadge');
@@ -4365,14 +4567,20 @@
             var brandEl = document.getElementById('heroBrand');
             
             var verifiedBadge = isVerified ? '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' : '';
+            var formattedTitleHtml = formatHeroTitleHtml(title);
 
             if (isSingleLineMarquee && title && title.length > 18) {
                 var dur = Math.max(10, Math.round(title.length * 0.42)) + 's';
-                heroTitleEl.className = 'main-title single-line-marquee';
-                heroTitleEl.innerHTML = '<div class="marquee-track" style="--marquee-dur: ' + dur + '; margin-bottom: 2px;"><span>' + title + '</span><span>' + title + '</span></div>';
+                var mKey = 'marquee:' + title;
+                if (heroTitleEl.getAttribute('data-marquee-key') !== mKey || !heroTitleEl.querySelector('.marquee-track')) {
+                    heroTitleEl.setAttribute('data-marquee-key', mKey);
+                    heroTitleEl.className = 'main-title single-line-marquee';
+                    heroTitleEl.innerHTML = '<div class="marquee-track" style="--marquee-dur: ' + dur + '; margin-bottom: 2px;"><span>' + formattedTitleHtml + '</span><span>' + formattedTitleHtml + '</span></div>';
+                }
             } else {
+                heroTitleEl.removeAttribute('data-marquee-key');
                 heroTitleEl.className = isSingleLineMarquee ? 'main-title single-line-marquee' : 'main-title';
-                heroTitleEl.innerHTML = '<span style="display: inline-block; margin-bottom: 2px; vertical-align: middle;">' + title + '</span>';
+                heroTitleEl.innerHTML = '<span style="display: inline-block; margin-bottom: 2px; vertical-align: middle;">' + formattedTitleHtml + '</span>';
             }
 
             if (subBadgeEl) subBadgeEl.innerHTML = verifiedBadge;
@@ -4438,12 +4646,24 @@
                     }
                     return;
                 }
-                if (targetEl.getAttribute('data-douyin-refresh') === '1' || targetEl.getAttribute('data-douyin-collapsed') === '1') {
+                if (targetEl.getAttribute('data-douyin-refresh') === '1') {
+                    return;
+                }
+                if (targetEl.getAttribute('data-douyin-collapsed') === '1' || targetEl.getAttribute('data-bili-collapsed') === '1') {
+                    var pCat = targetEl.getAttribute('data-douyin-cat');
+                    if (pCat && pCat !== activeDouyinCategory) {
+                        switchDouyinCategoryWithoutClearing(pCat);
+                    }
                     return;
                 }
                 var dyCat = targetEl.getAttribute('data-douyin-cat');
-                if (dyCat && dyCat !== activeDouyinCategory) {
-                    switchDouyinCategoryWithoutClearing(dyCat);
+                if (dyCat) {
+                    if (isBiliCategory(dyCat)) {
+                        biliSubExplicitlyChosen = true;
+                    }
+                    if (dyCat !== activeDouyinCategory) {
+                        switchDouyinCategoryWithoutClearing(dyCat);
+                    }
                     return;
                 }
                 var pornPrimary = targetEl.getAttribute('data-porn-primary');
@@ -4872,10 +5092,11 @@
                             break;
                         }
                         if (currentTrackRow === 3 && douyinPillsExpanded) {
+                            var returnCol = (douyinPillsExpanded === 'bilibili') ? 3 : 2;
                             douyinPillsExpanded = false;
                             douyinBarAnimType = 'collapse';
                             renderDouyinSeasonBar();
-                            var collapsedPill = findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
+                            var collapsedPill = findTargetFocusable(0, returnCol) || findTargetFocusable(0, 2) || findTargetFocusable(0, 1);
                             if (collapsedPill) setFocus(collapsedPill);
                             return;
                         }
@@ -4910,12 +5131,15 @@
                         if (row === -1) nextEl = getRememberedCard(7);
                         else nextEl = getRememberedCard(row);
                     }
-                    else if (row === 0 && currentTrackRow === 3 && !douyinPillsExpanded && currentFocusEl.getAttribute('data-douyin-collapsed') === '1') {
-                        douyinPillsExpanded = true;
+                    else if (row === 0 && currentTrackRow === 3 && !douyinPillsExpanded && currentFocusEl.getAttribute('data-bili-collapsed') === '1') {
+                        if (!isBiliCategory(activeDouyinCategory)) {
+                            switchDouyinCategoryWithoutClearing(activeBiliSubCategory);
+                        }
+                        douyinPillsExpanded = 'bilibili';
                         douyinBarAnimType = 'expand';
                         renderDouyinSeasonBar();
-                        var expCol = Math.min(DOUYIN_CATEGORIES.length + 1, Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 3));
-                        nextEl = findTargetFocusable(0, expCol) || findTargetFocusable(0, 2);
+                        var expBiliCol = Math.min(BILI_CATEGORIES.length + 1, Math.max(2, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2));
+                        nextEl = findTargetFocusable(0, expBiliCol) || findTargetFocusable(0, 2);
                     } else if (row === 0 && currentTrackRow === 4 && pornMenuLevel === 1 && currentFocusEl.getAttribute('data-porn-primary') === 'others' && PORN_FOLDER_LIST.length > 0) {
                         activePornPrimaryTab = 'others';
                         if (!activePornFolder && PORN_FOLDER_LIST.length > 0) activePornFolder = PORN_FOLDER_LIST[0];
@@ -4958,7 +5182,22 @@
                             return;
                         }
                         if (currentTrackRow === 3 && !douyinPillsExpanded) {
-                            douyinPillsExpanded = true;
+                            if (currentFocusEl.getAttribute('data-bili-collapsed') === '1') {
+                                if (!isBiliCategory(activeDouyinCategory)) {
+                                    switchDouyinCategoryWithoutClearing(activeBiliSubCategory);
+                                }
+                                douyinPillsExpanded = 'bilibili';
+                                douyinBarAnimType = 'expand';
+                                renderDouyinSeasonBar();
+                                var actBiliCol = Math.max(2, BILI_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
+                                var targetBiliPill = findTargetFocusable(0, actBiliCol) || findTargetFocusable(0, 2);
+                                if (targetBiliPill) setFocus(targetBiliPill);
+                                return;
+                            }
+                            if (isBiliCategory(activeDouyinCategory)) {
+                                switchDouyinCategoryWithoutClearing(activeDouyinSubCategory);
+                            }
+                            douyinPillsExpanded = 'douyin';
                             douyinBarAnimType = 'expand';
                             renderDouyinSeasonBar();
                             var actCol = Math.max(2, DOUYIN_CATEGORIES.findIndex(c => c.id === activeDouyinCategory) + 2);
@@ -5185,7 +5424,7 @@
             if (!el || !mainEl || !areasEl || !agencyEl || !mainText) return;
             mainEl.innerText = mainText;
             mainEl.style.setProperty('--telop-underline-color', getTelopUnderlineColor(mainText));
-            areasEl.innerText = areasText || '';
+            areasEl.innerText = String(areasText || '').trim().split(/\s+/).filter(Boolean).slice(0, 3).join(' ');
             agencyEl.innerText = agencyText || '';
             el.classList.add('visible');
             if (weatherHideTimer) clearTimeout(weatherHideTimer);

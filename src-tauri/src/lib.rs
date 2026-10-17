@@ -18,6 +18,8 @@ struct AppState {
     douyin_feed: Arc<Mutex<HashMap<String, Vec<DouyinItem>>>>,
     douyin_probing: Arc<Mutex<HashSet<String>>>,
     douyin_category: Arc<Mutex<String>>,
+    bili_cookie: Arc<Mutex<String>>,
+    bili_page_map: Arc<Mutex<HashMap<String, u32>>>,
     thumb_lock: Arc<Mutex<()>>,
     minutecast_400_until: Arc<AtomicU64>,
     was_precipitating: Arc<Mutex<bool>>,
@@ -61,6 +63,7 @@ fn build_ffmpeg_args(
     actual_url: &str,
     is_local_file: bool,
     is_douyin: bool,
+    is_bilibili: bool,
     can_stream_copy_h264: bool,
     use_sw_fallback: bool,
     seek_sec: Option<f64>,
@@ -69,7 +72,7 @@ fn build_ffmpeg_args(
 ) -> Vec<String> {
     let mut args = vec!["-v".to_string(), "error".to_string()];
     let v_codec = if use_sw_fallback { "libx264" } else { "h264_videotoolbox" };
-    // 任务 1 (Round 5)：全链路音量均衡与峰值硬限幅滤镜，严控所有视频（尤其高响度抖音视频）不超过上限
+    // 任务 1 (Round 5)：全链路音量均衡与峰值硬限幅滤镜，严控所有视频（尤其高响度抖音/流媒体视频）不超过上限
     let audio_norm_std = "acompressor=threshold=-18dB:ratio=3.5:attack=5:release=85:makeup=1,alimiter=limit=0.75:attack=5:release=50";
     let audio_norm_douyin = "acompressor=threshold=-20dB:ratio=5:attack=4:release=75:makeup=1,alimiter=limit=0.55:attack=4:release=45";
     let ss_val = match seek_sec {
@@ -112,9 +115,13 @@ fn build_ffmpeg_args(
             "-hls_segment_filename".to_string(), ts_pattern.to_string(),
             m3u8_path.to_string()
         ]);
-    } else if is_douyin {
+    } else if is_douyin || is_bilibili {
         let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
-        let header_lines = "Referer: https://www.douyin.com/\r\nOrigin: https://www.douyin.com\r\n";
+        let header_lines = if is_bilibili {
+            "Referer: https://www.bilibili.com/\r\nOrigin: https://www.bilibili.com\r\n"
+        } else {
+            "Referer: https://www.douyin.com/\r\nOrigin: https://www.douyin.com\r\n"
+        };
         args.extend(vec![
             "-user_agent".to_string(), ua.to_string(),
             "-headers".to_string(), header_lines.to_string(),
@@ -150,7 +157,7 @@ fn build_ffmpeg_args(
                 m3u8_path.to_string()
             ]);
         } else {
-            // 任务 10 (Round 5)：大屏连接下抖音高帧率流畅度优化（保持原始高帧率 passthrough + 10M 高码率硬件加速）
+            // 任务 10 (Round 5)：大屏连接下流媒体高帧率流畅度优化（保持原始高帧率 passthrough + 10M 高码率硬件加速）
             args.extend(vec![
                 "-fps_mode".to_string(), "passthrough".to_string(),
                 "-vf".to_string(), "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p".to_string(),
@@ -257,9 +264,163 @@ fn probe_douyin_candidates(raw_candidates: &str) -> Option<(String, String)> {
     None
 }
 
+fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<String>, Option<f64>) {
+    let clean = raw_spec
+        .trim()
+        .trim_start_matches("bilibili:")
+        .trim_start_matches("douyin:")
+        .trim_start_matches("bili:");
+    let parts: Vec<&str> = clean.split("@@").collect();
+    let bvid = parts.first().copied().unwrap_or("").trim();
+    if bvid.is_empty() {
+        return (Vec::new(), None);
+    }
+    let mut cid: u64 = parts
+        .get(1)
+        .and_then(|s| s.trim().parse::<u64>().ok())
+        .unwrap_or(0);
+    let mut duration_opt: Option<f64> = parts
+        .get(2)
+        .and_then(|s| s.trim().parse::<f64>().ok())
+        .filter(|d| *d > 0.0);
+
+    let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+    let curl_bili_json = |api_url: &str| -> Option<serde_json::Value> {
+        let mut cmd = Command::new("/usr/bin/curl");
+        cmd.args(&[
+            "-sL",
+            "--noproxy",
+            "*",
+            "--compressed",
+            "--connect-timeout",
+            "4",
+            "--max-time",
+            "6",
+            "-H",
+            &format!("User-Agent: {}", ua),
+            "-H",
+            "Referer: https://www.bilibili.com/",
+        ]);
+        if !cookie.trim().is_empty() {
+            cmd.args(&["-H", &format!("Cookie: {}", cookie.trim())]);
+        }
+        cmd.arg(api_url);
+        let out = cmd.output().ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        serde_json::from_slice::<serde_json::Value>(&out.stdout).ok()
+    };
+
+    if cid == 0 || duration_opt.is_none() {
+        let view_url = format!("https://api.bilibili.com/x/web-interface/view?bvid={}", bvid);
+        if let Some(vj) = curl_bili_json(&view_url) {
+            if let Some(d) = vj.get("data") {
+                if cid == 0 {
+                    cid = d.get("cid").and_then(|v| v.as_u64()).unwrap_or(0);
+                }
+                if duration_opt.is_none() {
+                    duration_opt = d.get("duration").and_then(|v| v.as_f64()).filter(|x| *x > 0.0);
+                }
+            }
+        }
+    }
+
+    if cid == 0 {
+        return (Vec::new(), duration_opt);
+    }
+
+    let mut urls: Vec<String> = Vec::new();
+    let api_endpoints = [
+        format!(
+            "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=80&type=&otype=json&platform=html5&high_quality=1",
+            bvid, cid
+        ),
+        format!(
+            "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=64&fnval=1&platform=pc&otype=json",
+            bvid, cid
+        ),
+    ];
+
+    for ep in &api_endpoints {
+        if let Some(pj) = curl_bili_json(ep) {
+            if let Some(d) = pj.get("data") {
+                if duration_opt.is_none() {
+                    if let Some(tl) = d.get("timelength").and_then(|v| v.as_f64()) {
+                        if tl > 0.0 {
+                            duration_opt = Some(tl / 1000.0);
+                        }
+                    }
+                }
+                if let Some(durl_arr) = d.get("durl").and_then(|v| v.as_array()) {
+                    for item in durl_arr {
+                        if let Some(u) = item.get("url").and_then(|v| v.as_str()) {
+                            let s = u.trim().to_string();
+                            if s.starts_with("http") && !urls.contains(&s) {
+                                urls.push(s);
+                            }
+                        }
+                        if let Some(b_arr) = item.get("backup_url").and_then(|v| v.as_array()) {
+                            for b in b_arr {
+                                if let Some(bu) = b.as_str() {
+                                    let s = bu.trim().to_string();
+                                    if s.starts_with("http") && !urls.contains(&s) {
+                                        urls.push(s);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if !urls.is_empty() {
+            break;
+        }
+    }
+
+    (urls, duration_opt)
+}
+
 #[tauri::command]
-async fn get_media_duration(url: String) -> Result<f64, String> {
+async fn get_media_duration(url: String, state: State<'_, AppState>) -> Result<f64, String> {
+    let bili_cookie = state.bili_cookie.lock().unwrap().clone();
     tauri::async_runtime::spawn_blocking(move || {
+        if url.starts_with("bilibili:") || url.starts_with("douyin:bili:") || url.starts_with("bili:") {
+            let (cands, api_dur) = resolve_bilibili_stream_candidates(&url, &bili_cookie);
+            if let Some(d) = api_dur {
+                if d.is_finite() && d > 0.0 {
+                    return Ok(d);
+                }
+            }
+            if let Some(first_u) = cands.first() {
+                let ffprobe_bin = get_ffprobe_bin();
+                let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+                let headers = "Referer: https://www.bilibili.com/\r\nOrigin: https://www.bilibili.com\r\n";
+                if let Ok(out) = Command::new(ffprobe_bin)
+                    .args(&[
+                        "-v", "error",
+                        "-user_agent", ua,
+                        "-headers", headers,
+                        "-rw_timeout", "5000000",
+                        "-show_entries", "format=duration",
+                        "-of", "default=noprint_wrappers=1:nokey=1",
+                        first_u,
+                    ])
+                    .output()
+                {
+                    if out.status.success() {
+                        if let Ok(dur) = String::from_utf8_lossy(&out.stdout).trim().parse::<f64>() {
+                            if dur.is_finite() && dur > 0.0 {
+                                return Ok(dur);
+                            }
+                        }
+                    }
+                }
+            }
+            return Err("无法获取 bilibili 视频时长".into());
+        }
+
         let raw_url = if let Some(s) = url.strip_prefix("douyin:h264:") {
             s.split("@@").next().unwrap_or(s).to_string()
         } else if let Some(s) = url.strip_prefix("douyin:") {
@@ -272,7 +433,12 @@ async fn get_media_duration(url: String) -> Result<f64, String> {
         cmd.args(&["-v", "error"]);
         if raw_url.starts_with("http") {
             let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
-            let headers = "Referer: https://www.douyin.com/\r\nOrigin: https://www.douyin.com\r\n";
+            let is_bili = raw_url.contains("bilivideo.com") || raw_url.contains("bilibili.com") || raw_url.contains("hdslb.com");
+            let headers = if is_bili {
+                "Referer: https://www.bilibili.com/\r\nOrigin: https://www.bilibili.com\r\n"
+            } else {
+                "Referer: https://www.douyin.com/\r\nOrigin: https://www.douyin.com\r\n"
+            };
             cmd.args(&["-user_agent", ua, "-headers", headers, "-rw_timeout", "5000000"]);
         }
         cmd.args(&[
@@ -302,6 +468,7 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
     let proc_arc = state.ffmpeg_process.clone();
     let op_lock_arc = state.ffmpeg_op_lock.clone();
     let gen_arc = state.ffmpeg_generation.clone();
+    let bili_cookie = state.bili_cookie.lock().unwrap().clone();
 
     tauri::async_runtime::spawn_blocking(move || {
         let hls_dir = "/tmp/cooltv_hls";
@@ -329,19 +496,28 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
             }
         }
 
-        let (raw_url, is_douyin, is_verified_h264) = if let Some(stripped) = url.strip_prefix("douyin:h264:") {
-            (stripped.to_string(), true, true)
+        let is_bili_input = url.starts_with("bilibili:") || url.starts_with("douyin:bili:") || url.starts_with("bili:") || url.contains("bilivideo.com");
+        let (candidates, is_douyin, is_bilibili, is_verified_h264) = if is_bili_input {
+            if url.starts_with("http://") || url.starts_with("https://") {
+                (vec![url], false, true, true)
+            } else {
+                let (cands, _) = resolve_bilibili_stream_candidates(&url, &bili_cookie);
+                (cands, false, true, true)
+            }
+        } else if let Some(stripped) = url.strip_prefix("douyin:h264:") {
+            let list = stripped.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect();
+            (list, true, false, true)
         } else if let Some(stripped) = url.strip_prefix("douyin:") {
-            (stripped.to_string(), true, false)
+            let list = stripped.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect();
+            (list, true, false, false)
         } else {
             let dy = url.contains("douyin") || url.contains("byte") || url.contains("amemv") || url.contains("zjcdn") || url.contains("snssdk");
-            (url, dy, false)
-        };
-
-        let candidates: Vec<String> = if is_douyin {
-            raw_url.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect()
-        } else {
-            vec![raw_url]
+            let list = if dy {
+                url.split("@@").filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).collect()
+            } else {
+                vec![url]
+            };
+            (list, dy, false, false)
         };
 
         if candidates.is_empty() {
@@ -352,11 +528,11 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
 
         let mut attempts: Vec<(String, bool, bool)> = Vec::new();
         for cand in &candidates {
-            if is_douyin && is_verified_h264 {
+            if (is_douyin || is_bilibili) && is_verified_h264 {
                 attempts.push((cand.clone(), true, false));
             }
             attempts.push((cand.clone(), false, false));
-            if is_douyin {
+            if is_douyin || is_bilibili {
                 attempts.push((cand.clone(), false, true));
             }
         }
@@ -376,6 +552,7 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                 cand_url,
                 is_local_file,
                 is_douyin,
+                is_bilibili,
                 *copy_h264,
                 *use_sw,
                 seek_sec,
@@ -1078,32 +1255,31 @@ fn resolve_four_nearby_streets(
         }
     }
 
-    // 针对南京市雨花台区各街道的精准邻接表（如梅山街道 -> 梅山街道 赛虹桥街道 铁心桥街道 西善桥街道）
+    // 任务 1 (Round 15)：原气象速报共显示四个街道，现在起改为只显示三个街道
     let yuhuatai_map: &[(&str, &[&str])] = &[
-        ("梅山街道", &["梅山街道", "赛虹桥街道", "铁心桥街道", "西善桥街道"]),
-        ("赛虹桥街道", &["赛虹桥街道", "雨花街道", "铁心桥街道", "西善桥街道"]),
-        ("铁心桥街道", &["铁心桥街道", "赛虹桥街道", "雨花街道", "西善桥街道"]),
-        ("西善桥街道", &["西善桥街道", "梅山街道", "赛虹桥街道", "铁心桥街道"]),
-        ("雨花街道", &["雨花街道", "赛虹桥街道", "铁心桥街道", "西善桥街道"]),
-        ("板桥街道", &["板桥街道", "古雄街道", "梅山街道", "西善桥街道"]),
-        ("古雄街道", &["古雄街道", "板桥街道", "梅山街道", "西善桥街道"]),
+        ("梅山街道", &["梅山街道", "赛虹桥街道", "铁心桥街道"]),
+        ("赛虹桥街道", &["赛虹桥街道", "雨花街道", "铁心桥街道"]),
+        ("铁心桥街道", &["铁心桥街道", "赛虹桥街道", "雨花街道"]),
+        ("西善桥街道", &["西善桥街道", "梅山街道", "赛虹桥街道"]),
+        ("雨花街道", &["雨花街道", "赛虹桥街道", "铁心桥街道"]),
+        ("板桥街道", &["板桥街道", "古雄街道", "梅山街道"]),
+        ("古雄街道", &["古雄街道", "板桥街道", "梅山街道"]),
     ];
 
     if clean_dist == "雨花台" || norm_street == "梅山街道" || norm_street == "赛虹桥街道" || norm_street == "铁心桥街道" || norm_street == "西善桥街道" {
         for (k, list) in yuhuatai_map {
             if *k == norm_street {
-                return list.iter().map(|s| s.to_string()).collect();
+                return list.iter().take(3).map(|s| s.to_string()).collect();
             }
         }
         return vec![
             "梅山街道".into(),
             "赛虹桥街道".into(),
             "铁心桥街道".into(),
-            "西善桥街道".into(),
         ];
     }
 
-    // 各区县街道池：当前街道置顶，自动补齐同区邻近三个街道
+    // 各区县街道池：当前街道置顶，自动补齐同区邻近两个街道（共显示三个街道）
     let district_street_pools: &[(&str, &str, &[&str])] = &[
         ("南京", "玄武", &["新街口街道", "玄武门街道", "梅园新村街道", "锁金村街道", "孝陵卫街道", "红山街道", "玄武湖街道"]),
         ("南京", "秦淮", &["夫子庙街道", "五老村街道", "洪武路街道", "朝天宫街道", "中华门街道", "双塘街道", "月牙湖街道", "光华路街道"]),
@@ -1148,7 +1324,7 @@ fn resolve_four_nearby_streets(
             || (!norm_street.is_empty() && pool.iter().any(|s| *s == norm_street))
         {
             for st in *pool {
-                if out.len() >= 4 {
+                if out.len() >= 3 {
                     break;
                 }
                 let st_str = st.to_string();
@@ -1160,9 +1336,9 @@ fn resolve_four_nearby_streets(
         }
     }
 
-    if out.len() < 4 && clean_city == "南京" {
-        for fallback_st in &["梅山街道", "赛虹桥街道", "铁心桥街道", "西善桥街道"] {
-            if out.len() >= 4 {
+    if out.len() < 3 && clean_city == "南京" {
+        for fallback_st in &["梅山街道", "赛虹桥街道", "铁心桥街道"] {
+            if out.len() >= 3 {
                 break;
             }
             let s = fallback_st.to_string();
@@ -1172,16 +1348,15 @@ fn resolve_four_nearby_streets(
         }
     }
 
-    if out.len() < 4 {
+    if out.len() < 3 {
         let base = if !clean_dist.is_empty() { &clean_dist } else if !clean_city.is_empty() { &clean_city } else { "中心" };
         let generic_fallbacks = [
             format!("{}街道", base),
             "新华街道".to_string(),
             "朝阳街道".to_string(),
-            "南苑街道".to_string(),
         ];
         for g in &generic_fallbacks {
-            if out.len() >= 4 {
+            if out.len() >= 3 {
                 break;
             }
             if !out.contains(g) {
@@ -1190,7 +1365,7 @@ fn resolve_four_nearby_streets(
         }
     }
 
-    out.into_iter().take(4).collect()
+    out.into_iter().take(3).collect()
 }
 
 #[tauri::command]
@@ -1404,15 +1579,15 @@ async fn fetch_weather_broadcast(
             }
         }
 
-        // 任务 6 (Round 10)：构造当前所在街道 + 邻近三个街道（如“梅山街道 赛虹桥街道 铁心桥街道 西善桥街道”）
-        let four_streets = resolve_four_nearby_streets(
+        // 任务 1 (Round 15)：原气象速报共显示四个街道，现在起改为只显示三个街道
+        let three_streets = resolve_four_nearby_streets(
             &domestic_city,
             &domestic_district,
             &domestic_street,
             lat,
             lon,
         );
-        let areas_display = four_streets.into_iter().take(4).collect::<Vec<_>>().join(" ");
+        let areas_display = three_streets.into_iter().take(3).collect::<Vec<_>>().join(" ");
 
         // 任务 6 (Round 10)：第二行居右气象台署名由省级改为市级（如“南京市气象台”）
         let clean_city_name = domestic_city
@@ -2036,7 +2211,261 @@ fn ensure_douyin_scraper(
         .build();
 }
 
-// 任务 7 (Round 11)：按分类独立缓存抖音推荐流，切换分类时绝不清空其他分类已加载的推荐流
+fn normalize_bili_cover(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.starts_with("//") {
+        format!("https:{}", trimmed)
+    } else if trimmed.starts_with("http://") {
+        format!("https://{}", &trimmed[7..])
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn parse_bili_item_node(item: &serde_json::Value) -> Option<DouyinItem> {
+    let bvid = item
+        .get("bvid")
+        .and_then(|v| v.as_str())
+        .or_else(|| item.get("share_copy").and_then(|v| v.as_str()).filter(|s| s.starts_with("BV")))
+        .unwrap_or("")
+        .trim();
+    if bvid.is_empty() {
+        return None;
+    }
+    let cid = item.get("cid").and_then(|v| v.as_u64()).unwrap_or(0);
+    let duration = item.get("duration").and_then(|v| v.as_u64()).unwrap_or(0);
+    let raw_title = item
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("bilibili 视频")
+        .replace("<em>", "")
+        .replace("</em>", "")
+        .trim()
+        .to_string();
+    let title = if raw_title.chars().count() > 70 {
+        raw_title.chars().take(70).collect()
+    } else {
+        raw_title
+    };
+    let owner_name = item
+        .get("owner")
+        .and_then(|o| o.get("name"))
+        .and_then(|v| v.as_str())
+        .or_else(|| item.get("author").and_then(|v| v.as_str()))
+        .unwrap_or("bilibili UP主")
+        .trim();
+    let author = if owner_name.starts_with('@') {
+        owner_name.to_string()
+    } else {
+        format!("@{}", owner_name)
+    };
+    let raw_pic = item
+        .get("pic")
+        .and_then(|v| v.as_str())
+        .or_else(|| item.get("cover").and_then(|v| v.as_str()))
+        .unwrap_or("");
+    let cover = normalize_bili_cover(raw_pic);
+    if cover.is_empty() {
+        return None;
+    }
+    let play_spec = format!("bili:{}@@{}@@{}", bvid, cid, duration);
+    Some((title, author, cover, play_spec))
+}
+
+fn fetch_bilibili_category_items(cat: &str, cookie: &str, page: u32) -> Vec<DouyinItem> {
+    let ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+    let curl_json = |api_url: &str| -> Option<serde_json::Value> {
+        let mut cmd = Command::new("/usr/bin/curl");
+        cmd.args(&[
+            "-sL",
+            "--noproxy",
+            "*",
+            "--compressed",
+            "--connect-timeout",
+            "4",
+            "--max-time",
+            "6",
+            "-H",
+            &format!("User-Agent: {}", ua),
+            "-H",
+            "Referer: https://www.bilibili.com/",
+        ]);
+        if !cookie.trim().is_empty() {
+            cmd.args(&["-H", &format!("Cookie: {}", cookie.trim())]);
+        }
+        cmd.arg(api_url);
+        let out = cmd.output().ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        serde_json::from_slice::<serde_json::Value>(&out.stdout).ok()
+    };
+
+    let mut urls: Vec<String> = Vec::new();
+    match cat {
+        "bili_rcmd" => {
+            urls.push(format!(
+                "https://api.bilibili.com/x/web-interface/index/top/rcmd?fresh_type=3&version=1&ps=14&fresh_idx={}&fresh_idx_1h={}",
+                page, page
+            ));
+            urls.push(format!(
+                "https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd?ps=16&fresh_idx={}",
+                page
+            ));
+            urls.push(format!(
+                "https://api.bilibili.com/x/web-interface/popular?ps=20&pn={}",
+                page
+            ));
+        }
+        "bili_popular" => {
+            urls.push(format!(
+                "https://api.bilibili.com/x/web-interface/popular?ps=20&pn={}",
+                page
+            ));
+            urls.push("https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all".to_string());
+        }
+        _ => {
+            let rid = match cat {
+                "bili_anime" => 1,
+                "bili_bangumi" => 33,
+                "bili_cinephile" => 181,
+                "bili_game" => 4,
+                "bili_knowledge" => 36,
+                "bili_tech" => 188,
+                "bili_music" => 3,
+                "bili_food" => 211,
+                "bili_dance" => 129,
+                "bili_sports" => 234,
+                _ => 1,
+            };
+            urls.push(format!(
+                "https://api.bilibili.com/x/web-interface/dynamic/region?ps=20&pn={}&rid={}",
+                page, rid
+            ));
+            urls.push(format!(
+                "https://api.bilibili.com/x/web-interface/ranking/v2?rid={}&type=all",
+                rid
+            ));
+        }
+    }
+
+    let mut items: Vec<DouyinItem> = Vec::new();
+    for u in &urls {
+        if let Some(j) = curl_json(u) {
+            if let Some(d) = j.get("data") {
+                if let Some(arr) = d
+                    .get("item")
+                    .and_then(|v| v.as_array())
+                    .or_else(|| d.get("archives").and_then(|v| v.as_array()))
+                    .or_else(|| d.get("list").and_then(|v| v.as_array()))
+                {
+                    for node in arr {
+                        if let Some(parsed) = parse_bili_item_node(node) {
+                            if !items.iter().any(|x| x.3 == parsed.3) {
+                                items.push(parsed);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if items.len() >= 12 {
+            break;
+        }
+    }
+    items
+}
+
+fn ensure_bilibili_scraper(
+    app: &AppHandle,
+    cookie_arc: Arc<Mutex<String>>,
+    feed_arc: Arc<Mutex<HashMap<String, Vec<DouyinItem>>>>,
+) {
+    if app.get_webview_window("bilibili_scraper").is_some() {
+        return;
+    }
+
+    let bili_hook_script = r#"
+        (function() {
+            window.__FC_SYNC_BILI_COOKIE__ = function() {
+                try {
+                    const ck = document.cookie || '';
+                    if (ck && (ck.includes('SESSDATA') || ck.includes('bili_jct') || ck.includes('DedeUserID') || ck.includes('buvid3'))) {
+                        document.title = '__FC_BILI_COOKIE__:' + encodeURIComponent(ck) + '|||' + Date.now();
+                    }
+                } catch(e) {}
+            };
+
+            setInterval(() => {
+                if (!document.getElementById('fc-login-bar')) {
+                    document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.volume = 0; });
+                }
+                if (window.__FC_SYNC_BILI_COOKIE__) window.__FC_SYNC_BILI_COOKIE__();
+            }, 1200);
+
+            window.__FC_SHOW_LOGIN_BAR__ = function() {
+                if (document.getElementById('fc-login-bar')) return;
+                const bar = document.createElement('div');
+                bar.id = 'fc-login-bar';
+                bar.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#0A84FF;color:#fff;padding:10px 28px;border-radius:999px;font-family:-apple-system,sans-serif;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1.5px solid rgba(255,255,255,0.4);';
+                bar.innerText = '✅ 完成登录并返回 Feel Cool TV (或按 Esc / 关闭窗口)';
+                bar.onclick = function() {
+                    bar.remove();
+                    try {
+                        document.title = '__FC_BILI_LOGIN_DONE__:' + encodeURIComponent(document.cookie || '');
+                    } catch(e) {
+                        document.title = '__FC_BILI_LOGIN_DONE__:';
+                    }
+                };
+                if (document.body) document.body.appendChild(bar);
+            };
+
+            window.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && document.getElementById('fc-login-bar')) {
+                    document.getElementById('fc-login-bar').remove();
+                    try {
+                        document.title = '__FC_BILI_LOGIN_DONE__:' + encodeURIComponent(document.cookie || '');
+                    } catch(err) {
+                        document.title = '__FC_BILI_LOGIN_DONE__:';
+                    }
+                }
+            }, true);
+        })();
+    "#;
+
+    let parsed_url: tauri::Url = "https://www.bilibili.com".parse().unwrap();
+    let _ = WebviewWindowBuilder::new(app, "bilibili_scraper", WebviewUrl::External(parsed_url))
+        .title("bilibili 账号登录")
+        .inner_size(1180.0, 760.0)
+        .visible(false)
+        .focused(false)
+        .initialization_script(bili_hook_script)
+        .on_document_title_changed(move |win, title| {
+            if let Some(ck_part) = title.strip_prefix("__FC_BILI_LOGIN_DONE__:") {
+                let raw_ck = url_decode(ck_part.split("|||").next().unwrap_or(ck_part));
+                if !raw_ck.trim().is_empty() {
+                    *cookie_arc.lock().unwrap() = raw_ck;
+                }
+                let _ = win.set_always_on_top(false);
+                let _ = win.hide();
+                {
+                    let mut fmap = feed_arc.lock().unwrap();
+                    fmap.retain(|k, _| !k.starts_with("bili_"));
+                }
+                if let Some(main_win) = win.app_handle().get_webview_window("main") {
+                    let _ = main_win.set_focus();
+                }
+            } else if let Some(ck_part) = title.strip_prefix("__FC_BILI_COOKIE__:") {
+                let raw_ck = url_decode(ck_part.split("|||").next().unwrap_or(ck_part));
+                if !raw_ck.trim().is_empty() {
+                    *cookie_arc.lock().unwrap() = raw_ck;
+                }
+            }
+        })
+        .build();
+}
+
+// 任务 7 (Round 11) & 任务 3 (Round 15)：按分类独立缓存抖音与 bilibili 推荐流，切换分类时绝不清空其他分类已加载的推荐流
 #[tauri::command]
 async fn get_douyin_feed(
     app: AppHandle,
@@ -2045,14 +2474,83 @@ async fn get_douyin_feed(
     category: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Vec<DouyinItem>, String> {
+    let req_cat = category.unwrap_or_else(|| "discover".to_string());
+
+    if req_cat.starts_with("bili_") {
+        ensure_bilibili_scraper(
+            &app,
+            state.bili_cookie.clone(),
+            state.douyin_feed.clone(),
+        );
+        let want_more = load_more.unwrap_or(false);
+        let feed_arc = state.douyin_feed.clone();
+        let page_arc = state.bili_page_map.clone();
+        let cookie_str = state.bili_cookie.lock().unwrap().clone();
+        let cat_key = req_cat.clone();
+
+        if refresh {
+            {
+                let mut feed_map = feed_arc.lock().unwrap();
+                feed_map.remove(&cat_key);
+            }
+            let next_page = {
+                let mut pmap = page_arc.lock().unwrap();
+                let p = pmap.entry(cat_key.clone()).or_insert(0);
+                *p = (*p % 12) + 1;
+                *p
+            };
+            let fetched = tauri::async_runtime::spawn_blocking(move || {
+                fetch_bilibili_category_items(&cat_key, &cookie_str, next_page)
+            })
+            .await
+            .unwrap_or_default();
+
+            if !fetched.is_empty() {
+                let mut feed_map = state.douyin_feed.lock().unwrap();
+                feed_map.insert(req_cat.clone(), fetched.clone());
+            }
+            return Ok(fetched);
+        }
+
+        let existing = {
+            let feed_map = state.douyin_feed.lock().unwrap();
+            feed_map.get(&req_cat).cloned().unwrap_or_default()
+        };
+
+        if existing.is_empty() || want_more {
+            let next_page = {
+                let mut pmap = page_arc.lock().unwrap();
+                let p = pmap.entry(cat_key.clone()).or_insert(0);
+                *p = (*p % 15) + 1;
+                *p
+            };
+            let fetched = tauri::async_runtime::spawn_blocking(move || {
+                fetch_bilibili_category_items(&cat_key, &cookie_str, next_page)
+            })
+            .await
+            .unwrap_or_default();
+
+            if !fetched.is_empty() {
+                let mut feed_map = state.douyin_feed.lock().unwrap();
+                let list = feed_map.entry(req_cat.clone()).or_insert_with(Vec::new);
+                for item in fetched {
+                    if !list.iter().any(|x| x.3 == item.3) {
+                        list.push(item);
+                    }
+                }
+                return Ok(list.clone());
+            }
+        }
+
+        return Ok(existing);
+    }
+
     ensure_douyin_scraper(
         &app,
         state.douyin_feed.clone(),
         state.douyin_probing.clone(),
         state.douyin_category.clone(),
     );
-
-    let req_cat = category.unwrap_or_else(|| "discover".to_string());
 
     if refresh {
         {
@@ -2143,9 +2641,40 @@ async fn hide_douyin_login(app: AppHandle, state: State<'_, AppState>) -> Result
     if let Some(win) = app.get_webview_window("douyin_scraper") {
         let _ = win.set_always_on_top(false);
         let _ = win.hide();
-        state.douyin_feed.lock().unwrap().clear();
+        state.douyin_feed.lock().unwrap().retain(|k, _| k.starts_with("bili_"));
         state.douyin_probing.lock().unwrap().clear();
         let _ = win.eval("const b = document.getElementById('fc-login-bar'); if(b) b.remove(); window.__FC_QUEUE__ = []; window.__FC_SEEN__.clear(); window.__FC_FETCHED_IDS__.clear(); window.location.reload();");
+    }
+    if let Some(main_win) = app.get_webview_window("main") {
+        let _ = main_win.set_focus();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn open_bilibili_login(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    ensure_bilibili_scraper(
+        &app,
+        state.bili_cookie.clone(),
+        state.douyin_feed.clone(),
+    );
+    if let Some(win) = app.get_webview_window("bilibili_scraper") {
+        let _ = win.show();
+        let _ = win.center();
+        let _ = win.set_always_on_top(true);
+        let _ = win.set_focus();
+        let _ = win.eval("if(window.__FC_SHOW_LOGIN_BAR__) window.__FC_SHOW_LOGIN_BAR__();");
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn hide_bilibili_login(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("bilibili_scraper") {
+        let _ = win.eval("if(window.__FC_SYNC_BILI_COOKIE__) window.__FC_SYNC_BILI_COOKIE__(); const b = document.getElementById('fc-login-bar'); if(b) b.remove();");
+        let _ = win.set_always_on_top(false);
+        let _ = win.hide();
+        state.douyin_feed.lock().unwrap().retain(|k, _| !k.starts_with("bili_"));
     }
     if let Some(main_win) = app.get_webview_window("main") {
         let _ = main_win.set_focus();
@@ -2186,6 +2715,7 @@ pub fn run() {
     let shared_douyin_feed: Arc<Mutex<HashMap<String, Vec<DouyinItem>>>> = Arc::new(Mutex::new(HashMap::new()));
     let shared_douyin_probing: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
     let shared_douyin_cat: Arc<Mutex<String>> = Arc::new(Mutex::new("discover".to_string()));
+    let shared_bili_cookie: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     let setup_feed = shared_douyin_feed.clone();
     let setup_probing = shared_douyin_probing.clone();
     let setup_cat = shared_douyin_cat.clone();
@@ -2216,6 +2746,8 @@ pub fn run() {
             douyin_feed: shared_douyin_feed,
             douyin_probing: shared_douyin_probing,
             douyin_category: shared_douyin_cat,
+            bili_cookie: shared_bili_cookie,
+            bili_page_map: Arc::new(Mutex::new(HashMap::new())),
             thumb_lock: Arc::new(Mutex::new(())),
             minutecast_400_until: Arc::new(AtomicU64::new(0)),
             was_precipitating: Arc::new(Mutex::new(false)),
@@ -2254,6 +2786,23 @@ pub fn run() {
                         let _ = main_win.set_focus();
                     }
                 }
+            } else if window.label() == "bilibili_scraper" {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.set_always_on_top(false);
+                    let _ = window.hide();
+                    if let Some(wv) = window.app_handle().get_webview_window("bilibili_scraper") {
+                        let _ = wv.eval("if(window.__FC_SYNC_BILI_COOKIE__) window.__FC_SYNC_BILI_COOKIE__(); const b = document.getElementById('fc-login-bar'); if(b) b.remove();");
+                    }
+                    if let Some(state) = window.app_handle().try_state::<AppState>() {
+                        if let Ok(mut fmap) = state.douyin_feed.lock() {
+                            fmap.retain(|k, _| !k.starts_with("bili_"));
+                        }
+                    }
+                    if let Some(main_win) = window.app_handle().get_webview_window("main") {
+                        let _ = main_win.set_focus();
+                    }
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -2268,6 +2817,8 @@ pub fn run() {
             get_douyin_feed,
             open_douyin_login,
             hide_douyin_login,
+            open_bilibili_login,
+            hide_bilibili_login,
             quit_app,
             restart_app
         ])
