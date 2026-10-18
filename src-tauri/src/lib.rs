@@ -3349,12 +3349,8 @@ async fn adjust_tv_brightness(delta_pct: Option<i32>, delta_percent: Option<i32>
                 offset_arg,
                 "-offset",
             ])
-            .output();
-        if let Some(updated_pct) = query_betterdisplay_brightness_percent() {
-            Ok(updated_pct)
-        } else {
-            Err("未能从 BetterDisplay 读取调节后的电视亮度".to_string())
-        }
+            .status();
+        Ok(delta)
     })
     .await
     .map_err(|e| format!("调节亮度异常: {}", e))?
