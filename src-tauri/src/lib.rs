@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use tauri::{State, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, TitleBarStyle, WindowEvent};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 type DouyinItem = (String, String, String, String);
 
@@ -3162,6 +3162,204 @@ async fn restart_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), S
     Ok(())
 }
 
+// 任务 10 (Round 20)：查询与直接切换 macOS 系统级 VPN 开关（基于 scutil --nc 与 networksetup）
+fn list_macos_vpn_services() -> Vec<(String, String, bool)> {
+    let mut services: Vec<(String, String, bool)> = Vec::new();
+    if let Ok(out) = Command::new("/usr/sbin/scutil").args(&["--nc", "list"]).output() {
+        let text = String::from_utf8_lossy(&out.stdout);
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if !trimmed.starts_with('*') || !trimmed.contains("[VPN:") {
+                continue;
+            }
+            let is_connected = trimmed.contains("(Connected)") || trimmed.contains("(Connecting)");
+            // 提取 UUID
+            let mut uuid_str = String::new();
+            for token in trimmed.split_whitespace() {
+                if token.len() == 36 && token.chars().filter(|&c| c == '-').count() == 4 {
+                    uuid_str = token.to_string();
+                    break;
+                }
+            }
+            // 提取引号内的 VPN 服务名称
+            let mut name_str = String::new();
+            if let Some(q1) = trimmed.find('"') {
+                if let Some(q2) = trimmed[q1 + 1..].find('"') {
+                    name_str = trimmed[q1 + 1..q1 + 1 + q2].to_string();
+                }
+            }
+            if !name_str.is_empty() || !uuid_str.is_empty() {
+                services.push((name_str, uuid_str, is_connected));
+            }
+        }
+    }
+    // 优先排序主流代理型 VPN（如 Shadowrocket / Surge / Clash / Stash / Sing-box / WireGuard），其次其他 VPN
+    services.sort_by_key(|(name, _, _)| {
+        let lower = name.to_lowercase();
+        if lower.contains("shadowrocket")
+            || lower.contains("surge")
+            || lower.contains("clash")
+            || lower.contains("stash")
+            || lower.contains("sing")
+            || lower.contains("quantumult")
+            || lower.contains("v2ray")
+            || lower.contains("wireguard")
+        {
+            0
+        } else if lower.contains("tailscale") {
+            2
+        } else {
+            1
+        }
+    });
+    services
+}
+
+#[tauri::command]
+async fn get_system_vpn_status() -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let services = list_macos_vpn_services();
+        if services.iter().any(|(_, _, connected)| *connected) {
+            return Ok(true);
+        }
+        if let Ok(out) = Command::new("/usr/sbin/scutil").arg("--proxy").output() {
+            let text = String::from_utf8_lossy(&out.stdout);
+            if text.contains("HTTPEnable : 1")
+                || text.contains("HTTPSEnable : 1")
+                || text.contains("SOCKSEnable : 1")
+            {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    })
+    .await
+    .map_err(|e| format!("查询系统 VPN 状态失败: {}", e))?
+}
+
+#[tauri::command]
+async fn set_system_vpn_state(enable: bool) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let services = list_macos_vpn_services();
+        if enable {
+            if let Some((name, uuid, _)) = services.first() {
+                if !name.is_empty() {
+                    let _ = Command::new("/usr/sbin/scutil")
+                        .args(&["--nc", "start", name])
+                        .status();
+                    let _ = Command::new("/usr/sbin/networksetup")
+                        .args(&["-connectpppoeservice", name])
+                        .status();
+                }
+                if !uuid.is_empty() {
+                    let _ = Command::new("/usr/sbin/scutil")
+                        .args(&["--nc", "start", uuid])
+                        .status();
+                }
+            }
+            std::thread::sleep(Duration::from_millis(320));
+            let updated = list_macos_vpn_services();
+            if updated.iter().any(|(_, _, connected)| *connected) {
+                return Ok(true);
+            }
+            Ok(true)
+        } else {
+            for (name, uuid, _) in &services {
+                if !name.is_empty() {
+                    let _ = Command::new("/usr/sbin/scutil")
+                        .args(&["--nc", "stop", name])
+                        .status();
+                    let _ = Command::new("/usr/sbin/networksetup")
+                        .args(&["-disconnectpppoeservice", name])
+                        .status();
+                }
+                if !uuid.is_empty() {
+                    let _ = Command::new("/usr/sbin/scutil")
+                        .args(&["--nc", "stop", uuid])
+                        .status();
+                }
+            }
+            std::thread::sleep(Duration::from_millis(250));
+            Ok(false)
+        }
+    })
+    .await
+    .map_err(|e| format!("切换系统 VPN 状态失败: {}", e))?
+}
+
+// 任务 11 (Round 20)：通过 BetterDisplay 命令行工具查询与调节电视亮度（返回值 0.0~1.0 转换为 0~100 纯数字整数）
+const BETTER_DISPLAY_BIN: &str = "/Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay";
+
+fn parse_brightness_output_to_percent(raw: &str) -> Option<i32> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    for token in trimmed.split(|c: char| !c.is_ascii_digit() && c != '.' && c != '-') {
+        if token.is_empty() || token == "-" || token == "." {
+            continue;
+        }
+        if let Ok(val) = token.parse::<f64>() {
+            if val.is_finite() {
+                let pct = if val <= 1.0001 && val >= 0.0 {
+                    (val * 100.0).round() as i32
+                } else {
+                    val.round() as i32
+                };
+                return Some(pct.clamp(0, 100));
+            }
+        }
+    }
+    None
+}
+
+fn query_betterdisplay_brightness_percent() -> Option<i32> {
+    let out = Command::new(BETTER_DISPLAY_BIN)
+        .args(&["get", "-tagID=30", "-brightness"])
+        .output()
+        .ok()?;
+    let stdout_str = String::from_utf8_lossy(&out.stdout);
+    parse_brightness_output_to_percent(&stdout_str)
+}
+
+#[tauri::command]
+async fn get_tv_brightness() -> Result<i32, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        query_betterdisplay_brightness_percent()
+            .ok_or_else(|| "未能从 BetterDisplay 获取电视亮度".to_string())
+    })
+    .await
+    .map_err(|e| format!("查询亮度异常: {}", e))?
+}
+
+#[tauri::command]
+async fn adjust_tv_brightness(delta_pct: Option<i32>, delta_percent: Option<i32>) -> Result<i32, String> {
+    let delta = delta_pct.or(delta_percent).unwrap_or(20);
+    tauri::async_runtime::spawn_blocking(move || {
+        let offset_arg = if delta >= 0 {
+            "-brightness=20%"
+        } else {
+            "-brightness=-20%"
+        };
+        let _ = Command::new(BETTER_DISPLAY_BIN)
+            .args(&[
+                "set",
+                "-type=Display",
+                "-tagID=30",
+                offset_arg,
+                "-offset",
+            ])
+            .output();
+        if let Some(updated_pct) = query_betterdisplay_brightness_percent() {
+            Ok(updated_pct)
+        } else {
+            Err("未能从 BetterDisplay 读取调节后的电视亮度".to_string())
+        }
+    })
+    .await
+    .map_err(|e| format!("调节亮度异常: {}", e))?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     cleanup_orphan_hls_ffmpeg();
@@ -3273,6 +3471,10 @@ pub fn run() {
             hide_douyin_login,
             open_bilibili_login,
             hide_bilibili_login,
+            get_system_vpn_status,
+            set_system_vpn_state,
+            get_tv_brightness,
+            adjust_tv_brightness,
             quit_app,
             restart_app
         ])
