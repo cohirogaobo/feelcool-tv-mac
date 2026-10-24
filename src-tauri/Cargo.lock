@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "cooltv-mac"
-version = "0.1.4"
+version = "3.0.1"
 dependencies = [
  "rouille",
  "serde",
