@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/icon.icns</key>
 		<data>
-		4BPtEFJWr2VoOdETnnWN5//5Q7E=
+		Q0Oli5uacUByp5JC1MtwA/Td0vY=
 		</data>
 		<key>Resources/src/.DS_Store</key>
 		<data>
@@ -38,7 +38,7 @@
 		</data>
 		<key>Resources/src/index.html</key>
 		<data>
-		O5XsRZWUllnQc7MZvzeFzjgu9hY=
+		kQdvlfsruc7biHVKqWXfCFUBeXg=
 		</data>
 		<key>Resources/src/main.js</key>
 		<data>
@@ -48,6 +48,24 @@
 		<data>
 		Zo1F7MBkVgqJpyqErh+y62M39Vo=
 		</data>
+		<key>Resources/zh-Hans.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			7Cn6QQVoPkVtgfWm5FvD1UGMquM=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>Resources/zh_CN.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			7Cn6QQVoPkVtgfWm5FvD1UGMquM=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 	</dict>
 	<key>files2</key>
 	<dict>
@@ -55,34 +73,34 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			AbK7PKP8fzmIvwrrgLawg88oXBI=
+			jUWoiMK4Z/HA+4BtICGiGjXRyYo=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"01b2bb3ca3fc7f3988bf0aeb80b6b083cf285c12"</string>
+			<string>cdhash H"8d45a888c2b867f1c0fb806d2021a21a35d1c98a"</string>
 		</dict>
 		<key>MacOS/cooltv-mac-engine</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			wEFTzru8R+sCfOpwApaAxzWmfZg=
+			V0n4NBGO8HrtAVEGOxi4uNIf6LQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"c04153cebbbc47eb027cea70029680c735a67d98"</string>
+			<string>cdhash H"5749f834118ef07aed0151063b18b8b8d21fe8b4"</string>
 		</dict>
 		<key>MacOS/libcooltv_glass.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			f4olWthfEDa4YZFesoMxGXpz1rs=
+			jUWoiMK4Z/HA+4BtICGiGjXRyYo=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7f8a255ad85f1036b861915eb28331197a73d6bb"</string>
+			<string>cdhash H"8d45a888c2b867f1c0fb806d2021a21a35d1c98a"</string>
 		</dict>
 		<key>Resources/icon.icns</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			PcEEk7feSKYd5Y92j4pXCNOkSgaMFIzt8FArm5txul0=
+			yD8b2UaKTqbD5v1t4TT0fRg5xcCOuV/IiycPRDXOalM=
 			</data>
 		</dict>
 		<key>Resources/src/assets/DouyinMeihaoti.otf</key>
@@ -131,7 +149,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			IH5BnOugfsiEx3q0/Qfgdv2QtqZTUnlOsAJ9Vzid6oY=
+			f+Enx9aHejZLObJbzzy90JCD3HQFeof9++uu7GfDvJY=
 			</data>
 		</dict>
 		<key>Resources/src/main.js</key>
@@ -147,6 +165,24 @@
 			<data>
 			nw+xL99R2aiz9h5z40CLYbUv3iGkirV5PblyLMkAKho=
 			</data>
+		</dict>
+		<key>Resources/zh-Hans.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nqVpzwLAoGfmyUh2Cm27Gf+GTr5ZKutt82bkuJspNmU=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>Resources/zh_CN.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nqVpzwLAoGfmyUh2Cm27Gf+GTr5ZKutt82bkuJspNmU=
+			</data>
+			<key>optional</key>
+			<true/>
 		</dict>
 	</dict>
 	<key>rules</key>

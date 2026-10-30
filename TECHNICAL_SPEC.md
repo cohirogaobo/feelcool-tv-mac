@@ -1,13 +1,13 @@
-# Feel Cool TV 技术规范与架构维护手册 (v4.2.0)
+# Feel Cool TV 技术规范与架构维护手册 (v4.7.0)
 
 本文档面向参与 **Feel Cool TV (`cooltv-mac`)** 后续迭代的开发人员，系统梳理产品的核心调性、视觉与交互设计规范、界面文案措辞准则、全局快捷键与遥控映射体系、**用户对各组件与按键的标准称呼词典**，并重点复盘前端（WebKit / HTML5 / CSS3 / HLS.js）与后端（Tauri v2 / Rust / FFmpeg / Rouille）在历次迭代中遇到的疑难问题、底层成因及最终工程解决方案。
 
-> **版本同步强制规范**：每次完成迭代任务后，必须同步更新产品版本号（当前版本：**`4.2.0`**），涉及位置包括：
-> 1. `src/index.html` 与 `Feel Cool TV.app/Contents/Resources/src/index.html` -> `#settingsVersionText` 及 `vFooterEl.textContent`（显示版本号 `4.2.0`）；
-> 2. `src-tauri/tauri.conf.json` -> `"version"`（SemVer `4.2.0`）；
-> 3. `src-tauri/Cargo.toml` -> `[package] version`（SemVer `4.2.0`）；
-> 4. `package.json` -> `"version"`（SemVer `4.2.0`）；
-> 5. `Feel Cool TV.app/Contents/Info.plist` -> `CFBundleShortVersionString` 与 `CFBundleVersion`（`4.2.0`）；
+> **版本同步强制规范**：每次完成迭代任务后，必须同步更新产品版本号（当前版本：**`4.7.0`**），涉及位置包括：
+> 1. `src/index.html` 与 `Feel Cool TV.app/Contents/Resources/src/index.html` -> `#settingsVersionText` 及 `vFooterEl.textContent`（显示版本号 `4.7.0`）；
+> 2. `src-tauri/tauri.conf.json` -> `"version"`（SemVer `4.7.0`）；
+> 3. `src-tauri/Cargo.toml` -> `[package] version`（SemVer `4.7.0`）；
+> 4. `package.json` -> `"version"`（SemVer `4.7.0`）；
+> 5. `Feel Cool TV.app/Contents/Info.plist` -> `CFBundleShortVersionString` 与 `CFBundleVersion`（`4.7.0`）；
 > 6. `TECHNICAL_SPEC.md` 与 `README.md` 标题与正文版本记录。
 >
 > **组件称呼记录强制规范（Round 20 任务 14 新增）**：每次任务结束后，必须在本文档第五章 **“五、组件、页面与快捷键标准称呼词典”** 中详细记录并持续维护用户对每个组件、页面、状态与按键的称呼及对应技术解释。
@@ -97,10 +97,10 @@
    - 一级页面主标题：**`设置`**
    - 一级分类按钮：**`媒体与账户设置`**、**`个性化设置`**、**`限制级内容设置`**（默认隐藏，长按一级分类按钮或按 `F17` 显现）
    - 二级设置项名称与类型：
-     - **媒体与账户设置**：`数据同步`（状态项）、`剧集资源位置`（`>` 三级填写页）、`电影资源位置`（`>` 三级填写页）、`EPG 电子节目单来源`（`>` 三级填写页）、`流媒体账号连接`（`>` 三级页含 `登录 抖音`、`登录 bilibili`）、`虚拟专用网络代理`（状态项：`开启` / `关闭`）、`观看历史记录`（状态项：`清空观看历史记录`）
-     - **个性化设置**：`气象信息定位`（状态项：`自动定位` / `手动输入`）、`所在地位置`（`>` 三级填写页：`城市`、`区`、`街道`）、`影片评分来源`（状态项：`豆瓣` / `TMDB`）、`背景主题`（状态项：`波浪` / `光影`）、`背景配色方案`（状态项）、`用户界面显示比例`（状态项）、`侧边栏位置`（状态项：`左侧` / `顶部`）、`侧边栏材质设计`（状态项：`Liquid Glass` / `传统模糊`）、`Liquid Glass 外观模式`（状态项：`深色` / `浅色`）、`左侧边栏折叠方案`（状态项：左侧模式下为 `自动折叠` / `始终折叠` / `自动隐藏` / `始终隐藏`；顶部模式下为 `始终显示` / `始终隐藏`）、`预览时开启声音`（状态项：`开启` / `关闭`）、`音量均衡`（状态项：`开启` / `关闭`）
+     - **媒体与账户设置**：`数据同步`（状态项）、`剧集资源位置`（`>` 三级填写页）、`电影资源位置`（`>` 三级填写页）、`EPG 电子节目单来源`（`>` 三级填写页）、`短视频账号连接`（`>` 三级页含 `登录 抖音`、`登录 bilibili`）、`虚拟专用网络代理`（状态项：`开启` / `关闭`）、`观看历史记录`（状态项：`清空观看历史记录`）、`本地缓存数据`（状态项）
+     - **个性化设置**：`气象信息定位`（状态项：`自动定位` / `手动输入`）、`所在地位置`（`>` 三级填写页：`城市`、`区`、`街道`）、`影片评分来源`（状态项：`豆瓣` / `TMDB`）、`背景主题`（状态项：`波浪` / `光影`）、`背景配色方案`（状态项）、`用户界面显示比例`（状态项）、`侧边栏位置`（状态项：`左侧` / `顶部`）、`侧边栏材质设计`（状态项：`Liquid Glass` / `传统模糊`）、`Liquid Glass 外观模式`（状态项：`深色` / `浅色`）、`左侧边栏折叠方案`（状态项：左侧模式下为 `自动折叠` / `始终折叠` / `自动隐藏` / `始终隐藏`；顶部模式下为 `始终显示` / `始终隐藏`）、`交互音效`（状态项：`开启` / `关闭`）、`交互音效方案`（状态项：`深海流光` / `星云潮汐` / `深邃脉冲`）、`交互音效音量`（状态项：`20%` / `40%` / `60%` / `80%` / `100%`）、`预览时开启声音`（状态项：`开启` / `关闭`）、`音量均衡`（状态项：`开启` / `关闭`）
      - **限制级内容设置**：`限制级媒体资源位置`（`>` 三级填写页）、`限制级内容密码`（`>` 三级填写页）
-   - 一级页面最底部版本号：**只显示纯版本号数字**（当前为 `4.2.0`）。
+   - 一级页面最底部版本号：**只显示纯版本号数字**（当前为 `4.7.0`）。
 
 ---
 
@@ -638,6 +638,101 @@
 6. **顶部气象信息（`#jpWeatherTelop`）动态避让顶部侧边栏适配（Task 6）**：
    - 新增 `syncWeatherTelopPosition()`，当顶部侧边栏处于可见状态（`top-bar` 且非 `autohidden`、非 `fullscreen-hidden`、非 `isFullScreen`）时，根据当前 UI 缩放系数动态计算 `--telop-top-with-bar = Math.max(88, Math.round(62 * scale + 20)) + 'px'` 并施加 `.top-bar-avoid`，使气象信息平滑下移至顶部胶囊侧边栏正下方；当顶部侧边栏隐藏或进入正式播放页面时平滑回升至 `48px`。
 
+### 23. 丸形菜单与选集列表 Liquid Glass 化、侧边栏聚焦时隐藏副标题与小标题、“流媒体”更名为“短视频”及作者/媒体源标题重构、顶部侧边栏偶发消失修复与 1918×802 本地媒体解码修复（Round 31 重点复盘 Task 1–7，v4.3.0）
+
+1. **丸形菜单（`.season-pill`）与选集列表（`.fs-ep-item-btn`、`.fs-ep-season-arrow`）适配原生 Liquid Glass 设计（Task 1）**：
+   - 为 `.season-pill`、`.fs-ep-item-btn` 与 `.fs-ep-season-arrow` 的非聚焦态注入 `-apple-visual-effect: -apple-system-glass-material-clear` 原生液态玻璃属性并清除自定义毛玻璃与实线边框，同步支持 `body.liquid-glass-light` / `body.liquid-glass-dark` 深浅色外观切换；当前选中未聚焦态（`.current:not(.focused)`）采用轻薄高光内描边标识，聚焦态（`.focused`）切换为纯白高亮胶囊。
+   - 升级 `libcooltv_glass.dylib`（`swizzled_updateHostingLayer`），对所有 `h > 10.0 && h <= 128.0 && w >= h - 4.0` 的胶囊与圆形图层统一赋予精确的 `effectiveRadius = h * 0.5` 半高胶囊圆角。
+2. **焦点位于侧边栏导航项时隐藏当前板块副标题（`#heroSub`）和小标题（`#heroBrand`），移至首个卡片时恢复显示（Task 2）**：
+   - 在 `updateHeroUI()` 中判定当前焦点位置：当焦点位于侧边栏导航项（`col === 0` 或丸形菜单 `row === 0`，且非“正在观看/现在观看”板块 `row !== 7`）时，自动隐藏副标题（`#heroSub`）、简介（`#heroDesc`）与小标题（`#heroBrand`），仅展示大标题（`#heroTitle`）；当焦点移动到板块内第一个卡片（`col >= 1`）时立即恢复副标题与小标题显示，“正在观看/现在观看”板块保持原有展示逻辑不变。
+3. **“流媒体”全面更名为“短视频”，并重构短视频大标题与副标题信息层级（Task 3 & Task 4）**：
+   - 将侧边栏导航项（`#navDouyinItem`）、正在观看丸形菜单分类（`NOW_WATCHING_BASE_TABS`）、设置页入口（`短视频账号连接`）及正式播放页菜单（`#fsStreamMenuTitle` `短视频选项`）中的“流媒体”统一更名为“短视频”。
+   - 在**短视频板块（`row === 3`）**中，当焦点位于卡片上时，卡片上方大标题（`#heroTitle`）改为显示作者（如 `@李子柒`），副标题（`#heroSub`）改为显示纯粹媒体源（`抖音` 或 `bilibili`，不带“精选”或“热门”等分类后缀）；卡片下方标题与正式播放页面标题保持视频标题不变。
+   - 在**正在观看/现在观看板块（`row === 7`）**中，短视频内容的副标题统一显示为 `短视频社区 · 媒体源`（如 `短视频社区 · 抖音`、`短视频社区 · bilibili`），同时在卡片 `data-org` 中保留作者信息以确保从正在观看进入正式播放页面时 HUD 副标题仍显示作者。
+4. **排查并根治顶部侧边栏偶见“选中状态消失”或“整个侧边栏消失”异常（Task 5）**：
+   - **根因 1（选中状态消失）**：`setFocus()` 在处理丸形菜单（`row === 0`）分支时提前 `return`，未执行底部的 `.active-row` 同步逻辑，导致焦点从顶部侧边栏下移至丸形菜单时 `#sidebarFocusPill` 隐藏且 `.active-row` 未挂载，顶部侧边栏选中状态完全消失。**修复**：将 `.active-row` 高亮同步提升至 `setFocus()` 顶部（在 `row === 0` 分支之前执行），并为 `.sidebar.top-bar .nav-item.active-row:not(.focused)` 增加高对比半透明胶囊内描边高亮；同时在 `syncSidebarFocusPill()` 中增加首帧尺寸未就绪时的 `requestAnimationFrame` 自动补测以及 `updateNowPlayingNavVisibility()` 文案变更后的重同步。
+   - **根因 2（整个顶部侧边栏消失）**：① 顶部侧边栏处于“始终显示”模式时，按 `F16` 或从“始终隐藏”切回“始终显示”会残留 `sidebarForceHiddenByMenu = true`，触发 `.autohidden` 导致整个顶部侧边栏上移消失；② `.sidebar.fullscreen-hidden` 使用了 `visibility: hidden !important`，导致 WebKit `WKMaterialHostingSupport` 在进入正式播放页面时销毁原生 Liquid Glass `CAHostingLayer`，退出全屏时偶发未能重建图层。**修复**：在顶部侧边栏“始终显示”模式下强制重置 `sidebarForceHiddenByMenu = false` 并移除 `.autohidden`；将 `.sidebar.fullscreen-hidden` 改为纯屏幕外位移与 `opacity: 0`，移除 `visibility: hidden` 以保持原生 `CAHostingLayer` 常驻。
+5. **根治 `1918 × 802`（23.98fps H.264）等本地媒体播放画面卡住（暂停继续后恢复）与切块异常（Task 6）**：
+   - **根因**：`1918 × 802` 经旧版 `trunc(iw/4)*4` 缩放后为 `1916 × 800`（宽度 `1916` 非 16 宏块整数倍，触发 SPS `frame_cropping_flag=1`，且非 16:9 画布在 WebKit `TiledCoreAnimationDrawingArea` 负层级下引发瓦片失效错位），同时旧版 `is_local_file` 分支使用 `h264_videotoolbox -realtime 1` 多 Slice 编码、未剥离源流私有 SEI，且 `start_ffmpeg` 在生成首个切片（仅 1 秒缓冲）时即返回前端起播，导致首片交界处缓冲区欠载使 `AVSampleBufferDisplayLayer` 挂起冻结。
+   - **修复**：将 `is_local_file` 分支统一升级为 `scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=30,format=yuv420p`（80×45 完整 16×16 宏块，`frame_cropping_flag=0`），采用 `libx264 ultrafast + zerolatency + sliced-threads=0:ref=1:bframes=0:force-cfr=1` 单 Slice 整帧编码并剥离私有 SEI（`filter_units=remove_types=6`），并在 `start_ffmpeg` 中等待至少 3 个完整切片（`_0002.ts`）就绪后再挂载起播。
+
+### 24. 短视频与正在观看短视频大标题“作者名 + 的视频”化、短视频副标题“来自 + 媒体源及分区”化、设置/电源聚焦保持原页面内容、macOS 顶部菜单栏汉化、很酷 TV+ 大标题简化及定制 App Icon 部署（Round 32 重点复盘 Task 1–6，v4.4.0）
+
+1. **短视频板块（`row === 3`）大标题显示“作者名 + 的视频”，副标题显示“来自 + 媒体源及分区”（Task 1）**：
+   - 新增 `formatShortVideoAuthorHeroTitle(rawAuthor)` 与 `getShortVideoCategorySourceSub(elOrItem)`：当焦点位于短视频板块卡片上时，卡片上方大标题（`#heroTitle`）显示为 `作者名 + 的视频`（例如 `@李子柒 的视频`），副标题（`#heroSub`）由纯粹媒体源升级为 `来自 + 媒体源及分区`（例如 `来自 抖音精选`、`来自 bilibili热门`，自动联动 `.douyin-font` 品牌字体与 `.inline-bili-logo` 内联图标）；正式播放页面标题与副标题保持不变。
+2. **正在播放/现在观看板块（`row === 7`）下的短视频内容大标题显示“作者名 + 的视频”，副标题保持不变（Task 2）**：
+   - 修复此前“正在观看/现在观看”板块下短视频内容大标题误显示为单条视频标题的问题：在 `setFocus()`（含侧边栏 `col === 0 && row === 7` 与卡片 `row === 7 && effRow === 3`）及 `updateNowWatchingHeroHeader()` 中，针对 `sourceRow === 3` 的短视频卡片统一提取作者名（`org`）并调用 `formatShortVideoAuthorHeroTitle()` 显示为 `@作者名 的视频`，副标题保持 `短视频社区 · 媒体源`（如 `短视频社区 · 抖音`）不做任何改变。
+3. **当焦点位于侧边栏“设置”（`row === 5`）或“电源”（`row === 6`）时，标题和卡片停留在之前的内容上不做改变（Task 3）**：
+   - 为侧边栏“设置”与“电源”导航项添加 `data-no-bg-change="true"` 属性，并移除 `setFocus()` 中针对 `row === 5 || row === 6 || row === -1` 调用 `renderTrack(-1)` 清空轨道的旧逻辑，使焦点移至“设置”或“电源”时主页面大标题、副标题、小标题、丸形菜单及卡片轨道均完整保持此前所在板块的内容。
+4. **应用程序对应的 macOS 顶部系统菜单栏全面汉化（Task 4）**：
+   - 在 `libcooltv_glass.dylib`（`translateMenuTitleToChinese` / `localizeMenuRecursive` / `swizzled_setMainMenu`）与 `src-tauri/src/lib.rs`、`Feel Cool TV.app/Contents/Info.plist`（`CFBundleDevelopmentRegion = zh_CN`、`CFBundleLocalizations = [zh_CN, zh-Hans]`）及 `zh-Hans.lproj/InfoPlist.strings` 中实现双层汉化保障：将应用主菜单（`关于 Feel Cool TV`、`服务`、`隐藏 Feel Cool TV`、`隐藏其他`、`全部显示`、`退出 Feel Cool TV`）及 `文件`、`编辑`、`显示`、`窗口`、`帮助` 各级子菜单全面汉化为标准 macOS 简体中文文案。
+5. **很酷 TV+ 的大标题不再显示“剧集”或“电影”字样（Task 5）**：
+   - 将 `#navCoolTvPlusItem` 的 `data-title` 与 `getCurrentCoolTvHeroTitle()` 返回值统一简化为 `'很酷 TV+'`，使聚焦“很酷 TV+”侧边栏项或切换“剧集 / 电影”二级丸形菜单时，大标题统一渲染为内联“很酷 TV+”品牌 Logo，不再附加“剧集”或“电影”后缀。
+6. **指定并部署定制 App Icon（Task 6）**：
+   - 基于 Icon Composer 导出的 `Icon-macOS-Default-1024@1x.png` 设计稿生成全套多分辨率图标（`icon.icns`、`icon.png`、`32x32.png`、`128x128.png`、`128x128@2x.png`、`icon.ico`），同步写入 `src-tauri/icons/` 与 `Feel Cool TV.app/Contents/Resources/icon.icns`。
+
+### 25. 深邃空间交互音效引擎、短视频跨轮刷新去重与末尾无感续载、二级丸形菜单首项搜索框、多页“只看作者”列表、过期视频流自动续期、B 站账户兴趣推荐流对齐、暂停态跑马灯 10 轮自动停止及 Dock 图标锁定（Round 33 重点复盘 Task 1–9，v4.5.0）
+
+1. **Amazon Fire TV / Apple TV 风格深邃恢宏空间交互音效引擎与设置开关（Task 1）**：
+   - 构建基于 Web Audio API 双振荡器（Sub-bass 正弦波 + 泛音三角波）配合低通滤波包络与立体声双延时混响网络的合成器 `CoolTvSoundEngine`（`playUiSound(type, dirHint)`），为方向键移动（`move`）、边界触底阻尼（`boundary`）、确认进入（`select`）、返回/退格（`back`）、菜单唤出（`menu`）、长按触发（`longpress`）、设置项切换（`toggle`）及点赞/收藏（`action`）赋予各具辨识度且深邃温润的低频空间音效；
+   - 在【设置 -> 个性化设置】中新增 **“交互音效”**（`appSettings.uiSound`，持久化于 `localStorage.fc_ui_sound`），支持随时开启或关闭。
+2. **修复抖音与 bilibili 每次刷新出现上一轮重复视频及卡片序列末尾无法向后继续加载更多卡片问题（Task 2）**：
+   - **根因剖析**：① 已编译的 `cooltv-mac-engine` 在 Rust `on_document_title_changed` 中硬编码了 `if existing_list.len() >= 18 { return; }`，导致后端 `douyin_feed` 队列达到 18 条后静默丢弃所有后续抓取的视频，焦点移至末尾时无法追加新卡片；② `get_douyin_feed(refresh: true)` 调用了 `window.__FC_SEEN__.clear()`，清空已见 ID 集合后再刷新，导致接口返回的缓存批次与上一轮重复。
+   - **解决方案**：在 `libcooltv_glass.dylib` 中注册原生 `WKScriptMessageHandler`（`window.webkit.messageHandlers.cooltvBridge`）跨 WebView 高速桥接通道，完全绕开 `cooltv-mac-engine` 的 18 条上限；同时在 `douyin_scraper` 与 `bilibili_scraper` 中维护跨刷新的持久化滚动去重集合（`__fc_dy_global_seen_v2__` 与 `__fc_bili_global_seen_v2__`，容量 800 条）并拦截 `window.__FC_SEEN__.clear`，确保每次刷新全部为全新视频；当焦点移至卡片序列末尾（或倒数第 3 张卡片内）按右键时，立即通过 `cooltvBridge` 触发追加加载并原地无感续接新卡片，无需重头覆盖。
+3. **短视频二级丸形菜单首项搜索框（Task 3）**：
+   - 在短视频展开的二级丸形菜单首位（`data-col="1"`）内置 Liquid Glass 搜索框（`#streamSearchPill` / `#streamSearchInput`）；
+   - 当焦点位于搜索框时自动进入输入状态（`.editing`），实时过滤并屏蔽所有中英文标点符号；搜索框非空时按返回键（`Escape` / `Backspace`）执行退格删除末尾字符（为空时按返回键折叠回一级丸形菜单），按确认键（`Enter`）即时触发当前平台（抖音或 bilibili）关键词视频搜索。
+4. **修复“只看作者”功能不可用或仅加载 1~2 个视频问题，实现完整作品列表多页抓取与流畅预加载（Task 4）**：
+   - **根因剖析**：旧版 `get_stream_author_videos` 仅截取前 12 条并逐条串行运行 `ffprobe`，而主线程仅等待 `1.17s` 即超时返回，导致只返回 0~2 个视频。
+   - **解决方案**：在 `libcooltv_glass.dylib` 中实现 `__FC_BRIDGE_AUTHOR_DY__`（结合 `aweme/detail` 反查 `sec_uid`、多页 `/aweme/v1/web/aweme/post/` 游标翻页及页面状态扫描兜底）与 `__FC_BRIDGE_AUTHOR_BILI__`（结合 `view` 反查 `mid`、多页 `wbi/arc/search` 与公开空间兜底），单批次拉取 3 页并过滤 H.264 直链，同时控制内存列表上限（120 条）并在浏览至列表尾部前自动静默预加载下一页，兼顾作品完整性与流畅度。
+5. **修复短视频推荐流长时间未观看未刷新后已加载卡片无法正常播放问题（Task 5）**：
+   - 新增 `isDouyinStreamUrlExpired(url)` 自动解析 CDN URL 中的 `x-expires` / `expires` 时间戳；当检测到已加载卡片 URL 临近或已经过期，或在 `start_ffmpeg` 起播失败时，自动调用 `refreshExpiredDouyinStreamUrl(item)`（通过 `cooltvBridge` 请求 `/aweme/v1/web/aweme/detail/` 或按标题检索）实时换取最新有效 CDN 地址，并原地更新 `ROW_DATA[3]`、DOM 卡片 `data-url` 与观看历史记录后无缝续播。
+6. **修复 bilibili 推荐流与用户个人账户首页兴趣不符问题（Task 6）**：
+   - 针对 bilibili 核心登录凭据 `SESSDATA` 为 `HttpOnly`（`document.cookie` 无法读取）的问题，在 `libcooltv_glass.dylib` 中直接通过 `[[WKWebsiteDataStore defaultDataStore] httpCookieStore]` 提取全量 `.bilibili.com` Cookie（含 `SESSDATA`、`bili_jct`、`DedeUserID`）同步至 `/tmp/cooltv_bili_cookie.txt` 与抓取器，并通过 `__FC_BRIDGE_FETCH_BILI__` 在已登录的 `bilibili_scraper` WebView 同源上下文内优先拉取 `x/web-interface/wbi/index/top/feed/rcmd` 个性化首页推荐流与页面 SSR 推荐流，使推荐内容与电脑浏览器访问 `bilibili.com` 首页的个人兴趣完全一致。
+7. **正式播放页面暂停态视频标题跑马灯限制为 10 轮自动停止（Task 7）**：
+   - 在 `startMarqueePingPong(el)` 与 `toggleFullscreenPlayPause()` 中新增暂停态轮次计数器（`el.__fcPausedLoops`）：当视频处于暂停状态（`isPausedIptv` 或 `macVideo.paused`）时，仅对正式播放页面底部标题（`#iptvHudTitle`）统计跑马灯滚动轮数，满 **10 轮**后自动在起始对齐位平滑停止动画；恢复播放或切换视频时立即重置计数并恢复滚动，其余位置（如主页面大标题、卡片标题）的跑马灯不受影响。
+8. **修复 App Icon 打开 1 秒后被 Tauri 原始图标覆盖问题（Task 8）**：
+   - **根因剖析**：`cooltv-mac-engine` 在 Tauri 应用启动约 1 秒后完成窗口初始化时，会调用 `[NSApp setApplicationIconImage:]` 将内嵌在二进制中的默认 Tauri 图标写入 Dock。
+   - **解决方案**：在 `libcooltv_glass.dylib` 中通过 Objective-C Runtime Method Swizzling 拦截 `-[NSApplication setApplicationIconImage:]`（`swizzled_setApplicationIconImage`），并在启动与前 5 秒周期守护中调用 `enforceCustomAppIconNow()` 强制加载锁定 `Feel Cool TV.app/Contents/Resources/icon.icns`，彻底杜绝图标回退。
+
+### 26. 抖音多路搜索修复、搜索框等高与放大镜左移优化、搜索框返回键纯退格防失焦、bilibili 一级丸形菜单默认显示子分类名及交互音效响度增强与音量调节（Round 34 重点复盘 Task 1–6，v4.6.0）
+
+1. **修复抖音关键词搜索无法搜索出内容问题（Task 1）**：
+   - **根因剖析**：
+     1) 抖音网页版搜索接口（`/aweme/v1/web/search/item/` 与 `/aweme/v1/web/general/search/single/`）校验 `Referer` 必须为 `/search/<keyword>` 路由，且其 SSR 阶段生成的 `self.__pace_f.push([1, "..."])` 载荷为多行换行分隔的 React Server Components (RSC) 流（每行形如 `<hex_id>:<json>`），此前直接对整段字符串截取首个冒号后调用 `JSON.parse` 会在首行换行处抛出 `SyntaxError`；
+     2) 此外，当 `activeDouyinCategory === 'dy_search'` 时，`replenishOneStreamingCardOnPlay()` 与后台轮询调用了 `invoke('get_douyin_feed', { category: 'dy_search' })`，导致后端将非 `bili_` 前缀的 `'dy_search'` 误映射回 `https://www.douyin.com/discover` 并强制重载了 `douyin_scraper`。
+   - **解决方案**：
+     1) 在 `libcooltv_glass.dylib` 中升级 `__FC_BRIDGE_SEARCH_DY__` 与 `/search/` 页面实时拦截器：先通过 `history.replaceState` 切换同源 `/search/<kw>?type=video` 路径以满足 `Referer` 与 `bdms` 签名校验并发起双接口检索，同时实现按行切分解析 RSC 流的函数 `parsePaceChunkString()`，并在需要时导航至真实 `/search/<kw>?type=video` 页面配合 `localStorage` 跨页状态（`__fc_dy_active_search__`）与 XHR/fetch/`__pace_f` 钩子实时回传搜索结果；在 `formatAwemeNode(aw, true)` 中放宽搜索结果对 `aw.images` 及 HEVC 候选源的过滤；
+     2) 在 `executeStreamKeywordSearch()` 与 `replenishOneStreamingCardOnPlay()` 中隔离 `dy_search` / `bili_search` 与常规推荐流轮询，避免 `get_douyin_feed` 重载打断搜索。
+2. **修复搜索框高度被压扁问题并将放大镜图标左移（Task 2）**：
+   - 将 `.season-pill.stream-search-pill` 的内边距由 `padding: 0 15px` 修正为与相邻丸形菜单一致的 `padding: 6px 14px 6px 10px; min-height: 31px; box-sizing: border-box;`，并将内部 `.stream-search-input` 设为 `height: 19px; line-height: 19px; -webkit-appearance: none;`，使搜索框高度与所有相邻丸形按钮完全一致；同时缩小左侧内边距并为 `.stream-search-icon` 设置 `margin-left: -2px`，使放大镜符号更靠左。
+3. **修复搜索框退格到最左侧时失焦问题，确保返回键仅用于退格、退出需用方向键（Task 3）**：
+   - **根因剖析**：① 全局 `window` 捕获阶段的 `Escape` 监听器无差别对所有 `INPUT` 执行了 `document.activeElement.blur()`；② 搜索框 `keydown` 处理在字符删空（`curSearchVal.length === 0`）后再次收到返回键时执行了折叠二级丸形菜单并移走焦点的分支。
+   - **解决方案**：在 `window` 捕获监听器中排除 `#streamSearchInput`，移除搜索框为空时按返回键折叠二级菜单的逻辑，并为 `#streamSearchInput` 挂载 `blur` 自动重聚焦守卫（当 `currentFocusEl === searchPillEl` 时保持输入焦点），确保搜索框激活时按返回键（`Escape` / `Backspace`）只用于退格，退出搜索框必须使用方向键将焦点移至他处。
+4. **短视频板块下 bilibili 一级丸形按钮默认显示当前子菜单项名（Task 4）**：
+   - 将 `biliSubExplicitlyChosen` 默认设为 `true`，并更新 `renderDouyinSeasonBar()`、`getCurrentStreamingHeroTitle()` 与 `getCurrentBiliHeroTitle()`，使短视频一级丸形菜单中的 bilibili 按钮默认显示对应的子分类名称（默认状态为 `bilibili 推荐`，切换子分类后显示对应子分类名，与 `抖音精选` 保持一致）。
+5. **增强交互音效响度与视频播放穿透力，并在设置中支持交互音效音量调节（Task 5）**：
+   - 在 `ensureUiAudioContext()` 与 `triggerResonantVoice()` 中引入 `1420Hz` 瞬态清晰度共振峰滤波器、`DynamicsCompressorNode` 动态压限器与高八度短促木质/琉璃瞬态泛音（`transientOsc`），大幅提升基础合成增益，并在背景或全屏视频有声播放时自动施加 `1.42x` 动态增益补偿与 `155ms` 视频微幅闪避（Audio Ducking）；
+   - 在【设置 -> 个性化设置】中新增 **“交互音效音量”**（`uiSoundVolume`，支持 `20%` / `40%` / `60%` / `80%` / `100%` 五档循环调节，默认 `100%`）。
+
+### 27. 抖音精选首屏加载与抖音多路搜索修复、全链路 CPU/GPU 功耗与风扇噪音治理及平滑流动感多方案交互音效（Round 35 重点复盘 Task 1–5，v4.7.0）
+
+1. **根治“抖音精选”（`discover`）无法加载出内容及“抖音搜索”（`dy_search`）无结果问题（Task 1 & Task 2）**：
+   - **根因剖析**：
+     1) **冷启动跨会话已见集合阻塞首屏**：此前 `installDouyinPatches()` 在页面初始化 `t = 0ms` 时将 `localStorage` 中的跨会话历史 ID 集合（`__fc_dy_global_seen_v2__`）全部注入 `window.__FC_SEEN__`，导致 `ensure_douyin_scraper` 在 `2400ms` 时的 `window.__FC_SEEN__.size < 6` 首屏补拉条件恒为 `false`，且冷启动 `/discover` 首屏视频因命中历史集合被全部过滤；同时当从 `/search/` 切回 `discover` 时，后端 `state.douyin_category` 仍记录为 `"discover"`（未感知搜索页路由切换），未重新导航回 `/discover`；
+     2) **桥接注入脚本语法校验加固**：上一轮压缩拼接 `libcooltv_glass.dylib` 内嵌 UTF-16LE 脚本时在末尾重复拼接了闭合块并混入一处八进制字面量，触发 WebKit JavaScriptCore 语法解析异常导致 `cooltvBridge` 在抓取器窗口内未挂载。
+   - **解决方案**：
+     1) 移除冷启动向 `window.__FC_SEEN__` 预填跨会话 `localStorage` 集合的操作，改为当前会话内存去重（且当单批次过滤后为空时自动放行兜底，确保 `discover` 永不为空），并在 `window.__FC_ACTIVE_CAT__` 上挂载 `Object.defineProperty` 响应式 setter：一旦从 `/search/` 切回常规分类自动导航回对应分类 URL，且在 `/discover` 首屏自动触发 `900ms` / `2400ms` 双阶段主动拉取；
+     2) 在 `__FC_BRIDGE_SEARCH_DY__` 与 `installDouyinPatches()` 中挂载滞后于 `ensure_douyin_scraper` 的顶层 `JSON.parse` 深度搜索扫描器（深度上限提升至 `18`，兼容 `/aweme/v1/web/general/search/stream/` 流式分块 JSON、`/aweme/v1/web/search/item/` 与多行 RSC `__pace_f` 数据），并通过 macOS 系统内置 WebKit `JavaScriptCore` (`jsc`) 对动态库提取脚本执行 `new Function` 零误差语法校验。
+2. **Mac 风扇噪音、CPU/GPU 占用与发热综合优化（不牺牲任何视觉效果，Task 3）**：
+   - **消除冗余 `ffprobe` 进程风暴**：在 `window.__FC_QUEUE__.push` 通过 `cooltvBridge` 直传前端后限制队列积压（`< 3`），阻止 `douyin_scraper` 每 `35ms` 通过 `document.title` 触发数十个后台 `ffprobe` 子进程并发拉起；
+   - **隐藏抓取器 WebView 智能降频**：在 `douyin_scraper` 首屏水合完成（`4.2s`）后，将后台隐藏态的 `requestAnimationFrame` 定时器从 `16ms`（62.5 FPS）降频至 `380ms`（约 2.6 FPS），将补丁巡检从 `120ms` 降至 `800ms`、B 站 Cookie 同步从 `4s` 降至 `8s`；
+   - **按需轮询自动休眠（`douyinPollTimer`）**：当当前短视频分类已加载完可见配额且不再新增卡片时，自动停止 `750ms` 轮询定时器，仅在切换分类、手动刷新或移至列表末尾加载更多时按需唤醒；
+   - **背景 Canvas 智能帧率与视频遮挡休眠（`renderPspWaveFrame`）**：当处于正式播放页面或背景视频已显影覆盖画面时，暂停每帧 Canvas 重绘并转为 `320ms` 低功耗检测；当动态丝带/光影背景可见时，在 120Hz ProMotion 屏幕上平滑锁定为 `36 FPS`（`27ms` 步进），在 100% 保持视觉丝滑度与画质的前提下大幅降低 GPU 光栅化负载。
+3. **新增“深海流光”与“星云潮汐”平滑流动感交互音效方案，支持在设置中自由切换（Task 4）**：
+   - 新增无点击瞬态的流动合成声部 `triggerFlowingSwellVoice()`：采用双微失谐纯正弦波（`±1.5Hz ~ ±2.6Hz` 空间合唱拍频）叠加低八度暖流正弦波与五度泛音，使用 `52ms ~ 110ms` S 型缓起渐入包络（彻底消除硬起音点击感）配合平滑指数滑音（Glissando）与呼吸式低通滤波扫频；
+   - 在【设置 -> 个性化设置 -> 交互音效方案】中提供三种可选方案：**`深海流光`**（默认，深邃温润的暗流涌动感）、**`星云潮汐`**（空灵舒缓的五度泛音滑音与潮汐余韵）、**`深邃脉冲`**（保留原瞬态脉冲方案）。
+
 ---
 
 ## 五、组件、页面与快捷键标准称呼词典（任务 14 长期维护规范）
@@ -647,9 +742,9 @@
 ### 1. 页面与全局视图状态称呼
 | 用户标准称呼 | 对应 DOM / 状态变量 | 详细解释与边界定义 |
 | :--- | :--- | :--- |
-| **主页面 / 主页** | `!isFullScreen && !isModalOpen && tvShutdownPhase === 'idle'` | 应用的核心浏览页面（包含左侧边栏、中央大标题信息区、丸形菜单、横向卡片轨道以及剧集展开子视图），区别于**正式播放页面**、**密码页**、**设置页**与**电源选项页**。主页面下背景可以同时播放预览/背景视频流。 |
-| **正式播放页面** | `isFullScreen === true` | 隐藏侧边栏（`#sidebar.fullscreen-hidden`，含左侧边栏与顶部侧边栏）、主内容卡片区（`#mainContent`）与背景遮罩（`#heroOverlay`），将视频画面（`#mac-bg-video`）完全铺满视口并开启声音的全屏沉浸播放视图。正式播放页面下严禁唤出顶部或左侧边栏。 |
-| **设置页面 / 设置页（多级全屏设置页面）** | `#settingsModal.active` (`isModalOpen === true`, `settingsCurrentLevel = 1 \| 2 \| 3`) | 点击侧边栏“设置”唤出的 Apple TV (tvOS) 深色毛玻璃风格三级全屏设置覆盖页（采用 `blur(78px) saturate(185%) brightness(0.82)` 多层环境光透出遮罩；列表滚动采用保留动量的临界阻尼 `rAF` 引擎与上下边缘渐隐遮罩）：<br>1. **一级页面**（`#settingsLevel1View`）：展示“媒体与账户设置”、“个性化设置”分类入口按钮（长按任意分类按钮或按 `F17` 显现“限制级内容设置”按钮），底部显示纯数字版本号 `4.2.0`；<br>2. **二级页面**（`#settingsLevel2View`）：展示当前分类下的设置项列表，填写性选项右侧显示 `>` SVG，非填写性选项右侧直接显示当前状态名；<br>3. **三级页面**（`#settingsLevel3View`）：针对单个填写性或账号连接设置项的独立全屏配置页。 |
+| **主页面 / 主页** | `!isFullScreen && !isModalOpen && tvShutdownPhase === 'idle'` | 应用的核心浏览页面（包含侧边栏、中央大标题信息区、丸形菜单、横向卡片轨道以及剧集展开子视图），区别于**正式播放页面**、**密码页**、**设置页**与**电源选项页**。主页面下背景可以同时播放预览/背景视频流。 |
+| **正式播放页面** | `isFullScreen === true` | 隐藏侧边栏（`#sidebar.fullscreen-hidden`，含左侧边栏与顶部侧边栏）、主内容卡片区（`#mainContent`）与背景遮罩（`#heroOverlay`），将视频画面（`#mac-bg-video`）完全铺满视口并开启声音的全屏沉浸播放视图。正式播放页面下严禁唤出顶部或左侧边栏；当视频处于暂停状态时，正式播放页面的视频标题跑马灯（`#iptvHudTitle`）限制滚动 10 轮后自动停止。 |
+| **设置页面 / 设置页（多级全屏设置页面）** | `#settingsModal.active` (`isModalOpen === true`, `settingsCurrentLevel = 1 \| 2 \| 3`) | 点击侧边栏“设置”唤出的 Apple TV (tvOS) 深色毛玻璃风格三级全屏设置覆盖页（采用 `blur(78px) saturate(185%) brightness(0.82)` 多层环境光透出遮罩；列表滚动采用保留动量的临界阻尼 `rAF` 引擎与上下边缘渐隐遮罩）：<br>1. **一级页面**（`#settingsLevel1View`）：展示“媒体与账户设置”、“个性化设置”分类入口按钮（长按任意分类按钮或按 `F17` 显现“限制级内容设置”按钮），底部显示纯数字版本号 `4.7.0`；<br>2. **二级页面**（`#settingsLevel2View`）：展示当前分类下的设置项列表，填写性选项右侧显示 `>` SVG，非填写性选项右侧直接显示当前状态名；<br>3. **三级页面**（`#settingsLevel3View`）：针对单个填写性或账号连接设置项的独立全屏配置页。 |
 | **密码页** | `#passwordModal.active` (`isModalOpen === true`) | 在侧边栏头像处长按（或按 `F17`）唤出的限制级空间解锁密码验证页面（采用与设置页同款的 Apple TV 深色高透毛玻璃遮罩，含右侧可展开的九键屏幕数字键盘 `#pwdNumpadPanel`），支持按 `Esc` 键直接退出。 |
 | **电源选项页** | `#powerModal.active` (`isModalOpen === true`) | 点击侧边栏“电源”按钮唤出的 Apple TV 深色高透毛玻璃遮罩页，包含“关闭电源”、“重新启动”、“取消”三个选项。 |
 | **关机遮罩 / 关闭电视页面** | `#tvShuttingDownModal` + `#tvBlackoutCurtain` (`tvShutdownPhase !== 'idle'`) | 按下 `F19` 键触发的睡眠关机过渡视图：先显示 5 秒“正在关闭电视.. / 请稍候。”模糊色彩遮罩，再切入 3 秒全黑屏，最后静默回到主页面。 |
@@ -660,16 +755,17 @@
 | 用户标准称呼 | 对应 DOM 选择器 / 函数 | 详细解释与交互说明 |
 | :--- | :--- | :--- |
 | **焦点 / 选中样式图形** | `currentFocusEl` + `#sidebarFocusPill` / `.settings-focus-pill` | 当前被方向键选中的高亮可交互元素。在侧边栏与设置页中，焦点移动时直接将选中样式的胶囊图形平滑平移到目标位置。 |
-| **侧边栏（位置：左侧 / 顶部；材质：Liquid Glass 深色·浅色 / 传统模糊；方案：自动折叠 / 始终折叠 / 自动隐藏 / 始终隐藏 / 始终显示）** | `#sidebar` (`col === 0`, `appSettings.sidebarPosition = 'left' \| 'top'`, `appSettings.sidebarStyle = 'liquid' \| 'blur'`, `appSettings.liquidGlassTheme = 'dark' \| 'light'`, `appSettings.sidebarMode = 'auto' \| 'always' \| 'autohide' \| 'alwayshide'`) | 支持在【设置 -> 个性化设置】中切换 **“左侧”** 与 **“顶部”** 两种位置方案：<br>1. **顶部侧边栏（`顶部`，`.sidebar.top-bar`）**：遵循 Apple 官方 tvOS 长连贯药丸胶囊设计，支持 **“始终显示”** 与 **“始终隐藏”**（`alwayshide`）两种方案，进入正式播放页面时自动隐藏且正式播放页面不允许唤出；在“始终隐藏”方案下，仅按下菜单键（`F16`）才会唤出顶部侧边栏并将焦点放置在当前所在的导航项。<br>2. **左侧边栏（`左侧`）**：支持 **“Liquid Glass”**（原生支持 **“深色”** 与 **“浅色”** 两种外观模式）与 **“传统模糊”** 两种材质，以及 **“自动折叠”**、**“始终折叠”**、**“自动隐藏”**、**“始终隐藏”** 四种折叠方案。在 **“始终隐藏”** 模式下，侧边栏与下层页面彻底分层覆盖，绝不改变主页面元素位置，召唤侧边栏仅能使用菜单键（`F16`）。 |
-| **正在观看 / 现在观看（现在播放中）** | `#navNowPlayingItem` (`data-row="7" data-col="0"`) | 侧边栏的第一个功能导航项，**每次启动 APP 时焦点自动落在此项上**（“始终隐藏”模式下自动落在“现在观看/正在观看”第一个卡片上以保持侧边栏隐藏）。配备“很酷 TV+”、“有线电视”、“流媒体”（及解锁后的“限制级”）独立丸形菜单分类，**选中的丸形菜单始终实时同步对应当前正在播放的内容**（`syncActiveNowWatchingTabToCurrentPlayback()`），且**每个分区独立享有 20 条观看历史记录额度**（`enforcePerSectionHistoryQuota()`），互不覆盖顶替。 |
-| **大标题 / 流媒体标题 / 流媒体副标题 / 影视 Logo** | `#heroTitle` / `#heroSub` (`updateHeroUI()`) | 主页面左上方/中央信息展示区（`#heroText`）。在**流媒体**板块下，大标题显示当前流媒体数据源分类名称（如 `抖音精选`、`bilibili 热门`），**副标题显示当前视频的作者**（`getCurrentStreamingHeroAuthorSub()`）；在**很酷 TV+** 板块下优先渲染本地缓存的 TMDB 官方透明影视 Logo（`.tmdb-logo-stage`）。 |
-| **丸形菜单与流媒体刷新指示器** | `#seasonBar`、`.season-pill`、`#streamRefreshIndicator` | 位于大标题下方、卡片轨道上方的横向胶囊形分类/选季菜单栏。焦点从卡片移动到丸形菜单时无需唤出侧边栏。流媒体丸形菜单左侧配备无底框刷新指示器 `#streamRefreshIndicator`，**只要触发刷新时，刷新符号自动旋转**（`.spinning`）。 |
-| **卡片 / 第一个卡片 / 第二个卡片 / 暂无视频内容卡片** | `.media-item.focusable` (`#mainTrack` 内，`col >= 1`) | 主页面下方横向滚动轨道中的 16:9 媒体海报卡片。流媒体卡片下方的视频标题过长时在聚焦态下自动开启跑马灯滚动显示（`.card-title.single-line-marquee`）。无内容时的**“暂无视频内容”卡片**采用与刷新按钮卡片一致的半透明毛玻璃加居中 `+` 符号 SVG（`.empty-card-wrapper`）。 |
+| **交互音效 / 交互音效方案 / 交互音效音量** | `playUiSound()` (`appSettings.uiSound`, `appSettings.uiSoundStyle`, `appSettings.uiSoundVolume`) | 位于【设置 -> 个性化设置】的空间感交互反馈音效系统，支持在 **“深海流光”**（默认，平滑舒缓无点击感）、**“星云潮汐”**（空灵潮汐滑音无点击感）与 **“深邃脉冲”**（瞬态低频脉冲）三种方案间切换，支持开启/关闭及 `20%`–`100%` 音量大小调节，并在有视频有声播放时自动增强穿透力。 |
+| **侧边栏（位置：左侧 / 顶部；材质：Liquid Glass 深色·浅色 / 传统模糊；方案：自动折叠 / 始终折叠 / 自动隐藏 / 始终隐藏 / 始终显示）** | `#sidebar` (`col === 0`, `appSettings.sidebarPosition = 'left' \| 'top'`, `appSettings.sidebarStyle = 'liquid' \| 'blur'`, `appSettings.liquidGlassTheme = 'dark' \| 'light'`, `appSettings.sidebarMode = 'auto' \| 'always' \| 'autohide' \| 'alwayshide'`) | 支持在【设置 -> 个性化设置】中切换 **“左侧”** 与 **“顶部”** 两种位置方案：<br>1. **顶部侧边栏（`顶部`，`.sidebar.top-bar`）**：遵循 Apple 官方 tvOS 长连贯药丸胶囊设计，支持 **“始终显示”** 与 **“始终隐藏”**（`alwayshide`）两种方案，进入正式播放页面时自动隐藏且正式播放页面不允许唤出；在“始终隐藏”方案下，仅按下菜单键（`F16`）才会唤出顶部侧边栏并将焦点放置在当前所在的导航项。<br>2. **左侧边栏（`左侧`）**：支持 **“Liquid Glass”**（原生支持 **“深色”** 与 **“浅色”** 两种外观模式）与 **“传统模糊”** 两种材质，以及 **“自动折叠”**、**“始终折叠”**、**“自动隐藏”**、**“始终隐藏”** 四种折叠方案。在 **“始终隐藏”** 模式下，侧边栏与下层页面彻底分层覆盖，绝不改变主页面元素位置，召唤侧边栏仅能使用菜单键（`F16`）。<br>3. 当焦点移动至侧边栏“设置”、“电源”或“头像”时，主页面标题和卡片仍停留在之前的内容上不做改变。 |
+| **正在观看 / 现在观看（现在播放中）** | `#navNowPlayingItem` (`data-row="7" data-col="0"`) | 侧边栏的第一个功能导航项，**每次启动 APP 时焦点自动落在此项上**（“始终隐藏”模式下自动落在“现在观看/正在观看”第一个卡片上以保持侧边栏隐藏）。配备“很酷 TV+”、“有线电视”、“短视频”（及解锁后的“限制级”）独立丸形菜单分类，**选中的丸形菜单始终实时同步对应当前正在播放的内容**（`syncActiveNowWatchingTabToCurrentPlayback()`），且**每个分区独立享有 20 条观看历史记录额度**（`enforcePerSectionHistoryQuota()`），互不覆盖顶替。其中短视频内容在“正在观看/现在观看”板块中的大标题显示为 **`作者名 + 的视频`**（如 `@李子柒 的视频`），副标题显示为 **`短视频社区 · 媒体源`**（如 `短视频社区 · 抖音`、`短视频社区 · bilibili`）。 |
+| **大标题 / 副标题 / 小标题 / 影视 Logo** | `#heroTitle` / `#heroSub` / `#heroBrand` (`updateHeroUI()`) | 主页面左上方信息展示区（`#heroText`）：<br>1. 当焦点位于侧边栏导航项（或尚未进入板块内第一个卡片）时，除“正在观看/现在观看”板块外，隐藏当前板块**副标题**（`#heroSub`）与**小标题**（`#heroBrand`），仅保留**大标题**（`#heroTitle`）；当焦点移动到板块内第一个卡片时副标题和小标题恢复显示；<br>2. 在**短视频**板块下，聚焦卡片时卡片上方**大标题**显示 `作者名 + 的视频`（如 `@李子柒 的视频`），**副标题**显示 `来自 + 媒体源及分区`（如 `来自 抖音精选`、`来自 bilibili热门`）；<br>3. 在**很酷 TV+** 板块下，侧边栏与丸形菜单状态的大标题统一显示为 `很酷 TV+`（不再附加“剧集”或“电影”字样），聚焦具体影视卡片时优先渲染本地缓存的 TMDB 官方透明影视 Logo（`.tmdb-logo-stage`）。 |
+| **丸形菜单、短视频搜索框与短视频刷新指示器** | `#seasonBar`、`.season-pill`、`#streamSearchPill`、`#streamSearchInput`、`#streamRefreshIndicator` | 位于大标题下方、卡片轨道上方的横向胶囊形分类/选季菜单栏，非聚焦态采用原生 Liquid Glass 材质。一级丸形菜单默认显示当前选中的子菜单项名（如 `抖音精选`、`bilibili 推荐`）；展开二级丸形菜单时，首项（`data-col="1"`）为与相邻丸形按钮等高的**搜索框**（`#streamSearchPill`），聚焦时自动进入输入状态并实时屏蔽标点符号，激活时按返回键（`Escape` / `Backspace`）仅用于退格（退格到最左侧为空时亦保持聚焦不失焦，需使用方向键移出搜索框），按确认键触发搜索；左侧配备无底框刷新指示器 `#streamRefreshIndicator`，**只要触发刷新时，刷新符号自动旋转**（`.spinning`）。 |
+| **卡片 / 第一个卡片 / 第二个卡片 / 暂无视频内容卡片** | `.media-item.focusable` (`#mainTrack` 内，`col >= 1`) | 主页面下方横向滚动轨道中的 16:9 媒体海报卡片。短视频卡片下方的视频标题过长时在聚焦态下自动开启跑马灯滚动显示（`.card-title.single-line-marquee`）。无内容时的**“暂无视频内容”卡片**采用与刷新按钮卡片一致的半透明毛玻璃加居中 `+` 符号 SVG（`.empty-card-wrapper`）。 |
 | **进度条与正式播放页播放按钮（Liquid Glass 播放按钮）** | `#iptvFullscreenHud` / `#fsProgressWrap` / `#fsPlayStateBtn` (`.fs-play-state-btn`) | 正式播放页面底部的半透明黑色渐变信息遮罩与播放进度控制条。左侧播放/暂停状态按钮（`#fsPlayStateBtn`，`42×42px`）采用 macOS 27 原生 Liquid Glass 圆形液态玻璃材质设计。 |
-| **点赞符号与收藏符号（点赞与收藏状态指示器）** | `#fsStreamActionIndicators` (`#fsStreamLikeInd` / `#fsStreamCollectInd`) | **仅在流媒体（`sourceRow === 3`）正式播放页面下**显示的互动状态图标组，位于底部视频标题与作者副标题右侧居右显示（间距 `28px`）；很酷 TV+ 与有线电视正式播放页面严格隐藏该指示器。默认白色，点赞激活为品红色（`#ff007f`），收藏激活为黄色（`#ffd60a`）。 |
+| **点赞符号与收藏符号（点赞与收藏状态指示器）** | `#fsStreamActionIndicators` (`#fsStreamLikeInd` / `#fsStreamCollectInd`) | **仅在短视频（`sourceRow === 3`）正式播放页面下**显示的互动状态图标组，位于底部视频标题与作者副标题右侧居右显示（间距 `28px`）；很酷 TV+ 与有线电视正式播放页面严格隐藏该指示器。默认白色，点赞激活为品红色（`#ff007f`），收藏激活为黄色（`#ffd60a`）。 |
 | **亮度条 / 亮度滑杆 / 亮度符号** | `#tvBrightnessHud` / `#tvBrightnessIconBtn` | 由 **F20 键**触发的底部半透明黑色渐变电视亮度控制条，左侧直接显示无按钮容器的**亮度符号**（`.tv-brightness-icon`），右侧为实时响应用户左右键（**`±10%` 步长**）操作的**亮度滑杆**与 `0-100` 纯数字亮度值。 |
-| **选集菜单** | `#fsEpisodePickerHud` | 剧集类视频在**正式播放页面**下，通过按下方向键（`ArrowDown`）或菜单键（`F16`）在画面底部唤出的选集列表遮罩。 |
-| **流媒体选项 / 流媒体选项菜单 / 只看作者** | `#fsStreamMenuHud` / `#fsStreamAuthorOnlyBtn` | 流媒体视频在**正式播放页面**下，通过按下菜单键（`F16`）在画面底部唤出的流媒体专用选项遮罩，包含带对勾 SVG 激活状态指示器的 **“只看作者”** 丸形按钮。 |
+| **选集菜单 / 选集列表** | `#fsEpisodePickerHud` (`.fs-ep-item-btn` / `.fs-ep-season-arrow`) | 剧集类视频在**正式播放页面**下，通过按下方向键（`ArrowDown`）或菜单键（`F16`）在画面底部唤出的选集列表遮罩，选集按钮与季切换箭头采用原生 Liquid Glass 材质设计。 |
+| **短视频选项 / 短视频选项菜单 / 只看作者** | `#fsStreamMenuHud` / `#fsStreamAuthorOnlyBtn` | 短视频在**正式播放页面**下，通过按下菜单键（`F16`）在画面底部唤出的短视频专用选项遮罩，包含带对勾 SVG 激活状态指示器的 **“只看作者”** Liquid Glass 丸形按钮。 |
 | **整点/半点时钟** | `#topRightClock` (`.top-right-clock`) | 在整点与半点的前一分钟至整点/半点结束期间（`:29`–`:30`、`:59`–`:00`），于屏幕右上角浮现的无底框柔和扩散阴影数字时钟。 |
 | **气象信息 / 气象速报** | `#jpWeatherTelop` | 屏幕顶部居中弹出的即时灾害预警、降水与高湿提示横幅（带彩色底部下划线）。 |
 

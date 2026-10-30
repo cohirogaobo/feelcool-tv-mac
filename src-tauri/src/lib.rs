@@ -126,33 +126,55 @@ fn build_ffmpeg_args(
     };
 
     if is_local_file {
+        // 任务 6 (Round 31)：针对 1918×802 等非 16 宏块对齐超宽屏及 23.98fps H.264 本地媒体：
+        // 1) 统一等比缩放并居中填充至 1280×720（80×45 完整 16×16 宏块，SPS frame_cropping_flag=0，标准 16:9 画布），彻底消除非 16 对齐分辨率与非 16:9 纹理在 WebKit TiledCoreAnimationDrawingArea 下的宏块错位切块与瓦片冻结；
+        // 2) 默认采用 libx264 ultrafast + zerolatency + sliced-threads=0:ref=1:bframes=0:force-cfr=1 单 Slice 整帧编码并剥离源流私有未注册 SEI (remove_types=6)，配合 -max_interleave_delta 0 与零点 PTS 对齐，彻底根除播放卡住（暂停继续后恢复）与切块异常。
+        let local_v_codec = if use_sw_fallback { "h264_videotoolbox" } else { "libx264" };
         args.extend(vec![
             "-fflags".to_string(), "+genpts+discardcorrupt".to_string(),
+            "-err_detect".to_string(), "ignore_err".to_string(),
             "-analyzeduration".to_string(), "10M".to_string(),
             "-probesize".to_string(), "10M".to_string(),
+            "-threads".to_string(), "4".to_string(),
             "-ss".to_string(), ss_val,
             "-i".to_string(), actual_url.to_string(),
             "-map".to_string(), "0:v:0".to_string(),
             "-map".to_string(), "0:a:0?".to_string(),
             "-fps_mode".to_string(), "cfr".to_string(),
             "-r".to_string(), "30".to_string(),
-            "-vf".to_string(), "setpts=PTS-STARTPTS,scale='min(1920,iw)':'min(1920,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/4)*4:trunc(ih/4)*4,setsar=1,fps=30,format=yuv420p".to_string(),
-            "-c:v".to_string(), v_codec.to_string(),
+            "-vf".to_string(), "setpts=PTS-STARTPTS,scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=30,format=yuv420p".to_string(),
+            "-c:v".to_string(), local_v_codec.to_string(),
             "-profile:v".to_string(), "main".to_string(),
             "-bf".to_string(), "0".to_string(),
         ]);
-        if use_sw_fallback {
-            args.extend(vec!["-preset".to_string(), "ultrafast".to_string()]);
+        if local_v_codec == "libx264" {
+            args.extend(vec![
+                "-preset".to_string(), "ultrafast".to_string(),
+                "-tune".to_string(), "zerolatency".to_string(),
+                "-level".to_string(), "4.0".to_string(),
+                "-pix_fmt".to_string(), "yuv420p".to_string(),
+                "-g".to_string(), "30".to_string(),
+                "-keyint_min".to_string(), "30".to_string(),
+                "-sc_threshold".to_string(), "0".to_string(),
+                "-flags".to_string(), "+cgop".to_string(),
+                "-x264-params".to_string(), "sliced-threads=0:ref=1:bframes=0:force-cfr=1".to_string(),
+                "-bsf:v".to_string(), "filter_units=remove_types=6".to_string(),
+                "-b:v".to_string(), "6000k".to_string(),
+                "-maxrate".to_string(), "8500k".to_string(),
+                "-bufsize".to_string(), "12000k".to_string(),
+            ]);
         } else {
             args.extend(vec![
                 "-realtime".to_string(), "1".to_string(),
                 "-allow_sw".to_string(), "1".to_string(),
+                "-g".to_string(), "30".to_string(),
+                "-flags".to_string(), "+cgop".to_string(),
+                "-bsf:v".to_string(), "filter_units=remove_types=6".to_string(),
+                "-b:v".to_string(), "6000k".to_string(),
+                "-maxrate".to_string(), "8500k".to_string(),
+                "-bufsize".to_string(), "12000k".to_string(),
             ]);
         }
-        args.extend(vec![
-            "-g".to_string(), "30".to_string(),
-            "-b:v".to_string(), "8M".to_string(),
-        ]);
         if !skip_audio_filter {
             args.extend(vec!["-af".to_string(), audio_norm_std.to_string()]);
         } else {
@@ -163,6 +185,7 @@ fn build_ffmpeg_args(
             "-b:a".to_string(), "192k".to_string(),
             "-ar".to_string(), "44100".to_string(),
             "-ac".to_string(), "2".to_string(),
+            "-max_interleave_delta".to_string(), "0".to_string(),
             "-avoid_negative_ts".to_string(), "make_zero".to_string(),
             "-muxdelay".to_string(), "0".to_string(),
             "-muxpreload".to_string(), "0".to_string(),
@@ -900,9 +923,9 @@ async fn start_ffmpeg(url: String, seek_sec: Option<f64>, state: State<'_, AppSt
                     break;
                 }
                 if let Ok(content) = fs::read_to_string(&m3u8_path) {
-                    if is_douyin || is_bilibili {
-                        // 任务 1 (Round 25)：流媒体预缓冲至少 3 个完整 1s 切片 (_0002.ts) 或已写入 #EXT-X-ENDLIST 后再挂载播放器，确保首屏缓冲区充裕
-                        if content.contains("_0002.ts") || content.contains("#EXT-X-ENDLIST") || (tick_idx >= 30 && content.contains("_0001.ts")) {
+                    if is_local_file || is_douyin || is_bilibili {
+                        // 任务 1 (Round 25) & 任务 6 (Round 31)：本地媒体与短视频均预缓冲至少 3 个完整 1s 切片 (_0002.ts) 或已写入 #EXT-X-ENDLIST 后再挂载播放器，防止首片边界缓冲区欠载触发 AVSampleBufferDisplayLayer 画面冻结
+                        if content.contains("_0002.ts") || content.contains("#EXT-X-ENDLIST") || (tick_idx >= 26 && content.contains("_0001.ts")) {
                             return Ok(format!("http://127.0.0.1:8765/{}", m3u8_filename));
                         }
                     } else if content.contains(".ts") {
@@ -2929,7 +2952,7 @@ fn ensure_douyin_scraper(
                     {
                         let fmap = feed_arc.lock().unwrap();
                         if let Some(existing_list) = fmap.get(&active_cat) {
-                            if existing_list.len() >= 18 {
+                            if existing_list.len() >= 240 {
                                 return;
                             }
                         }
@@ -2945,7 +2968,7 @@ fn ensure_douyin_scraper(
                             {
                                 let fmap = feed_clone.lock().unwrap();
                                 if let Some(existing_list) = fmap.get(&active_cat) {
-                                    if existing_list.len() >= 18 {
+                                    if existing_list.len() >= 240 {
                                         return;
                                     }
                                 }
@@ -5391,6 +5414,78 @@ pub fn run() {
             was_precipitating: Arc::new(Mutex::new(false)),
         })
         .setup(move |app| {
+            // 任务 4 (Round 32)：确保 macOS 顶部应用菜单栏内容全面汉化
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::menu::{Menu, Submenu, PredefinedMenuItem, AboutMetadata};
+                let handle = app.handle();
+                let about_meta = AboutMetadata {
+                    name: Some("Feel Cool TV".to_string()),
+                    version: Some("4.4.0".to_string()),
+                    ..Default::default()
+                };
+                if let (
+                    Ok(about_item),
+                    Ok(services_item),
+                    Ok(hide_item),
+                    Ok(hide_others_item),
+                    Ok(show_all_item),
+                    Ok(quit_item),
+                    Ok(close_win_item),
+                    Ok(undo_item),
+                    Ok(redo_item),
+                    Ok(cut_item),
+                    Ok(copy_item),
+                    Ok(paste_item),
+                    Ok(select_all_item),
+                    Ok(fullscreen_item),
+                    Ok(minimize_item),
+                    Ok(maximize_item),
+                    Ok(sep1),
+                    Ok(sep2),
+                    Ok(sep3),
+                    Ok(sep4),
+                ) = (
+                    PredefinedMenuItem::about(handle, Some("关于 Feel Cool TV"), Some(about_meta)),
+                    PredefinedMenuItem::services(handle, Some("服务")),
+                    PredefinedMenuItem::hide(handle, Some("隐藏 Feel Cool TV")),
+                    PredefinedMenuItem::hide_others(handle, Some("隐藏其他")),
+                    PredefinedMenuItem::show_all(handle, Some("全部显示")),
+                    PredefinedMenuItem::quit(handle, Some("退出 Feel Cool TV")),
+                    PredefinedMenuItem::close_window(handle, Some("关闭窗口")),
+                    PredefinedMenuItem::undo(handle, Some("撤销")),
+                    PredefinedMenuItem::redo(handle, Some("重做")),
+                    PredefinedMenuItem::cut(handle, Some("剪切")),
+                    PredefinedMenuItem::copy(handle, Some("拷贝")),
+                    PredefinedMenuItem::paste(handle, Some("粘贴")),
+                    PredefinedMenuItem::select_all(handle, Some("全选")),
+                    PredefinedMenuItem::fullscreen(handle, Some("进入全屏")),
+                    PredefinedMenuItem::minimize(handle, Some("最小化")),
+                    PredefinedMenuItem::maximize(handle, Some("缩放")),
+                    PredefinedMenuItem::separator(handle),
+                    PredefinedMenuItem::separator(handle),
+                    PredefinedMenuItem::separator(handle),
+                    PredefinedMenuItem::separator(handle),
+                ) {
+                    if let (
+                        Ok(app_menu),
+                        Ok(file_menu),
+                        Ok(edit_menu),
+                        Ok(view_menu),
+                        Ok(window_menu),
+                    ) = (
+                        Submenu::with_items(handle, "Feel Cool TV", true, &[&about_item, &sep1, &services_item, &sep2, &hide_item, &hide_others_item, &show_all_item, &sep3, &quit_item]),
+                        Submenu::with_items(handle, "文件", true, &[&close_win_item]),
+                        Submenu::with_items(handle, "编辑", true, &[&undo_item, &redo_item, &sep4, &cut_item, &copy_item, &paste_item, &select_all_item]),
+                        Submenu::with_items(handle, "显示", true, &[&fullscreen_item]),
+                        Submenu::with_items(handle, "窗口", true, &[&minimize_item, &maximize_item]),
+                    ) {
+                        if let Ok(menu) = Menu::with_items(handle, &[&app_menu, &file_menu, &edit_menu, &view_menu, &window_menu]) {
+                            let _ = app.set_menu(menu);
+                        }
+                    }
+                }
+            }
             if let Some(main_win) = app.get_webview_window("main") {
                 let _ = main_win.set_title("");
                 let _ = main_win.set_title_bar_style(TitleBarStyle::Overlay);
