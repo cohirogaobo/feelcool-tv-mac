@@ -4,6 +4,19 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>Resources/Base.lproj/InfoPlist.strings</key>
+		<data>
+		wVLhh72tGuMxKyVHqvThE99v2pg=
+		</data>
+		<key>Resources/en.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			wVLhh72tGuMxKyVHqvThE99v2pg=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
 		<key>Resources/icon.icns</key>
 		<data>
 		Q0Oli5uacUByp5JC1MtwA/Td0vY=
@@ -20,6 +33,10 @@
 		<data>
 		k/SCa6QPHz4vzJmlCJ0GLrWlcPE=
 		</data>
+		<key>Resources/src/assets/cooltv_brand.png</key>
+		<data>
+		oKxNbcPZiGHyTMLu3aZH1aMSeFI=
+		</data>
 		<key>Resources/src/assets/cooltv_plus.png</key>
 		<data>
 		MZKJPDftGlIEdnPCAWwQ2tXy2vE=
@@ -27,6 +44,58 @@
 		<key>Resources/src/assets/javascript.svg</key>
 		<data>
 		qkOwuxNfuMFa17zpu0pPs1dwzlE=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_action.wav</key>
+		<data>
+		fkTST0vOxCa+02KdiPSue385pxg=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_back.wav</key>
+		<data>
+		6r4lf8miojThjESUNJZjyNWXmzg=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_boot.wav</key>
+		<data>
+		NFyZ/C2hm5m4Xn+h2kHLfPTZ+dg=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_boundary.wav</key>
+		<data>
+		BI3OwiyxIYEc1HpH0sqWkbDj4x8=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_menu.wav</key>
+		<data>
+		ozqdoDSLcclO4K4Wo+oZPOjbphU=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_move_down.wav</key>
+		<data>
+		o/l8jw3+w0trO0dq39BGf8wjF54=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_move_left.wav</key>
+		<data>
+		T6iKGcn2I2bDDxR/OCsci5uFLqI=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_move_right.wav</key>
+		<data>
+		zTaBYEW62F1a1jY7WaHRkPH8pHI=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_move_up.wav</key>
+		<data>
+		9S3krQNhHHWJ777gZqiimgfh6B8=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_select.wav</key>
+		<data>
+		BYl2MgFYK9+dlKKeMClyeR6QiRA=
+		</data>
+		<key>Resources/src/assets/sounds/firetv_toggle.wav</key>
+		<data>
+		2Pp8QroR/0ZKrjwqwqLhjXPzNhk=
+		</data>
+		<key>Resources/src/assets/sounds/poopoo.mp3</key>
+		<data>
+		JZLq0SYcu3zrJRAbF8Q5FndzllI=
+		</data>
+		<key>Resources/src/assets/sounds/zoo.mp3</key>
+		<data>
+		4YzE6munJM1F76UD5kXQ+6ROpXw=
 		</data>
 		<key>Resources/src/assets/tauri.svg</key>
 		<data>
@@ -38,7 +107,7 @@
 		</data>
 		<key>Resources/src/index.html</key>
 		<data>
-		kQdvlfsruc7biHVKqWXfCFUBeXg=
+		5Ey2dofFel41580aPMOuySlAc9k=
 		</data>
 		<key>Resources/src/main.js</key>
 		<data>
@@ -52,7 +121,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			7Cn6QQVoPkVtgfWm5FvD1UGMquM=
+			wVLhh72tGuMxKyVHqvThE99v2pg=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -61,7 +130,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			7Cn6QQVoPkVtgfWm5FvD1UGMquM=
+			wVLhh72tGuMxKyVHqvThE99v2pg=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -73,28 +142,44 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			jUWoiMK4Z/HA+4BtICGiGjXRyYo=
+			rJsjinxVWF9IrE/H7SIUgtcIwS8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"8d45a888c2b867f1c0fb806d2021a21a35d1c98a"</string>
+			<string>identifier "com.gaobo.cooltv-mac.glass"</string>
 		</dict>
 		<key>MacOS/cooltv-mac-engine</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			V0n4NBGO8HrtAVEGOxi4uNIf6LQ=
+			aSEnmDMhLhj4GwPfuTMAy1ujx5Q=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"5749f834118ef07aed0151063b18b8b8d21fe8b4"</string>
+			<string>identifier "com.gaobo.cooltv-mac"</string>
 		</dict>
 		<key>MacOS/libcooltv_glass.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			jUWoiMK4Z/HA+4BtICGiGjXRyYo=
+			rJsjinxVWF9IrE/H7SIUgtcIwS8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"8d45a888c2b867f1c0fb806d2021a21a35d1c98a"</string>
+			<string>identifier "com.gaobo.cooltv-mac.glass"</string>
+		</dict>
+		<key>Resources/Base.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			XhhFocgF8PwkyFEO8jXts3omdCjzta2rcViu5vTsj3s=
+			</data>
+		</dict>
+		<key>Resources/en.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			XhhFocgF8PwkyFEO8jXts3omdCjzta2rcViu5vTsj3s=
+			</data>
+			<key>optional</key>
+			<true/>
 		</dict>
 		<key>Resources/icon.icns</key>
 		<dict>
@@ -117,6 +202,13 @@
 			V9TPLbUiDm2viaex/tQiY4/dkjqd5Wc7PY/6r/b3CU8=
 			</data>
 		</dict>
+		<key>Resources/src/assets/cooltv_brand.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			DiA39W4NGVgXXKLNdYRWZG19m0nhSxBSj/g7UqCSSIc=
+			</data>
+		</dict>
 		<key>Resources/src/assets/cooltv_plus.png</key>
 		<dict>
 			<key>hash2</key>
@@ -129,6 +221,97 @@
 			<key>hash2</key>
 			<data>
 			jaxTeZEEIUwwdpqkTCWhazyMhvfGxuRvsZluY6tdgo4=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_action.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			0e7yoce62+FB6rhLkxmWQbp94p8+uLo5+kXeQZk9ymc=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_back.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			WqFuQQJpm/87YspNkMf8xX2ymt2mZjy/l9uXiaxkbsg=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_boot.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			yxFfiQIlQSuaEcQ1GyuMYWB4VnXZviQ1WS99sqfBBOk=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_boundary.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Rmpnw55C3nczcLpTLNrRWqQn1laOUXBdpjDFDJjJOhU=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_menu.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			E9n3n84k7CjD0j76vq70n87XPQn+09gppjMKAgfwojY=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_move_down.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			N4ssUBbMc1PFl5G2m5mwffwVVnimbjVYmaB4t28MQ7o=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_move_left.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			JAxiCO2xcalFFmjMyRqWTsLG8YY5Pjv9+KqY1iMDmqM=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_move_right.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			HH1uWV+WXem/7yLdgOj9YwkhflN9GwmRMowl/qPfYMc=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_move_up.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			UA0KahiOyErU/55VsQjMf0uJDR+AYM2whwldzIxUzlE=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_select.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ddtcza5uqP0KrqpVON9GvzsFTwLDdx1phS0KZV8Dp0Y=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/firetv_toggle.wav</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			riyHCGxlaOUzZG7h5M9xlr3xncQtOOqLdKi38rLPLjQ=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/poopoo.mp3</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			0Ts+6ybeRqmS6ZI2b3ndkaa47kiopmw+fLxYOtaT4cQ=
+			</data>
+		</dict>
+		<key>Resources/src/assets/sounds/zoo.mp3</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			NtszTBa3siRbsOaJO3gSG7VVBJ6CC0QbPTvTtNg9Mb4=
 			</data>
 		</dict>
 		<key>Resources/src/assets/tauri.svg</key>
@@ -149,7 +332,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			f+Enx9aHejZLObJbzzy90JCD3HQFeof9++uu7GfDvJY=
+			JzL9Zw8Hpl0qts8xIOrOZ6NoG9K7tIDWR/STo/bIi64=
 			</data>
 		</dict>
 		<key>Resources/src/main.js</key>
@@ -170,7 +353,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			nqVpzwLAoGfmyUh2Cm27Gf+GTr5ZKutt82bkuJspNmU=
+			XhhFocgF8PwkyFEO8jXts3omdCjzta2rcViu5vTsj3s=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -179,7 +362,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			nqVpzwLAoGfmyUh2Cm27Gf+GTr5ZKutt82bkuJspNmU=
+			XhhFocgF8PwkyFEO8jXts3omdCjzta2rcViu5vTsj3s=
 			</data>
 			<key>optional</key>
 			<true/>

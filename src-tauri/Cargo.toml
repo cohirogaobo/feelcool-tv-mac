@@ -1,6 +1,6 @@
 [package]
 name = "cooltv-mac"
-version = "4.7.0"
+version = "6.3.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2024"
@@ -32,3 +32,13 @@ lto = true
 opt-level = 3
 panic = "abort"
 strip = true
+
+[profile.dev]
+debug = 0
+strip = "debuginfo"
+incremental = false
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1

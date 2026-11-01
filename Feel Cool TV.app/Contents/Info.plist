@@ -2,34 +2,48 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>zh_CN</string>
-    <key>CFBundleLocalizations</key>
-    <array>
-        <string>zh_CN</string>
-        <string>zh-Hans</string>
-    </array>
-    <key>CFBundleDisplayName</key>
-    <string>Feel Cool TV</string>
-    <key>CFBundleExecutable</key>
-    <string>cooltv-mac</string>
-    <key>CFBundleIconFile</key>
-    <string>icon.icns</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.gaobo.cooltv-mac</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>Feel Cool TV</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>4.7.0</string>
-    <key>CFBundleVersion</key>
-    <string>4.7.0</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>zh_CN</string>
+	<key>CFBundleDisplayName</key>
+	<string>很酷TV</string>
+	<key>CFBundleExecutable</key>
+	<string>cooltv-mac</string>
+	<key>CFBundleIconFile</key>
+	<string>icon.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.gaobo.cooltv-mac</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>zh_CN</string>
+		<string>zh-Hans</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>很酷TV</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>6.3.0</string>
+	<key>CFBundleVersion</key>
+	<string>6.3.0</string>
+	<key>LSHasLocalizedDisplayName</key>
+	<true/>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.15</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>很酷TV需要访问可移除宗卷以扫描和播放外接存储设备中的本地影视媒体。</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>很酷TV需要访问网络宗卷以扫描和播放局域网存储中的影视媒体。</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>很酷TV需要访问本地网络以连接智能家居设备与本地流媒体服务。</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>很酷TV需要访问文稿文件夹以读取本地影视媒体与配置文件。</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>很酷TV需要访问桌面文件夹以读取本地影视媒体文件。</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>很酷TV需要访问下载文件夹以读取本地影视媒体文件。</string>
 </dict>
 </plist>

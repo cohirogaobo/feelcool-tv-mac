@@ -562,7 +562,7 @@ fn resolve_bilibili_stream_candidates(raw_spec: &str, cookie: &str) -> (Vec<Stri
         bvid, cid
     );
     let ep_pc_stream = format!(
-        "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=64&fnval=1&platform=pc&otype=json",
+        "https://api.bilibili.com/x/player/playurl?bvid={}&cid={}&qn=64&platform=html5&high_quality=01",
         bvid, cid
     );
     let api_endpoints = if is_long_video {
@@ -2811,7 +2811,7 @@ fn ensure_douyin_scraper(
                 const bar = document.createElement('div');
                 bar.id = 'fc-login-bar';
                 bar.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#0A84FF;color:#fff;padding:10px 28px;border-radius:999px;font-family:-apple-system,sans-serif;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1.5px solid rgba(255,255,255,0.4);';
-                bar.innerText = '✅ 完成登录并返回 Feel Cool TV (或按 Esc / 关闭窗口)';
+                bar.innerText = '✅ 完成登录并返回 很酷TV (或按 Esc / 关闭窗口)';
                 bar.onclick = function() {
                     bar.remove();
                     document.title = '__FC_LOGIN_DONE__';
@@ -3998,7 +3998,7 @@ fn ensure_bilibili_scraper(
                 const bar = document.createElement('div');
                 bar.id = 'fc-login-bar';
                 bar.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#0A84FF;color:#fff;padding:10px 28px;border-radius:999px;font-family:-apple-system,sans-serif;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1.5px solid rgba(255,255,255,0.4);';
-                bar.innerText = '✅ 完成登录并返回 Feel Cool TV (或按 Esc / 关闭窗口)';
+                bar.innerText = '✅ 完成登录并返回 很酷TV (或按 Esc / 关闭窗口)';
                 bar.onclick = function() {
                     bar.remove();
                     try {
@@ -4419,6 +4419,88 @@ async fn hide_bilibili_login(app: AppHandle, state: State<'_, AppState>) -> Resu
         let _ = main_win.eval("if(window.__FC_ON_BILI_LOGIN_UPDATED__) window.__FC_ON_BILI_LOGIN_UPDATED__();");
     }
     Ok(())
+}
+
+// 任务 11 (Round 41)：执行米家终端命令读取室内温度、室内湿度与室内空气质量
+#[derive(Serialize)]
+struct MiSmartHomeEnvResult {
+    indoor_temp: String,
+    indoor_humidity: String,
+    indoor_air_quality: String,
+}
+
+fn run_mi_cli_query(device_id: &str, prop_siid_piid: &str) -> Option<String> {
+    let path_env = format!(
+        "/opt/homebrew/bin:/usr/local/bin:{}",
+        std::env::var("PATH").unwrap_or_else(|_| "/usr/bin:/bin:/usr/sbin:/sbin".to_string())
+    );
+    let out = Command::new("mi")
+        .args(["-o", "plain", "get", device_id, prop_siid_piid])
+        .env("PATH", path_env)
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    let last_line = s.lines().last()?.trim();
+    let tok = last_line.split_whitespace().last()?.trim().to_string();
+    if tok.is_empty() { None } else { Some(tok) }
+}
+
+#[tauri::command]
+async fn fetch_mi_smart_home_env() -> Result<MiSmartHomeEnvResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let t_handle = thread::spawn(|| run_mi_cli_query("blt.3.16e9cjkf4ek00", "2.1"));
+        let h_handle = thread::spawn(|| run_mi_cli_query("blt.3.16e9cjkf4ek00", "2.2"));
+        let a_handle = thread::spawn(|| run_mi_cli_query("xiaomi.airp.rma4", "3.3"));
+        let raw_t = t_handle.join().ok().flatten();
+        let raw_h = h_handle.join().ok().flatten();
+        let raw_a = a_handle.join().ok().flatten();
+        let indoor_temp = raw_t
+            .and_then(|v| v.trim_end_matches('℃').trim_end_matches("°C").parse::<f64>().ok())
+            .map(|n| {
+                if (n - n.round()).abs() < 0.05 {
+                    format!("{:.0}℃", n)
+                } else {
+                    format!("{:.1}℃", n)
+                }
+            })
+            .unwrap_or_else(|| "--℃".to_string());
+        let indoor_humidity = raw_h
+            .and_then(|v| v.trim_end_matches('%').parse::<f64>().ok())
+            .map(|n| {
+                if (n - n.round()).abs() < 0.05 {
+                    format!("{:.0}%", n)
+                } else {
+                    format!("{:.1}%", n)
+                }
+            })
+            .unwrap_or_else(|| "--%".to_string());
+        let indoor_air_quality = raw_a
+            .and_then(|v| v.parse::<f64>().ok())
+            .map(|n| {
+                if n == 0.0 || n <= 1.0 {
+                    "空气良好".to_string()
+                } else if n == 2.0 || (n > 35.0 && n <= 75.0) {
+                    "轻度污染".to_string()
+                } else if n == 3.0 || (n > 75.0 && n <= 115.0) {
+                    "中度污染".to_string()
+                } else if n >= 4.0 {
+                    "重度污染".to_string()
+                } else {
+                    "空气良好".to_string()
+                }
+            })
+            .unwrap_or_else(|| "空气良好".to_string());
+        Ok(MiSmartHomeEnvResult {
+            indoor_temp,
+            indoor_humidity,
+            indoor_air_quality,
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 // 任务 12 (Round 5) & 任务 4 (Round 16)：电源管理——彻底清理子进程并安全关闭退出或无白屏热重启应用
@@ -5420,8 +5502,8 @@ pub fn run() {
                 use tauri::menu::{Menu, Submenu, PredefinedMenuItem, AboutMetadata};
                 let handle = app.handle();
                 let about_meta = AboutMetadata {
-                    name: Some("Feel Cool TV".to_string()),
-                    version: Some("4.4.0".to_string()),
+                    name: Some("很酷TV".to_string()),
+                    version: Some("6.3.0".to_string()),
                     ..Default::default()
                 };
                 if let (
@@ -5446,12 +5528,12 @@ pub fn run() {
                     Ok(sep3),
                     Ok(sep4),
                 ) = (
-                    PredefinedMenuItem::about(handle, Some("关于 Feel Cool TV"), Some(about_meta)),
+                    PredefinedMenuItem::about(handle, Some("关于 很酷TV"), Some(about_meta)),
                     PredefinedMenuItem::services(handle, Some("服务")),
-                    PredefinedMenuItem::hide(handle, Some("隐藏 Feel Cool TV")),
+                    PredefinedMenuItem::hide(handle, Some("隐藏 很酷TV")),
                     PredefinedMenuItem::hide_others(handle, Some("隐藏其他")),
                     PredefinedMenuItem::show_all(handle, Some("全部显示")),
-                    PredefinedMenuItem::quit(handle, Some("退出 Feel Cool TV")),
+                    PredefinedMenuItem::quit(handle, Some("退出 很酷TV")),
                     PredefinedMenuItem::close_window(handle, Some("关闭窗口")),
                     PredefinedMenuItem::undo(handle, Some("撤销")),
                     PredefinedMenuItem::redo(handle, Some("重做")),
@@ -5474,7 +5556,7 @@ pub fn run() {
                         Ok(view_menu),
                         Ok(window_menu),
                     ) = (
-                        Submenu::with_items(handle, "Feel Cool TV", true, &[&about_item, &sep1, &services_item, &sep2, &hide_item, &hide_others_item, &show_all_item, &sep3, &quit_item]),
+                        Submenu::with_items(handle, "很酷TV", true, &[&about_item, &sep1, &services_item, &sep2, &hide_item, &hide_others_item, &show_all_item, &sep3, &quit_item]),
                         Submenu::with_items(handle, "文件", true, &[&close_win_item]),
                         Submenu::with_items(handle, "编辑", true, &[&undo_item, &redo_item, &sep4, &cut_item, &copy_item, &paste_item, &select_all_item]),
                         Submenu::with_items(handle, "显示", true, &[&fullscreen_item]),
@@ -5580,6 +5662,7 @@ pub fn run() {
             load_persistent_metadata,
             save_persistent_metadata,
             clear_local_cache,
+            fetch_mi_smart_home_env,
             quit_app,
             restart_app
         ])
